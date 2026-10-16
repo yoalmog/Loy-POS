@@ -1,0 +1,6 @@
+{
+  "summary": "Implementation plan for Loyverse POS and Back Office Management System. Covers POS sale screen with item grid and cart, open tickets, table management, dining options, modifiers, split/partial payments, shift management with cash pay-in/pay-out, customer loyalty with points redemption, inventory tracking with low stock alerts, and Back Office analytics reports with Room persistence.",
+  "updatedAt": "2026-10-16T14:41:10.755595170Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

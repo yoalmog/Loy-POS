@@ -1,0 +1,6 @@
+{
+  "name": "Loyverse POS",
+  "description": "Comprehensive Point of Sale (POS) and Back Office inventory management system with open tickets, modifiers, split payments, shifts, and analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
