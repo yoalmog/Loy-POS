@@ -72,7 +72,9 @@ abstract class AppDatabase : RoomDatabase() {
             super.onCreate(db)
             INSTANCE?.let { database ->
                 CoroutineScope(Dispatchers.IO).launch {
-                    populateInitialBistroData(database)
+                    if (!com.example.data.api.SupabaseApiClient.isConfigured()) {
+                        populateInitialBistroData(database)
+                    }
                 }
             }
         }
@@ -81,7 +83,9 @@ abstract class AppDatabase : RoomDatabase() {
             super.onDestructiveMigration(db)
             INSTANCE?.let { database ->
                 CoroutineScope(Dispatchers.IO).launch {
-                    populateInitialBistroData(database)
+                    if (!com.example.data.api.SupabaseApiClient.isConfigured()) {
+                        populateInitialBistroData(database)
+                    }
                 }
             }
         }

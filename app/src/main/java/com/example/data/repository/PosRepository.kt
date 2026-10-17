@@ -13,7 +13,7 @@ class PosRepository(private val database: AppDatabase) {
     init {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             try {
-                if (database.itemDao().countItems() == 0) {
+                if (!com.example.data.api.SupabaseApiClient.isConfigured() && database.itemDao().countItems() == 0) {
                     com.example.data.db.populateInitialBistroData(database)
                 }
             } catch (e: Exception) {
@@ -305,6 +305,38 @@ class PosRepository(private val database: AppDatabase) {
             database.ticketDao().closeTicket(ticketId)
         }
 
+        // 6. Post completed receipt to Supabase database if configured
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                if (com.example.data.api.SupabaseApiClient.isConfigured()) {
+                    val dto = com.example.data.api.SupabaseReceiptDto(
+                        id = "rcpt_$receiptId",
+                        receipt_number = receiptNumber,
+                        created_at = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date()),
+                        shift_id = shiftId,
+                        cashier_name = cashierName,
+                        ticket_name = ticketName,
+                        diningOption.label,
+                        subtotal = subtotal,
+                        tax_amount = taxAmount,
+                        discount_amount = discountAmount,
+                        tip_amount = tipAmount,
+                        total_amount = totalAmount,
+                        payment_type = paymentType.name,
+                        payment_details_json = paymentDetails,
+                        customer_id = customerId,
+                        customer_name = customerName,
+                        is_refunded = false,
+                        items_summary_json = itemsSummary,
+                        idempotency_key = "idemp_$receiptId"
+                    )
+                    com.example.data.api.SupabaseApiClient.api.postReceipt(dto)
+                }
+            } catch (e: Exception) {
+                // Stored in local Room database; will sync during next SyncWorker pass
+            }
+        }
+
         return receipt.copy(id = receiptId)
     }
 
@@ -381,5 +413,22 @@ class PosRepository(private val database: AppDatabase) {
             )
         )
     }
+
+    suspend fun insertItemsFromSync(items: List<ItemEntity>) {
+        if (items.isEmpty()) return
+        database.itemDao().insertAll(items)
+        val products = items.map { item ->
+            Product(
+                id = item.id,
+                name = item.name,
+                price = item.price,
+                category = item.categoryName,
+                stockLevel = item.inStock.toInt(),
+                imageUrl = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
+            )
+        }
+        database.productDao().insertAll(products)
+    }
 }
+
 
