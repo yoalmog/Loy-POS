@@ -10,5 +10,40 @@
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: 'Assistant', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* High Contrast Modes */
+.contrast-high {
+  filter: contrast(135%);
+}
+
+.contrast-ultra {
+  filter: contrast(180%) brightness(105%);
+}
+
+/* Colorblind Filters */
+.cb-protanopia {
+  filter: url('#protanopia-filter');
+}
+
+.cb-deuteranopia {
+  filter: url('#deuteranopia-filter');
+}
+
+.cb-tritanopia {
+  filter: url('#tritanopia-filter');
+}
+
+.cb-monochrome {
+  filter: url('#monochrome-filter');
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

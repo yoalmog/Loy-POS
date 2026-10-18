@@ -16,3 +16,14 @@
 local.properties
 .env
 debug.keystore
+
+# Web / Node / Next.js
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+out/
+**/out/
+*.log
+.env.local
+.env.*.local

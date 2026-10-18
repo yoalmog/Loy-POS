@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
@@ -20,7 +20,13 @@ import {
   Menu,
   X,
   Building2,
+  ShoppingCart,
+  Wifi,
+  WifiOff,
+  Sparkles,
 } from 'lucide-react'
+import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
 import { supabase } from '@/lib/supabase/client'
 
 export default function DashboardLayout({
@@ -30,86 +36,116 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname()
   const router = useRouter()
+  const { settings, currentStaff, syncStatus } = usePos()
+  const { t, isRtl } = useTheme()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [storeName, setStoreName] = useState('AuraPOS Bistro & Grill')
-  const [dbStatus, setDbStatus] = useState<'connected' | 'configured'>('connected')
-
-  useEffect(() => {
-    async function checkDbConnection() {
-      try {
-        const { data } = await supabase.from('store_settings').select('store_name').limit(1).maybeSingle()
-        if (data && data.store_name) {
-          setStoreName(data.store_name)
-        }
-      } catch (e) {
-        setDbStatus('configured')
-      }
-    }
-    checkDbConnection()
-  }, [])
 
   const navItems = [
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Sales & Receipts', href: '/dashboard/sales', icon: Receipt },
-    { label: 'Products & Prices', href: '/dashboard/products', icon: Package },
-    { label: 'Inventory & Stock', href: '/dashboard/inventory', icon: Boxes },
-    { label: 'Customers', href: '/dashboard/customers', icon: Users },
-    { label: 'Shifts & Employees', href: '/dashboard/shifts', icon: Clock },
-    { label: 'Reports & Analytics', href: '/dashboard/reports', icon: BarChart3 },
-    { label: 'Store Settings', href: '/dashboard/settings', icon: Settings },
+    { label: t.dashboard, href: '/dashboard', icon: LayoutDashboard },
+    { label: t.sales, href: '/dashboard/sales', icon: Receipt },
+    { label: t.products, href: '/dashboard/products', icon: Package },
+    { label: t.inventory, href: '/dashboard/inventory', icon: Boxes },
+    { label: t.customers, href: '/dashboard/customers', icon: Users },
+    { label: t.shifts, href: '/dashboard/shifts', icon: Clock },
+    { label: t.reports, href: '/dashboard/reports', icon: BarChart3 },
+    { label: t.settings, href: '/dashboard/settings', icon: Settings },
   ]
 
   async function handleLogout() {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } catch {}
     router.push('/login')
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between border-b border-slate-800">
+    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row text-slate-800">
+      {/* Mobile Top Header */}
+      <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between border-b border-slate-800 sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-sky-600">
             <Store className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-sm">{storeName}</h1>
+            <h1 className="font-bold text-sm">{settings.store_name}</h1>
             <p className="text-xs text-slate-400">Back Office</p>
           </div>
         </div>
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700"
-        >
-          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/pos"
+            className="p-2 rounded-xl bg-sky-600 text-white text-xs font-bold flex items-center gap-1"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            <span>קופה</span>
+          </Link>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
+      {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 md:static md:translate-x-0 ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 ${
+          isRtl ? 'right-0' : 'left-0'
+        } z-50 w-72 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 md:static md:translate-x-0 ${
+          mobileMenuOpen
+            ? 'translate-x-0'
+            : isRtl
+            ? 'translate-x-full'
+            : '-translate-x-full'
         }`}
       >
-        <div className="p-6 border-b border-slate-800 hidden md:flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-sky-600 shadow-lg shadow-sky-600/30">
-            <Store className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="font-extrabold text-white text-base tracking-tight">{storeName}</h1>
-            <p className="text-xs text-sky-400 font-medium">Online Back Office</p>
+        {/* Brand Banner */}
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-sky-600 shadow-lg shadow-sky-600/30">
+              <Store className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="font-extrabold text-white text-sm tracking-tight">
+                {settings.store_name}
+              </h1>
+              <p className="text-[11px] text-sky-400 font-medium">ניהול עסק Back Office</p>
+            </div>
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-slate-950/50 border-b border-slate-800/60 flex items-center justify-between">
+        {/* Big Switch to POS Button */}
+        <div className="p-4 border-b border-slate-800">
+          <Link
+            href="/pos"
+            onClick={() => setMobileMenuOpen(false)}
+            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-sky-600/25 flex items-center justify-center gap-2 transition-transform active:scale-95"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            <span>עבור לקופה ומכירה (POS) &larr;</span>
+          </Link>
+        </div>
+
+        {/* Sync Status Badge */}
+        <div className="px-5 py-3 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-sky-400" />
-            <span className="text-xs font-semibold text-slate-300">Supabase DB</span>
+            {syncStatus.isOnline ? (
+              <Wifi className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-amber-500" />
+            )}
+            <span className="font-semibold text-slate-300">
+              {syncStatus.isOnline ? 'ענן מחובר' : 'מצב אופליין'}
+            </span>
           </div>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-            {dbStatus}
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            {syncStatus.isOnline ? 'Online' : 'Offline'}
           </span>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        {/* Navigation Items */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
@@ -118,45 +154,65 @@ export default function DashboardLayout({
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                   isActive
-                    ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/25'
+                    ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </Link>
             )
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
+        {/* Footer: Current Staff & Logout */}
+        <div className="p-4 border-t border-slate-800 space-y-2">
+          <div className="flex items-center gap-2.5 px-2">
+            <div
+              style={{ backgroundColor: currentStaff.avatarColor }}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold"
+            >
+              {currentStaff.name.charAt(0)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-white truncate">{currentStaff.name}</p>
+              <p className="text-[10px] text-slate-400">{currentStaff.role}</p>
+            </div>
+          </div>
+
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-colors"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/10 transition-colors"
           >
-            <LogOut className="w-5 h-5" />
-            <span>Sign Out</span>
+            <LogOut className="w-4 h-4" />
+            <span>התנתק (Sign Out)</span>
           </button>
         </div>
       </aside>
 
+      {/* Main Content Viewport */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="bg-white border-b border-slate-200 px-8 py-4 hidden md:flex items-center justify-between">
+        <header className="bg-white border-b border-slate-200 px-8 py-3.5 hidden md:flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Building2 className="w-5 h-5 text-sky-600" />
-            <h2 className="font-bold text-slate-800 text-lg">AuraPOS Management Portal</h2>
+            <h2 className="font-extrabold text-slate-800 text-sm">
+              פורטל ניהול ובקרה • {settings.store_name}
+            </h2>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Live Android POS Sync Active</span>
-            </div>
+            <Link
+              href="/pos"
+              className="px-3.5 py-1.5 rounded-xl bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold hover:bg-sky-100 flex items-center gap-1.5 transition-colors"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span>מסך קופה ומכירה</span>
+            </Link>
           </div>
         </header>
 
-        <div className="flex-1 p-6 md:p-10 max-w-7xl w-full mx-auto">{children}</div>
+        <div className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">{children}</div>
       </main>
     </div>
   )
