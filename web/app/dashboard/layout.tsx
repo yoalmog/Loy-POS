@@ -108,7 +108,7 @@ export default function DashboardLayout({
           <div className="p-4 rounded-2xl bg-sky-600 animate-pulse text-white shadow-xl shadow-sky-600/30">
             <Store className="w-8 h-8" />
           </div>
-          <p className="text-xs font-bold text-slate-400">מאמת הרשאות גישה לדשבורד...</p>
+          <p className="text-xs font-bold text-slate-400">{t.loading}</p>
         </div>
       </div>
     )
@@ -128,7 +128,7 @@ export default function DashboardLayout({
           </div>
           <div>
             <h1 className="font-bold text-sm">{settings.store_name}</h1>
-            <p className="text-xs text-slate-400">Back Office</p>
+            <p className="text-xs text-slate-400">{t.backOffice}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -137,7 +137,7 @@ export default function DashboardLayout({
             className="p-2 rounded-xl bg-sky-600 text-white text-xs font-bold flex items-center gap-1"
           >
             <ShoppingCart className="w-4 h-4" />
-            <span>קופה</span>
+            <span>{t.register}</span>
           </Link>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -170,7 +170,7 @@ export default function DashboardLayout({
               <h1 className="font-extrabold text-white text-sm tracking-tight">
                 {settings.store_name}
               </h1>
-              <p className="text-[11px] text-sky-400 font-medium">ניהול עסק Back Office</p>
+              <p className="text-[11px] text-sky-400 font-medium">{t.backOffice}</p>
             </div>
           </div>
         </div>
@@ -183,7 +183,7 @@ export default function DashboardLayout({
             className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-sky-600/25 flex items-center justify-center gap-2 transition-transform active:scale-95"
           >
             <ShoppingCart className="w-4 h-4" />
-            <span>עבור לקופה ומכירה (POS) &larr;</span>
+            <span>{t.switchToPos}</span>
           </Link>
         </div>
 
@@ -196,11 +196,11 @@ export default function DashboardLayout({
               <WifiOff className="w-4 h-4 text-amber-500" />
             )}
             <span className="font-semibold text-slate-300">
-              {syncStatus.isOnline ? 'ענן מחובר' : 'מצב אופליין'}
+              {syncStatus.isOnline ? t.onlineCloud : t.offlineMode}
             </span>
           </div>
           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-            {syncStatus.isOnline ? 'Online' : 'Offline'}
+            {syncStatus.isOnline ? t.online : t.offline}
           </span>
         </div>
 
@@ -247,7 +247,7 @@ export default function DashboardLayout({
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/10 transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            <span>התנתק (Sign Out)</span>
+            <span>{t.signOut}</span>
           </button>
         </div>
       </aside>
@@ -258,7 +258,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-3">
             <Building2 className="w-5 h-5 text-sky-600" />
             <h2 className="font-extrabold text-slate-800 text-sm">
-              פורטל ניהול ובקרה • {settings.store_name}
+              {t.portalTitle} • {settings.store_name}
             </h2>
           </div>
           <div className="flex items-center gap-3">
@@ -267,7 +267,7 @@ export default function DashboardLayout({
               className="px-3.5 py-1.5 rounded-xl bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold hover:bg-sky-100 flex items-center gap-1.5 transition-colors"
             >
               <ShoppingCart className="w-4 h-4" />
-              <span>מסך קופה ומכירה</span>
+              <span>{t.register}</span>
             </Link>
           </div>
         </header>

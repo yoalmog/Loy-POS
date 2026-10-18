@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { X, Check, Plus, Minus, Tag, MessageSquare } from 'lucide-react'
 import { Item, ProductVariant, CartModifierSelection } from '@/lib/types'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
 
 export default function ItemCustomizationModal({
   item,
@@ -15,6 +16,7 @@ export default function ItemCustomizationModal({
   onClose: () => void
 }) {
   const { addToCart, settings } = usePos()
+  const { t, isRtl } = useTheme()
 
   if (!isOpen || !item) return null
 
@@ -31,9 +33,6 @@ export default function ItemCustomizationModal({
 
   // Quantity
   const [quantity, setQuantity] = useState<number>(1)
-
-  // Preset quick comment pills
-  const QUICK_NOTES = ['ללא קרח', 'רוטב בצד', 'ללא בצל', 'חריף מאוד', 'אקסטרה פריך', 'ארוז היטב']
 
   function toggleModifier(mod: { id: string; name: string; price: number }) {
     const exists = selectedModifiers.find((m) => m.modifier_id === mod.id)
@@ -58,11 +57,11 @@ export default function ItemCustomizationModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden text-start">
         {/* Header */}
         <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-sky-400">התאמת פריט לעגלה</span>
+            <span className="text-xs font-bold text-sky-400">{t.cart}</span>
             <h3 className="text-lg font-black">{item.name}</h3>
           </div>
           <button
@@ -79,7 +78,7 @@ export default function ItemCustomizationModal({
           {item.variants && item.variants.length > 0 && (
             <div>
               <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-                בחר גודל / וריאנט
+                {t.variants}
               </label>
               <div className="grid grid-cols-2 gap-2.5">
                 {item.variants.map((variant) => {
@@ -89,7 +88,7 @@ export default function ItemCustomizationModal({
                       key={variant.id}
                       type="button"
                       onClick={() => setSelectedVariant(variant)}
-                      className={`p-3 rounded-2xl border text-right transition-all flex items-center justify-between ${
+                      className={`p-3 rounded-2xl border text-start transition-all flex items-center justify-between ${
                         isSelected
                           ? 'border-sky-600 bg-sky-50 shadow-sm ring-2 ring-sky-600/20'
                           : 'border-slate-200 bg-white hover:bg-slate-100'
@@ -123,7 +122,7 @@ export default function ItemCustomizationModal({
                           key={opt.id}
                           type="button"
                           onClick={() => toggleModifier(opt)}
-                          className={`p-2.5 rounded-xl border text-right flex items-center justify-between transition-all ${
+                          className={`p-2.5 rounded-xl border text-start flex items-center justify-between transition-all ${
                             isChecked
                               ? 'border-sky-600 bg-sky-50 text-sky-900 font-bold'
                               : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
@@ -142,7 +141,7 @@ export default function ItemCustomizationModal({
                             <span className="text-xs">{opt.name}</span>
                           </div>
                           <span className="text-xs font-semibold text-slate-500">
-                            {opt.price > 0 ? `+${settings.currency_symbol}${opt.price.toFixed(2)}` : 'חינם'}
+                            {opt.price > 0 ? `+${settings.currency_symbol}${opt.price.toFixed(2)}` : `${settings.currency_symbol}0`}
                           </span>
                         </button>
                       )
@@ -158,38 +157,22 @@ export default function ItemCustomizationModal({
             <div className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-slate-400" />
               <label className="text-xs font-bold uppercase text-slate-600">
-                הערה מותאמת אישית לפריט (למטבח/בר)
+                {t.customNotes}
               </label>
             </div>
 
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="לדוגמה: ללא קרח, רוטב בצד, ללא בצל..."
+              placeholder={`${t.customNotes}...`}
               className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-slate-50"
               rows={2}
             />
-
-            {/* Quick Note Pills */}
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {QUICK_NOTES.map((note) => (
-                <button
-                  key={note}
-                  type="button"
-                  onClick={() =>
-                    setComment((prev) => (prev ? `${prev}, ${note}` : note))
-                  }
-                  className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-semibold text-slate-600 transition-colors"
-                >
-                  +{note}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Quantity Selector */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-700">כמות מנות:</span>
+            <span className="text-xs font-bold text-slate-700">{t.actions}:</span>
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -215,7 +198,7 @@ export default function ItemCustomizationModal({
         {/* Footer */}
         <div className="p-4 bg-white border-t border-slate-200 flex items-center justify-between">
           <div>
-            <span className="text-xs text-slate-500">סה״כ שורה:</span>
+            <span className="text-xs text-slate-500">{t.subtotal}:</span>
             <div className="text-xl font-black text-sky-600">
               {settings.currency_symbol}
               {lineTotal.toFixed(2)}
@@ -227,13 +210,13 @@ export default function ItemCustomizationModal({
               onClick={onClose}
               className="py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold"
             >
-              ביטול
+              {t.cancel}
             </button>
             <button
               onClick={handleConfirm}
               className="py-2.5 px-6 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black shadow-lg shadow-sky-600/25 flex items-center gap-2"
             >
-              <span>הוסף לעגלה</span>
+              <span>{t.add}</span>
             </button>
           </div>
         </div>

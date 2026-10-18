@@ -16,6 +16,8 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
+import { getTranslation } from '@/lib/i18n'
 import { Item, StockMovement, StockMovementReason } from '@/lib/types'
 import { idbGetAll, idbPut } from '@/lib/db/idb'
 import { syncEngine } from '@/lib/db/sync'
@@ -23,6 +25,8 @@ import { syncEngine } from '@/lib/db/sync'
 export default function InventoryControlPage() {
   const { items, settings, currentStaff, updateSettings, updateItemInCatalog, refreshData } =
     usePos()
+  const { language } = useTheme()
+  const t = getTranslation(language)
 
   const [activeTab, setActiveTab] = useState<'levels' | 'movements'>('levels')
   const [search, setSearch] = useState('')
@@ -95,21 +99,21 @@ export default function InventoryControlPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-slate-900">
-            ניהול מלאי ומעקב מלאי (Inventory Control)
+            {t.inventoryManagement}
           </h2>
           <p className="text-xs text-slate-500">
-            מעקב מלאי חי, התראות סף נמוך, מניעת מכירה במלאי שלילי ויומן תנועות מלא
+            {t.inventoryOverview}
           </p>
         </div>
 
         {/* Negative Stock Toggle */}
         <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="text-right">
+          <div className="text-start">
             <span className="text-xs font-bold text-slate-800 block">
-              מכירה במלאי שלילי
+              {t.allowNegativeStock}
             </span>
             <span className="text-[10px] text-slate-400">
-              {settings.allow_negative_stock ? 'מאפשר מכירה גם כשהמלאי 0' : 'חוסם מכירה ללא מלאי'}
+              {settings.allow_negative_stock ? t.yes : t.no}
             </span>
           </div>
           <button
@@ -120,7 +124,7 @@ export default function InventoryControlPage() {
           >
             <div
               className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                settings.allow_negative_stock ? 'translate-x-6' : 'translate-x-0'
+                settings.allow_negative_stock ? 'ltr:translate-x-6 rtl:-translate-x-6' : 'translate-x-0'
               }`}
             />
           </button>
@@ -138,7 +142,7 @@ export default function InventoryControlPage() {
           }`}
         >
           <Boxes className="w-4 h-4" />
-          <span>רמות מלאי נוכחיות ({items.length})</span>
+          <span>{t.stockLevel} ({items.length})</span>
         </button>
 
         <button
@@ -150,7 +154,7 @@ export default function InventoryControlPage() {
           }`}
         >
           <History className="w-4 h-4" />
-          <span>יומן תנועות מלאי ({movements.length})</span>
+          <span>{t.movementHistory} ({movements.length})</span>
         </button>
       </div>
 
@@ -163,23 +167,23 @@ export default function InventoryControlPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="חפש מוצר במלאי לפי שם או מק״ט..."
+              placeholder={t.searchPlaceholder}
               className="flex-1 text-xs bg-transparent focus:outline-none text-slate-800"
             />
           </div>
 
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
+              <table className="w-full text-start text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                   <tr>
-                    <th className="p-4">מוצר</th>
-                    <th className="p-4">מק״ט</th>
-                    <th className="p-4">מעקב פעיל</th>
-                    <th className="p-4">יתרה נוכחית</th>
-                    <th className="p-4">סף התראה נמוך</th>
-                    <th className="p-4">סטטוס</th>
-                    <th className="p-4 text-left">התאמת מלאי</th>
+                    <th className="p-4">{t.productName}</th>
+                    <th className="p-4">{t.sku}</th>
+                    <th className="p-4">{t.trackStock}</th>
+                    <th className="p-4">{t.stockLevel}</th>
+                    <th className="p-4">{t.lowStockThreshold}</th>
+                    <th className="p-4">{t.status}</th>
+                    <th className="p-4 ltr:text-right rtl:text-left">{t.adjustStock}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -193,9 +197,9 @@ export default function InventoryControlPage() {
                         <td className="p-4 font-mono text-slate-500">{item.sku || '-'}</td>
                         <td className="p-4">
                           {item.track_stock ? (
-                            <span className="text-emerald-600 font-bold">כן</span>
+                            <span className="text-emerald-600 font-bold">{t.yes}</span>
                           ) : (
-                            <span className="text-slate-400">לא</span>
+                            <span className="text-slate-400">{t.no}</span>
                           )}
                         </td>
                         <td className="p-4 font-black text-sm text-slate-900">
@@ -207,19 +211,19 @@ export default function InventoryControlPage() {
                         <td className="p-4">
                           {isOut ? (
                             <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 font-bold text-[10px]">
-                              אזל מהמלאי
+                              {t.damageLoss}
                             </span>
                           ) : isLow ? (
                             <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold text-[10px]">
-                              מלאי נמוך
+                              {t.lowStock}
                             </span>
                           ) : (
                             <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">
-                              תקין
+                              {t.success}
                             </span>
                           )}
                         </td>
-                        <td className="p-4 text-left">
+                        <td className="p-4 ltr:text-right rtl:text-left">
                           <button
                             onClick={() => {
                               setAdjustingItem(item)
@@ -227,7 +231,7 @@ export default function InventoryControlPage() {
                             }}
                             className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs"
                           >
-                            התאם מלאי (+/-)
+                            {t.adjustStock} (+/-)
                           </button>
                         </td>
                       </tr>
@@ -244,32 +248,32 @@ export default function InventoryControlPage() {
       {activeTab === 'movements' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
+            <table className="w-full text-start text-xs">
               <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                 <tr>
-                  <th className="p-4">תאריך ושעה</th>
-                  <th className="p-4">מוצר</th>
-                  <th className="p-4">סיבת תנועה</th>
-                  <th className="p-4">מלאי קודם</th>
-                  <th className="p-4">שינוי</th>
-                  <th className="p-4">מלאי חדש</th>
-                  <th className="p-4">קופאי / עובד</th>
-                  <th className="p-4">הערות / אסמכתא</th>
+                  <th className="p-4">{t.dateTime}</th>
+                  <th className="p-4">{t.productName}</th>
+                  <th className="p-4">{t.reason}</th>
+                  <th className="p-4">{t.previousStock}</th>
+                  <th className="p-4">{t.quantityChanged}</th>
+                  <th className="p-4">{t.newStock}</th>
+                  <th className="p-4">{t.customer}</th>
+                  <th className="p-4">{t.customNotes}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {movements.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="text-center py-12 text-slate-400">
-                      אין עדיין תנועות מלאי מתועדות
+                      {t.emptyCart}
                     </td>
                   </tr>
                 ) : (
                   movements.map((mov) => (
                     <tr key={mov.id} className="hover:bg-slate-50/80">
                       <td className="p-4 text-slate-500">
-                        {new Date(mov.timestamp).toLocaleDateString('he-IL')} •{' '}
-                        {new Date(mov.timestamp).toLocaleTimeString('he-IL', {
+                        {new Date(mov.timestamp).toLocaleDateString()} •{' '}
+                        {new Date(mov.timestamp).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
@@ -307,55 +311,55 @@ export default function InventoryControlPage() {
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
             <h3 className="text-base font-black text-slate-900">
-              התאמת מלאי ידנית: {adjustingItem.name}
+              {t.adjustStock}: {adjustingItem.name}
             </h3>
             <p className="text-xs text-slate-500">
-              יתרה נוכחית: <strong>{adjustingItem.in_stock}</strong> {adjustingItem.unit_of_measure}
+              {t.stockLevel}: <strong>{adjustingItem.in_stock}</strong> {adjustingItem.unit_of_measure}
             </p>
 
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  שינוי כמות (+ להוספה, - להפחתה):
+                  {t.quantityChanged} (+ / -):
                 </label>
                 <input
                   type="number"
                   value={adjustmentAmount}
                   onChange={(e) => setAdjustmentAmount(Number(e.target.value))}
-                  placeholder="למשל 10 או -5"
+                  placeholder="10 / -5"
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-sm font-black bg-slate-50 text-slate-900"
                 />
                 <span className="text-xs text-sky-600 font-bold mt-1 block">
-                  יתרה חדשה לאחר השינוי: {adjustingItem.in_stock + adjustmentAmount}
+                  {t.newStock}: {adjustingItem.in_stock + adjustmentAmount}
                 </span>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  סיבת התנועה:
+                  {t.reason}:
                 </label>
                 <select
                   value={adjustmentReason}
                   onChange={(e) => setAdjustmentReason(e.target.value as any)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50 text-slate-800 font-bold"
                 >
-                  <option value="PURCHASE">רכש / סחורה נכנסת מספק</option>
-                  <option value="ADJUSTMENT">התאמת מלאי ידנית</option>
-                  <option value="DAMAGED">מלאי פגום / בלאי</option>
-                  <option value="STOCK_COUNT">ספירת מלאי תקופתית</option>
-                  <option value="TRANSFER">העברה בין סניפים</option>
+                  <option value="PURCHASE">{t.restockMovement}</option>
+                  <option value="ADJUSTMENT">{t.adjustStock}</option>
+                  <option value="DAMAGED">{t.damageLoss}</option>
+                  <option value="STOCK_COUNT">{t.physicalAudit}</option>
+                  <option value="TRANSFER">{t.filter}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  הערה / מספר חשבונית ספק:
+                  {t.customNotes}:
                 </label>
                 <input
                   type="text"
                   value={adjustmentNote}
                   onChange={(e) => setAdjustmentNote(e.target.value)}
-                  placeholder="לדוגמה: חשבונית 4912"
+                  placeholder="..."
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50 text-slate-800"
                 />
               </div>
@@ -367,7 +371,7 @@ export default function InventoryControlPage() {
                 onClick={() => setAdjustingItem(null)}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
               >
-                ביטול
+                {t.cancel}
               </button>
               <button
                 type="button"
@@ -375,7 +379,7 @@ export default function InventoryControlPage() {
                 disabled={adjustmentAmount === 0}
                 className="px-6 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black shadow-md shadow-sky-600/20 disabled:opacity-50"
               >
-                עדכן מלאי ורשום תנועה
+                {t.save}
               </button>
             </div>
           </div>

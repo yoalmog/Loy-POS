@@ -17,17 +17,21 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
+import { getTranslation } from '@/lib/i18n'
 import { Customer } from '@/lib/types'
 import { idbPut } from '@/lib/db/idb'
 
 export default function CustomersCrmPage() {
   const { customers, settings, addCustomer, refreshData } = usePos()
+  const { language } = useTheme()
+  const t = getTranslation(language)
 
   const [search, setSearch] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [adjustingCustomer, setAdjustingCustomer] = useState<Customer | null>(null)
   const [pointsDelta, setPointsDelta] = useState<number>(50)
-  const [pointsReason, setPointsReason] = useState<string>('בונוס הצטרפות / פיצוי שירות')
+  const [pointsReason, setPointsReason] = useState<string>('')
 
   // New Customer Form State
   const [newName, setNewName] = useState('')
@@ -88,10 +92,10 @@ export default function CustomersCrmPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-slate-900">
-            ניהול לקוחות ומועדון לקוחות (CRM & Loyalty)
+            {t.customerManagement}
           </h2>
           <p className="text-xs text-slate-500">
-            כרטיסי לקוח, מעקב רכישות, ניהול נקודות מועדון והתאמות ידניות
+            {t.customers} • {t.loyaltyPoints}
           </p>
         </div>
 
@@ -100,7 +104,7 @@ export default function CustomersCrmPage() {
           className="py-2.5 px-5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs shadow-md shadow-sky-600/20 flex items-center gap-1.5"
         >
           <UserPlus className="w-4 h-4" />
-          <span>לקוח חדש</span>
+          <span>{t.addCustomer}</span>
         </button>
       </div>
 
@@ -111,7 +115,7 @@ export default function CustomersCrmPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="חפש לקוח לפי שם, טלפון או דוא״ל..."
+          placeholder={t.searchPlaceholder}
           className="flex-1 text-xs bg-transparent focus:outline-none text-slate-800"
         />
       </div>
@@ -138,7 +142,7 @@ export default function CustomersCrmPage() {
                   {/* Loyalty Points Badge */}
                   <div className="flex items-center gap-1.5 px-3 py-1 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-black">
                     <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                    <span>{cust.points_balance} נק׳</span>
+                    <span>{cust.points_balance} {t.points}</span>
                   </div>
                 </div>
 
@@ -166,7 +170,7 @@ export default function CustomersCrmPage() {
 
                 {cust.note && (
                   <p className="mt-2.5 p-2 rounded-xl bg-slate-50 text-[11px] text-slate-600 border border-slate-100 italic">
-                    ״{cust.note}״
+                    "{cust.note}"
                   </p>
                 )}
               </div>
@@ -174,18 +178,18 @@ export default function CustomersCrmPage() {
               {/* Purchase Metrics Summary */}
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-slate-400 text-[10px] block">רכישות מצטברות</span>
+                  <span className="text-slate-400 text-[10px] block">{t.totalSpent}</span>
                   <span className="font-black text-slate-900">
                     {settings.currency_symbol}
                     {cust.total_spent.toFixed(2)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 text-[10px] block">ביקורים</span>
+                  <span className="text-slate-400 text-[10px] block">{t.totalVisits}</span>
                   <span className="font-black text-slate-900">{cust.total_visits}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 text-[10px] block">ממוצע להזמנה</span>
+                  <span className="text-slate-400 text-[10px] block">{t.averageTicket}</span>
                   <span className="font-black text-slate-900">
                     {settings.currency_symbol}
                     {avgTicket.toFixed(0)}
@@ -199,7 +203,7 @@ export default function CustomersCrmPage() {
                 className="w-full py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 flex items-center justify-center gap-1.5"
               >
                 <Award className="w-3.5 h-3.5 text-amber-500" />
-                <span>עדכן נקודות מועדון (+/-)</span>
+                <span>{t.redeemPoints} (+/-)</span>
               </button>
             </div>
           )
@@ -210,12 +214,12 @@ export default function CustomersCrmPage() {
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
-            <h3 className="text-base font-black text-slate-900">הוספת לקוח חדש למועדון</h3>
+            <h3 className="text-base font-black text-slate-900">{t.addCustomer}</h3>
 
             <form onSubmit={handleCreateCustomer} className="space-y-3">
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  שם מלא *
+                  {t.customerName} *
                 </label>
                 <input
                   type="text"
@@ -228,7 +232,7 @@ export default function CustomersCrmPage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  מספר טלפון
+                  {t.phone}
                 </label>
                 <input
                   type="tel"
@@ -240,7 +244,7 @@ export default function CustomersCrmPage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  דואר אלקטרוני
+                  {t.email}
                 </label>
                 <input
                   type="email"
@@ -252,7 +256,7 @@ export default function CustomersCrmPage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  כתובת
+                  {t.storeAddress}
                 </label>
                 <input
                   type="text"
@@ -264,12 +268,12 @@ export default function CustomersCrmPage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  הערות פנימיות
+                  {t.customNotes}
                 </label>
                 <textarea
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="העדפות הושבה, אלרגיות וכו׳"
+                  placeholder="..."
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50 text-slate-900"
                   rows={2}
                 />
@@ -281,13 +285,13 @@ export default function CustomersCrmPage() {
                   onClick={() => setIsAddModalOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                 >
-                  ביטול
+                  {t.cancel}
                 </button>
                 <button
                   type="submit"
                   className="px-6 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black shadow-md shadow-sky-600/20"
                 >
-                  שמור לקוח
+                  {t.saveCustomer}
                 </button>
               </div>
             </form>
@@ -300,16 +304,16 @@ export default function CustomersCrmPage() {
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
             <h3 className="text-base font-black text-slate-900">
-              עדכון נקודות מועדון: {adjustingCustomer.name}
+              {t.redeemPoints}: {adjustingCustomer.name}
             </h3>
             <p className="text-xs text-slate-500">
-              יתרה נוכחית: <strong>{adjustingCustomer.points_balance}</strong> נקודות
+              {t.pointsBalance}: <strong>{adjustingCustomer.points_balance}</strong> {t.points}
             </p>
 
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  הוספה או הפחתת נקודות (+/-):
+                  {t.points} (+/-):
                 </label>
                 <input
                   type="number"
@@ -318,18 +322,19 @@ export default function CustomersCrmPage() {
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-base font-black text-slate-900 bg-slate-50"
                 />
                 <span className="text-xs text-amber-600 font-bold mt-1 block">
-                  יתרה לאחר העדכון: {Math.max(0, adjustingCustomer.points_balance + pointsDelta)} נק׳
+                  {t.newStock}: {Math.max(0, adjustingCustomer.points_balance + pointsDelta)} {t.points}
                 </span>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  סיבת ההתאמה:
+                  {t.reason}:
                 </label>
                 <input
                   type="text"
                   value={pointsReason}
                   onChange={(e) => setPointsReason(e.target.value)}
+                  placeholder="..."
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50 text-slate-900"
                 />
               </div>
@@ -341,14 +346,14 @@ export default function CustomersCrmPage() {
                 onClick={() => setAdjustingCustomer(null)}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
               >
-                ביטול
+                {t.cancel}
               </button>
               <button
                 type="button"
                 onClick={handleAdjustPoints}
                 className="px-6 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black shadow-md shadow-amber-600/20"
               >
-                עדכן יתרת נקודות
+                {t.save}
               </button>
             </div>
           </div>

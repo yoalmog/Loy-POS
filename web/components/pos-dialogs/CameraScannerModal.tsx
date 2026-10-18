@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react'
 import { X, Camera, RefreshCw, Barcode, CheckCircle2 } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
 import { useAccessibility } from '@/lib/context/AccessibilityContext'
+import { useTheme } from '@/lib/context/ThemeContext'
 
 export default function CameraScannerModal({
   isOpen,
@@ -14,6 +15,7 @@ export default function CameraScannerModal({
 }) {
   const { items, addToCart } = usePos()
   const { announce, triggerSound, triggerHaptic } = useAccessibility()
+  const { t, isRtl } = useTheme()
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
@@ -62,25 +64,25 @@ export default function CameraScannerModal({
       triggerSound('beep')
       triggerHaptic(50)
       setDetectedItemName(found.name)
-      announce(`נסרק: ${found.name}`)
+      announce(found.name)
       setTimeout(() => {
         setDetectedItemName(null)
         onClose()
       }, 1000)
     } else {
       triggerSound('error')
-      announce(`ברקוד ${trimmed} לא נמצא בקטלוג`)
+      announce(trimmed)
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden flex flex-col">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden flex flex-col text-start">
         {/* Header */}
         <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Camera className="w-5 h-5 text-sky-400" />
-            <h3 className="text-base font-black">סורק ברקוד במצלמה</h3>
+            <h3 className="text-base font-black">{t.cameraScanner}</h3>
           </div>
           <button
             onClick={onClose}
@@ -111,7 +113,7 @@ export default function CameraScannerModal({
             <div className="absolute inset-0 bg-emerald-600/90 flex flex-col items-center justify-center text-white p-4 text-center z-10 animate-fade-in">
               <CheckCircle2 className="w-12 h-12 mb-2" />
               <h4 className="text-lg font-black">{detectedItemName}</h4>
-              <p className="text-xs text-emerald-100">נוסף לעגלת הקניות בהצלחה!</p>
+              <p className="text-xs text-emerald-100">{t.cart} ✓</p>
             </div>
           )}
         </div>
@@ -119,12 +121,12 @@ export default function CameraScannerModal({
         {/* Manual SKU / Barcode input */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
           <label className="block text-xs font-bold uppercase text-slate-500">
-            או הקלד מק״ט / ברקוד ידנית:
+            {t.sku} / {t.barcode}:
           </label>
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="למשל: 729000100101 או BGR-ANG-01"
+              placeholder={`${t.sku} / ${t.barcode}...`}
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
               onKeyDown={(e) => {
@@ -136,13 +138,13 @@ export default function CameraScannerModal({
               onClick={() => handleCodeSubmit(manualCode)}
               className="py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm"
             >
-              הוסף
+              {t.add}
             </button>
           </div>
 
           {/* Quick Demo Barcodes */}
           <div className="pt-1">
-            <span className="text-[10px] text-slate-400 block mb-1">ברקודים לדוגמה להקלדה:</span>
+            <span className="text-[10px] text-slate-400 block mb-1">{t.barcode}:</span>
             <div className="flex flex-wrap gap-1.5">
               {items.slice(0, 4).map((it) => (
                 <button

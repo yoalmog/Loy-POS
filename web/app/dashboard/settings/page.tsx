@@ -60,7 +60,7 @@ export default function StoreSettingsPage() {
   }
 
   async function handleTestPrint(target: 'CASHIER' | 'KITCHEN' | 'BAR') {
-    setTestPrintStatus(`מבצע בדיקת הדפסה עבור ${target}...`)
+    setTestPrintStatus(`${t.testPrint} (${target})...`)
     try {
       const printers = await printerManager.getPrinters()
       const printer = printers.find((p) => p.type === target) || printers[0]
@@ -70,7 +70,7 @@ export default function StoreSettingsPage() {
             id: 'test_receipt',
             receipt_number: 'TEST-001',
             created_at: new Date().toISOString(),
-            cashier_name: 'בדיקת מערכת',
+            cashier_name: t.appName,
             dining_option: 'Dine in',
             subtotal: 100.0,
             tax_amount: 17.0,
@@ -83,7 +83,7 @@ export default function StoreSettingsPage() {
               {
                 cart_id: 'c1',
                 item_id: 1,
-                name: 'בדיקת הדפסה מוצלחת',
+                name: t.testPrint,
                 unit_price: 100.0,
                 cost: 30.0,
                 quantity: 1,
@@ -97,10 +97,10 @@ export default function StoreSettingsPage() {
           },
           formData
         )
-        setTestPrintStatus('הדפסת הניסיון נשלחה בהצלחה!')
+        setTestPrintStatus(t.success)
       }
     } catch (err: any) {
-      setTestPrintStatus(`שגיאת הדפסה: ${err.message}`)
+      setTestPrintStatus(`${t.error}: ${err.message}`)
     }
   }
 
@@ -110,17 +110,17 @@ export default function StoreSettingsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-slate-900">
-            הגדרות מערכת וקונפיגורציה (Settings & Setup)
+            {t.storeSettings}
           </h2>
           <p className="text-xs text-slate-500">
-            פרופיל החנות, חומרה ומדפסות, נגישות, שפות (i18n), ואבטחת בעל עסק
+            {t.storeProfile} • {t.printers} • {t.accessibility} • i18n
           </p>
         </div>
 
         {isSaved && (
           <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold animate-fade-in">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>ההגדרות נשמרו בהצלחה!</span>
+            <span>{t.success}!</span>
           </div>
         )}
       </div>
@@ -136,7 +136,7 @@ export default function StoreSettingsPage() {
           }`}
         >
           <Store className="w-4 h-4" />
-          <span>פרטי עסק וקבלות</span>
+          <span>{t.storeProfile}</span>
         </button>
 
         <button
@@ -148,7 +148,7 @@ export default function StoreSettingsPage() {
           }`}
         >
           <Printer className="w-4 h-4" />
-          <span>מדפסות וחומרה</span>
+          <span>{t.printers}</span>
         </button>
 
         <button
@@ -160,7 +160,7 @@ export default function StoreSettingsPage() {
           }`}
         >
           <Eye className="w-4 h-4" />
-          <span>חבילת נגישות מתקדמת</span>
+          <span>{t.accessibility}</span>
         </button>
 
         <button
@@ -172,7 +172,7 @@ export default function StoreSettingsPage() {
           }`}
         >
           <Palette className="w-4 h-4" />
-          <span>עיצוב ושפות ({language})</span>
+          <span>{t.settings} ({language.toUpperCase()})</span>
         </button>
 
         <button
@@ -184,19 +184,19 @@ export default function StoreSettingsPage() {
           }`}
         >
           <Shield className="w-4 h-4" />
-          <span>אבטחה וקוד PIN</span>
+          <span>{t.ownerAuthRequired}</span>
         </button>
       </div>
 
       {/* 1. STORE PROFILE TAB */}
       {activeTab === 'store' && (
         <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-          <h3 className="text-sm font-black text-slate-900 mb-2">פרטי העסק וחשבונית</h3>
+          <h3 className="text-sm font-black text-slate-900 mb-2">{t.storeProfile}</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                שם העסק / החנות *
+                {t.storeName} *
               </label>
               <input
                 type="text"
@@ -209,7 +209,7 @@ export default function StoreSettingsPage() {
 
             <div>
               <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                טלפון ליצירת קשר
+                {t.storePhone}
               </label>
               <input
                 type="text"
@@ -223,7 +223,7 @@ export default function StoreSettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                כתובת מלאה
+                {t.storeAddress}
               </label>
               <input
                 type="text"
@@ -235,7 +235,7 @@ export default function StoreSettingsPage() {
 
             <div>
               <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                דואר אלקטרוני
+                {t.storeEmail}
               </label>
               <input
                 type="email"
@@ -249,7 +249,7 @@ export default function StoreSettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                סמל מטבע
+                {t.currencySymbol}
               </label>
               <input
                 type="text"
@@ -263,7 +263,7 @@ export default function StoreSettingsPage() {
 
             <div>
               <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                שיעור מע״מ / מס (%)
+                {t.taxRatePercent} (%)
               </label>
               <input
                 type="number"
@@ -278,7 +278,7 @@ export default function StoreSettingsPage() {
 
             <div>
               <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                מצב מע״מ
+                {t.tax}
               </label>
               <select
                 value={formData.tax_included ? 'true' : 'false'}
@@ -287,8 +287,8 @@ export default function StoreSettingsPage() {
                 }
                 className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50 text-slate-900 font-bold"
               >
-                <option value="true">מחירים כוללים מע״מ (ישראל/אירופה)</option>
-                <option value="false">הוסף מע״מ בקופה (ארה״ב)</option>
+                <option value="true">{t.yes}</option>
+                <option value="false">{t.no}</option>
               </select>
             </div>
           </div>
@@ -296,7 +296,7 @@ export default function StoreSettingsPage() {
           <div className="space-y-3 pt-2">
             <div>
               <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                כותרת עליונה בקבלה (Receipt Header)
+                {t.receiptHeader}
               </label>
               <input
                 type="text"
@@ -310,7 +310,7 @@ export default function StoreSettingsPage() {
 
             <div>
               <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                כותרת תחתונה בקבלה (Receipt Footer)
+                {t.receiptFooter}
               </label>
               <input
                 type="text"
@@ -324,7 +324,7 @@ export default function StoreSettingsPage() {
 
             <div>
               <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                מדיניות החזרות מודפסת בקבלה
+                {t.returnPolicy}
               </label>
               <input
                 type="text"
@@ -343,7 +343,7 @@ export default function StoreSettingsPage() {
               className="py-2.5 px-6 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-black text-xs shadow-md shadow-sky-600/20 flex items-center gap-2"
             >
               <Save className="w-4 h-4" />
-              <span>שמור הגדרות</span>
+              <span>{t.save}</span>
             </button>
           </div>
         </form>
@@ -355,10 +355,10 @@ export default function StoreSettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-black text-slate-900">
-                מערכת הדפסה כפולה וניתוב הזמנות (Dual Printer System)
+                {t.printers}
               </h3>
               <p className="text-xs text-slate-500">
-                חיבור מדפסות Bluetooth BLE, WebUSB, רשת LAN (TCP 9100) ו-Sunmi
+                {t.cashierPrinter} • {t.kitchenPrinter} • {t.barPrinter}
               </p>
             </div>
           </div>
@@ -373,57 +373,57 @@ export default function StoreSettingsPage() {
             {/* Cashier Printer */}
             <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="font-black text-xs text-slate-900">מדפסת קופה ראשית</span>
+                <span className="font-black text-xs text-slate-900">{t.cashierPrinter}</span>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                  פעיל
+                  {t.success}
                 </span>
               </div>
               <p className="text-[11px] text-slate-500">
-                מיועדת לקבלות לקוח, פתיחת מגירת מזומנים וחיתוך נייר אוטומטי (80 מ״מ).
+                {t.receiptPreview} (80mm)
               </p>
               <button
                 onClick={() => handleTestPrint('CASHIER')}
                 className="w-full py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700"
               >
-                בצע הדפסת ניסיון
+                {t.testPrint}
               </button>
             </div>
 
             {/* Kitchen Printer */}
             <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="font-black text-xs text-slate-900">מדפסת מטבח (LAN 9100)</span>
+                <span className="font-black text-xs text-slate-900">{t.kitchenPrinter}</span>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                  פעיל
+                  {t.success}
                 </span>
               </div>
               <p className="text-[11px] text-slate-500">
-                ניתוב אוטומטי של הזמנות מנות חמות, בשרים ופיצות ישירות לשף (80 מ״מ).
+                {t.kitchenOrder} (LAN 9100)
               </p>
               <button
                 onClick={() => handleTestPrint('KITCHEN')}
                 className="w-full py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700"
               >
-                בדיקת מדפסת מטבח
+                {t.testPrint}
               </button>
             </div>
 
             {/* Bar Printer */}
             <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="font-black text-xs text-slate-900">מדפסת בר (BLE ניידת)</span>
+                <span className="font-black text-xs text-slate-900">{t.barPrinter}</span>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                  פעיל
+                  {t.success}
                 </span>
               </div>
               <p className="text-[11px] text-slate-500">
-                ניתוב אוטומטי של בירות, קפה ומשקאות לברמן (רוחב נייר 58 מ״מ).
+                {t.bar} (BLE 58mm)
               </p>
               <button
                 onClick={() => handleTestPrint('BAR')}
                 className="w-full py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700"
               >
-                בדיקת מדפסת בר
+                {t.testPrint}
               </button>
             </div>
           </div>
@@ -435,24 +435,24 @@ export default function StoreSettingsPage() {
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
           <div>
             <h3 className="text-sm font-black text-slate-900">
-              חבילת נגישות מתקדמת (WCAG 2.1 / Section 508)
+              {t.accessibility} (WCAG 2.1)
             </h3>
             <p className="text-xs text-slate-500">
-              התאמות ויזואליות, גדלי טקסט, פילטרים לעיוורון צבעים ומשוב קולי/רטט
+              {t.textScale} • {t.contrast} • {t.touchTarget}
             </p>
           </div>
 
           {/* Text Scaling */}
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-              גודל טקסט (Text Scale)
+              {t.textScale}
             </label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {[
-                { scale: '1.0', label: 'רגיל (1.0x)' },
-                { scale: '1.15', label: 'גדול (1.15x)' },
-                { scale: '1.30', label: 'מוגדל (1.30x)' },
-                { scale: '1.50', label: 'מקסימלי (1.50x)' },
+                { scale: '1.0', label: '1.0x' },
+                { scale: '1.15', label: '1.15x' },
+                { scale: '1.30', label: '1.30x' },
+                { scale: '1.50', label: '1.50x' },
               ].map((s) => (
                 <button
                   key={s.scale}
@@ -473,13 +473,13 @@ export default function StoreSettingsPage() {
           {/* Contrast Mode */}
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-              מצבי ניגודיות (Contrast)
+              {t.contrast}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { mode: 'normal', label: 'רגיל' },
-                { mode: 'high', label: 'ניגודיות גבוהה' },
-                { mode: 'ultra', label: 'ניגודיות אולטרה' },
+                { mode: 'normal', label: t.standardTier },
+                { mode: 'high', label: t.silverTier },
+                { mode: 'ultra', label: t.goldTier },
               ].map((c) => (
                 <button
                   key={c.mode}
@@ -500,15 +500,15 @@ export default function StoreSettingsPage() {
           {/* Colorblind Filters */}
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-              התאמה לעיוורון צבעים
+              {t.colorblind}
             </label>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               {[
-                { mode: 'none', label: 'ללא סינון' },
-                { mode: 'protanopia', label: 'פרוטנופיה (אדום)' },
-                { mode: 'deuteranopia', label: 'דאוטרנופיה (ירוק)' },
-                { mode: 'tritanopia', label: 'טריטנופיה (כחול)' },
-                { mode: 'monochrome', label: 'מונוכרומטי' },
+                { mode: 'none', label: t.all },
+                { mode: 'protanopia', label: 'Protanopia' },
+                { mode: 'deuteranopia', label: 'Deuteranopia' },
+                { mode: 'tritanopia', label: 'Tritanopia' },
+                { mode: 'monochrome', label: 'Monochrome' },
               ].map((cb) => (
                 <button
                   key={cb.mode}
@@ -529,25 +529,25 @@ export default function StoreSettingsPage() {
           {/* Touch Target Sizing */}
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-              שטח כפתורי מגע במסך (Touch Target)
+              {t.touchTarget}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { size: 'standard', label: 'סטנדרטי (44px)' },
-                { size: 'large', label: 'מוגדל (52px)' },
-                { size: 'jumbo', label: 'ג׳מבו נגיש (60px)' },
-              ].map((t) => (
+                { size: 'standard', label: '44px' },
+                { size: 'large', label: '52px' },
+                { size: 'jumbo', label: '60px' },
+              ].map((tItem) => (
                 <button
-                  key={t.size}
+                  key={tItem.size}
                   type="button"
-                  onClick={() => setTouchSize(t.size as any)}
+                  onClick={() => setTouchSize(tItem.size as any)}
                   className={`p-3 rounded-2xl border font-bold text-xs transition-all ${
-                    touchSize === t.size
+                    touchSize === tItem.size
                       ? 'border-sky-600 bg-sky-50 text-sky-900 ring-2 ring-sky-600/20'
                       : 'border-slate-200 bg-white text-slate-700'
                   }`}
                 >
-                  {t.label}
+                  {tItem.label}
                 </button>
               ))}
             </div>
@@ -557,7 +557,7 @@ export default function StoreSettingsPage() {
           <div className="space-y-3 pt-2 border-t border-slate-100">
             <label className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 cursor-pointer">
               <span className="text-xs font-bold text-slate-800">
-                משוב קולי וצלילי סריקה (Web Audio API)
+                {t.soundEffects}
               </span>
               <input
                 type="checkbox"
@@ -569,7 +569,7 @@ export default function StoreSettingsPage() {
 
             <label className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 cursor-pointer">
               <span className="text-xs font-bold text-slate-800">
-                משוב רטט במסכי מגע (Haptic Feedback)
+                {t.hapticFeedback}
               </span>
               <input
                 type="checkbox"
@@ -581,7 +581,7 @@ export default function StoreSettingsPage() {
 
             <label className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 cursor-pointer">
               <span className="text-xs font-bold text-slate-800">
-                מצב קופה מופשט (Simplified POS Mode)
+                {t.simplifiedPos}
               </span>
               <input
                 type="checkbox"
@@ -599,17 +599,17 @@ export default function StoreSettingsPage() {
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
           <div>
             <h3 className="text-sm font-black text-slate-900">
-              ערכות נושא, פלטות צבעים ושפות (Themes & i18n)
+              {t.settings} • i18n
             </h3>
             <p className="text-xs text-slate-500">
-              תמיכה מלאה ב-9 שפות עם כיווניות RTL/LTR אוטומטית ומגוון פלטות צבעים
+              RTL / LTR • {language.toUpperCase()}
             </p>
           </div>
 
           {/* Supported Languages */}
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-              שפת הממשק (9 שפות נתמכות)
+              {t.language} (9 Languages)
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {[
@@ -643,13 +643,13 @@ export default function StoreSettingsPage() {
           {/* Display Mode */}
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-              מצב תצוגה
+              {t.status}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { mode: 'light', label: 'מצב בהיר (Light)' },
-                { mode: 'dark', label: 'מצב כהה (Dark)' },
-                { mode: 'system', label: 'סנכרן עם מערכת ההפעלה' },
+                { mode: 'light', label: 'Light' },
+                { mode: 'dark', label: 'Dark' },
+                { mode: 'system', label: 'System' },
               ].map((m) => (
                 <button
                   key={m.mode}
@@ -670,16 +670,16 @@ export default function StoreSettingsPage() {
           {/* Color Palettes */}
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-              פלטת צבעים מותאמת
+              {t.colorTag}
             </label>
             <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
               {[
-                { id: 'blue', label: 'כחול מודרני', hex: '#0288D1' },
-                { id: 'emerald', label: 'ברקת רענן', hex: '#10B981' },
-                { id: 'purple', label: 'סגול רויאל', hex: '#8B5CF6' },
-                { id: 'amber', label: 'כתום קפה', hex: '#F59E0B' },
-                { id: 'red', label: 'אדום ביסטרו', hex: '#EF4444' },
-                { id: 'midnight', label: 'שחור חצות', hex: '#0F172A' },
+                { id: 'blue', label: 'Blue', hex: '#0288D1' },
+                { id: 'emerald', label: 'Emerald', hex: '#10B981' },
+                { id: 'purple', label: 'Purple', hex: '#8B5CF6' },
+                { id: 'amber', label: 'Amber', hex: '#F59E0B' },
+                { id: 'red', label: 'Red', hex: '#EF4444' },
+                { id: 'midnight', label: 'Midnight', hex: '#0F172A' },
               ].map((pal) => (
                 <button
                   key={pal.id}
@@ -706,21 +706,20 @@ export default function StoreSettingsPage() {
       {/* 5. SECURITY & OWNER AUTH */}
       {activeTab === 'security' && (
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-          <h3 className="text-sm font-black text-slate-900">אבטחה וקוד בעל עסק</h3>
+          <h3 className="text-sm font-black text-slate-900">{t.ownerAuthRequired}</h3>
           <p className="text-xs text-slate-500">
-            פעולות רגישות (איפוס נתונים, עריכת שיעורי מס) דורשות אישור PIN בעל עסק.
+            {t.enterPin}
           </p>
 
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-semibold flex items-center justify-between">
             <div>
-              <p>קוד ה-PIN הנוכחי של בעל העסק הוא: <strong>{formData.owner_pin || '1234'}</strong></p>
-              <p className="text-[11px] text-amber-700 mt-0.5">ניתן לעדכן אותו בכל עת.</p>
+              <p>PIN: <strong>•••• ({formData.owner_pin || '1234'})</strong></p>
             </div>
             <button
               onClick={() => setIsOwnerModalOpen(true)}
               className="py-2 px-4 rounded-xl bg-amber-600 text-white font-bold text-xs"
             >
-              בדוק אישור בעלים
+              {t.confirm} PIN
             </button>
           </div>
         </div>
@@ -729,7 +728,7 @@ export default function StoreSettingsPage() {
       {/* Owner Auth Modal Test */}
       <OwnerAuthModal
         isOpen={isOwnerModalOpen}
-        onApproved={() => alert('אישור בעל עסק אומת בהצלחה!')}
+        onApproved={() => alert(t.success)}
         onClose={() => setIsOwnerModalOpen(false)}
       />
     </div>

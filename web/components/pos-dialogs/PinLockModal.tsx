@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Lock, Delete, UserCheck, ShieldAlert, KeyRound } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
 
 export default function PinLockModal({
   isOpen,
@@ -12,6 +13,7 @@ export default function PinLockModal({
   onClose?: () => void
 }) {
   const { currentStaff, staffList, switchStaffWithPin, isLocked, setIsLocked } = usePos()
+  const { t } = useTheme()
   const [pin, setPin] = useState<string>('')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -50,12 +52,12 @@ export default function PinLockModal({
         </div>
 
         <div>
-          <h3 className="text-xl font-black text-slate-800">נעילת קופה ומעבר קופאים</h3>
+          <h3 className="text-xl font-black text-slate-800">{t.lockScreen}</h3>
           <p className="text-xs text-slate-500 mt-1">
-            הקש קוד PIN בן 4 ספרות לכניסה למערכת
+            {t.enterPin} (4)
           </p>
           <div className="text-[11px] text-sky-600 font-semibold mt-1">
-            עובד נוכחי: {currentStaff.name} ({currentStaff.role})
+            {currentStaff.name} ({currentStaff.role})
           </div>
         </div>
 
@@ -96,7 +98,7 @@ export default function PinLockModal({
             onClick={() => setPin('')}
             className="h-14 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-400 text-xs font-bold"
           >
-            נקה
+            {t.keypadClear}
           </button>
           <button
             type="button"
@@ -116,7 +118,7 @@ export default function PinLockModal({
 
         {/* Quick Staff Demo Legend */}
         <div className="text-[11px] text-slate-400 pt-1">
-          קודים לדוגמה: קופאי (1111) • מנהלת (2222) • בעלים (1234)
+          1111 • 2222 • 1234
         </div>
       </div>
     </div>

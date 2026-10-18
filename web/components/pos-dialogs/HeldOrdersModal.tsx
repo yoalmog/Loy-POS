@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { X, Clock, Play, Trash2, User, Table, ShoppingBag } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
 
 export default function HeldOrdersModal({
   isOpen,
@@ -13,6 +14,8 @@ export default function HeldOrdersModal({
 }) {
   const { heldOrders, unparkOrder, discardParkedOrder, parkCurrentOrder, cart, settings } =
     usePos()
+
+  const { t, isRtl } = useTheme()
 
   const [tableName, setTableName] = useState('')
   const [comment, setComment] = useState('')
@@ -27,7 +30,7 @@ export default function HeldOrdersModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden text-start">
         {/* Header */}
         <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -35,8 +38,8 @@ export default function HeldOrdersModal({
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black">הזמנות מושהות (Held / Parked)</h3>
-              <p className="text-xs text-slate-400">שמירת עגלות פתוחות ושליפתן בכל עת</p>
+              <h3 className="text-base font-black">{t.heldOrders}</h3>
+              <p className="text-xs text-slate-400">{t.parkOrder}</p>
             </div>
           </div>
           <button
@@ -51,19 +54,19 @@ export default function HeldOrdersModal({
         {cart.length > 0 && (
           <div className="p-4 bg-amber-50/70 border-b border-amber-200 space-y-2.5">
             <h4 className="text-xs font-black text-amber-900">
-              השהיית העגלה הפעילה ({cart.length} פריטים)
+              {t.parkOrder} ({cart.length})
             </h4>
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
-                placeholder="שם שולחן / לקוח (אופציונלי)"
+                placeholder={`${t.tableNumber} / ${t.customer}`}
                 value={tableName}
                 onChange={(e) => setTableName(e.target.value)}
                 className="p-2 rounded-xl border border-amber-200 text-xs bg-white text-slate-800"
               />
               <input
                 type="text"
-                placeholder="הערה (למשל: ממתינים לעוד אורח)"
+                placeholder={t.customNotes}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 className="p-2 rounded-xl border border-amber-200 text-xs bg-white text-slate-800"
@@ -74,7 +77,7 @@ export default function HeldOrdersModal({
                 onClick={handleParkCurrent}
                 className="py-1.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm"
               >
-                השהה עגלה זו עכשיו
+                {t.parkOrder}
               </button>
             </div>
           </div>
@@ -85,11 +88,11 @@ export default function HeldOrdersModal({
           {heldOrders.length === 0 ? (
             <div className="text-center py-12 text-slate-400 space-y-2">
               <ShoppingBag className="w-10 h-10 mx-auto opacity-30" />
-              <p className="text-xs">אין כרגע הזמנות מושהות במערכת</p>
+              <p className="text-xs">{t.no} {t.heldOrders}</p>
             </div>
           ) : (
             heldOrders.map((order) => {
-              const timeStr = new Date(order.created_at).toLocaleTimeString('he-IL', {
+              const timeStr = new Date(order.created_at).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
               })
@@ -115,19 +118,19 @@ export default function HeldOrdersModal({
                         <Clock className="w-3 h-3 text-slate-400" />
                         {timeStr}
                       </span>
-                      <span>• {itemCount} פריטים</span>
-                      {order.customer_name && <span>• לקוח: {order.customer_name}</span>}
+                      <span>• {itemCount}</span>
+                      {order.customer_name && <span>• {t.customer}: {order.customer_name}</span>}
                     </div>
 
                     {order.comment && (
                       <p className="text-[11px] text-amber-700 font-medium">
-                        הערה: {order.comment}
+                        {t.customNotes}: {order.comment}
                       </p>
                     )}
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-slate-900 ml-2">
+                    <span className="text-sm font-black text-slate-900 mx-2">
                       {settings.currency_symbol}
                       {order.subtotal.toFixed(2)}
                     </span>
@@ -137,15 +140,15 @@ export default function HeldOrdersModal({
                         onClose()
                       }}
                       className="p-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm flex items-center gap-1"
-                      title="שלוף עגלה"
+                      title={t.cart}
                     >
                       <Play className="w-3.5 h-3.5 fill-white" />
-                      <span>שלוף</span>
+                      <span>{t.confirm}</span>
                     </button>
                     <button
                       onClick={() => discardParkedOrder(order.id)}
                       className="p-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs"
-                      title="בטל הזמנה מושהית"
+                      title={t.delete}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

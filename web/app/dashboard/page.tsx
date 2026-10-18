@@ -15,10 +15,12 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
 import SalesChart from '@/components/SalesChart'
 
 export default function DashboardOverviewPage() {
-  const { receipts, items, customers, settings, currentShift } = usePos()
+  const { receipts, items, customers, settings } = usePos()
+  const { t, isRtl } = useTheme()
 
   // Calculate high-level metrics
   const totalRevenue = receipts.reduce((sum, r) => sum + (r.is_refunded ? 0 : r.total_amount), 0)
@@ -45,13 +47,13 @@ export default function DashboardOverviewPage() {
       <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-white p-6 rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-400/30">
-            דשבורד ניהול פעיל
+            {t.dashboard}
           </span>
           <h2 className="text-2xl font-black mt-2">
-            שלום וברוכים הבאים לפורטל {settings.store_name}
+            {t.welcomeTitle} {settings.store_name}
           </h2>
           <p className="text-xs text-slate-300 mt-1">
-            מעקב ביצועים בזמן אמת, סנכרון קופה היברידי וניהול קטלוג מלא
+            {t.welcomeSubtitle}
           </p>
         </div>
 
@@ -60,7 +62,7 @@ export default function DashboardOverviewPage() {
           className="py-3 px-6 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-xs shadow-lg shadow-sky-500/30 flex items-center gap-2 transition-transform active:scale-95"
         >
           <ShoppingCart className="w-4 h-4" />
-          <span>פתח מסך קופה ומכירה &larr;</span>
+          <span>{t.switchToPos}</span>
         </Link>
       </div>
 
@@ -70,7 +72,7 @@ export default function DashboardOverviewPage() {
         <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              הכנסות ברוטו (סה״כ)
+              {t.totalRevenue}
             </span>
             <div className="text-2xl font-black text-slate-900 mt-1">
               {settings.currency_symbol}
@@ -78,7 +80,7 @@ export default function DashboardOverviewPage() {
             </div>
             <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 mt-1">
               <TrendingUp className="w-3.5 h-3.5" />
-              <span>פעיל בזמן אמת</span>
+              <span>{t.onlineCloud}</span>
             </span>
           </div>
           <div className="p-3.5 rounded-2xl bg-emerald-50 text-emerald-600">
@@ -90,11 +92,11 @@ export default function DashboardOverviewPage() {
         <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              עסקאות וקבלות
+              {t.totalOrders}
             </span>
             <div className="text-2xl font-black text-slate-900 mt-1">{totalOrders}</div>
             <span className="text-[11px] text-slate-500 mt-1 block">
-              ממוצע לעסקה: {settings.currency_symbol}
+              {t.averageTicket}: {settings.currency_symbol}
               {averageTicket.toFixed(2)}
             </span>
           </div>
@@ -107,11 +109,11 @@ export default function DashboardOverviewPage() {
         <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              מוצרים בקטלוג
+              {t.products}
             </span>
             <div className="text-2xl font-black text-slate-900 mt-1">{items.length}</div>
             <span className="text-[11px] text-slate-500 mt-1 block">
-              {items.filter((i) => i.is_favorite).length} מועדפים בקופה
+              {items.filter((i) => i.is_favorite).length} {t.favorites}
             </span>
           </div>
           <div className="p-3.5 rounded-2xl bg-purple-50 text-purple-600">
@@ -123,11 +125,11 @@ export default function DashboardOverviewPage() {
         <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              לקוחות מועדון
+              {t.customers}
             </span>
             <div className="text-2xl font-black text-slate-900 mt-1">{customers.length}</div>
             <span className="text-[11px] text-amber-600 font-bold mt-1 block">
-              ★ {customers.reduce((s, c) => s + c.points_balance, 0)} נקודות מועדון
+              ★ {customers.reduce((s, c) => s + c.points_balance, 0)} {t.points}
             </span>
           </div>
           <div className="p-3.5 rounded-2xl bg-amber-50 text-amber-600">
@@ -142,11 +144,11 @@ export default function DashboardOverviewPage() {
         <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-extrabold text-slate-800">מגמת הכנסות שעתית</h3>
-              <p className="text-xs text-slate-400">פילוח מחזור מכירות במהלך היום</p>
+              <h3 className="text-sm font-extrabold text-slate-800">{t.hourlySalesTrend}</h3>
+              <p className="text-xs text-slate-400">{t.hourlySales}</p>
             </div>
             <span className="text-xs font-bold text-sky-600 bg-sky-50 px-3 py-1 rounded-xl">
-              היום
+              {t.status}
             </span>
           </div>
           <div className="h-64">
@@ -160,17 +162,17 @@ export default function DashboardOverviewPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-amber-500" />
-                <h3 className="text-sm font-extrabold text-slate-800">התראות מלאי נמוך</h3>
+                <h3 className="text-sm font-extrabold text-slate-800">{t.lowStockAlertCount}</h3>
               </div>
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
-                {lowStockItems.length} פריטים
+                {lowStockItems.length}
               </span>
             </div>
 
             <div className="space-y-2.5 max-h-56 overflow-y-auto">
               {lowStockItems.length === 0 ? (
                 <p className="text-xs text-slate-400 text-center py-6">
-                  כל המוצרים נמצאים ברמת מלאי תקינה
+                  {t.inStock}
                 </p>
               ) : (
                 lowStockItems.map((item) => (
@@ -181,11 +183,11 @@ export default function DashboardOverviewPage() {
                     <div>
                       <h4 className="text-xs font-black text-slate-800">{item.name}</h4>
                       <span className="text-[10px] text-slate-500">
-                        סף מינימום: {item.low_stock_threshold}
+                        {t.lowStockThreshold}: {item.low_stock_threshold}
                       </span>
                     </div>
                     <span className="text-xs font-black text-red-600">
-                      נותרו {item.in_stock}
+                      {t.inStock}: {item.in_stock}
                     </span>
                   </div>
                 ))
@@ -197,7 +199,7 @@ export default function DashboardOverviewPage() {
             href="/dashboard/inventory"
             className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold text-center block"
           >
-            עבור לניהול מלאי ויומן תנועות &larr;
+            {t.inventoryManagement} &rarr;
           </Link>
         </div>
       </div>
@@ -206,28 +208,28 @@ export default function DashboardOverviewPage() {
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-extrabold text-slate-800">עסקאות אחרונות בקופה</h3>
-            <p className="text-xs text-slate-400">פירוט עסקאות שהושלמו לאחרונה</p>
+            <h3 className="text-sm font-extrabold text-slate-800">{t.sales}</h3>
+            <p className="text-xs text-slate-400">{t.receiptPreview}</p>
           </div>
           <Link
             href="/dashboard/sales"
             className="text-xs font-bold text-sky-600 hover:underline"
           >
-            הצג את כל הקבלות ({receipts.length}) &larr;
+            {t.sales} ({receipts.length}) &rarr;
           </Link>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs">
+          <table className={`w-full ${isRtl ? 'text-right' : 'text-left'} text-xs`}>
             <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
               <tr>
-                <th className="p-4">מספר קבלה</th>
-                <th className="p-4">שעה ותאריך</th>
-                <th className="p-4">קופאי</th>
-                <th className="p-4">לקוח</th>
-                <th className="p-4">אמצעי תשלום</th>
-                <th className="p-4">סה״כ לתשלום</th>
-                <th className="p-4">סטטוס</th>
+                <th className="p-4">{t.receiptPreview}</th>
+                <th className="p-4">{t.dateTime}</th>
+                <th className="p-4">{t.shifts}</th>
+                <th className="p-4">{t.customer}</th>
+                <th className="p-4">{t.paymentDistribution}</th>
+                <th className="p-4">{t.total}</th>
+                <th className="p-4">{t.status}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -235,14 +237,14 @@ export default function DashboardOverviewPage() {
                 <tr key={rec.id} className="hover:bg-slate-50/70">
                   <td className="p-4 font-black font-mono text-slate-800">{rec.receipt_number}</td>
                   <td className="p-4 text-slate-500">
-                    {new Date(rec.created_at).toLocaleTimeString('he-IL', {
+                    {new Date(rec.created_at).toLocaleTimeString([], {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
                   </td>
                   <td className="p-4 text-slate-700">{rec.cashier_name}</td>
                   <td className="p-4 text-slate-700 font-medium">
-                    {rec.customer_name || 'לקוח מזדמן'}
+                    {rec.customer_name || t.standardTier}
                   </td>
                   <td className="p-4">
                     <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-bold">
@@ -256,11 +258,11 @@ export default function DashboardOverviewPage() {
                   <td className="p-4">
                     {rec.is_refunded ? (
                       <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold">
-                        זוכה
+                        {t.refund}
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">
-                        הושלם
+                        {t.completed}
                       </span>
                     )}
                   </td>

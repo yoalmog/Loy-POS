@@ -17,6 +17,7 @@ import {
   Upload,
 } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
 import { Item, Category } from '@/lib/types'
 import MenuScannerModal from '@/components/menu-scanner/MenuScannerModal'
 
@@ -30,6 +31,7 @@ export default function ProductsManagementPage() {
     deleteItemFromCatalog,
     addCategory,
   } = usePos()
+  const { t, isRtl } = useTheme()
 
   const [activeTab, setActiveTab] = useState<'products' | 'categories'>('products')
   const [search, setSearch] = useState('')
@@ -58,7 +60,7 @@ export default function ProductsManagementPage() {
       id: Date.now(),
       name: '',
       category_id: categories[0]?.id || 1,
-      category_name: categories[0]?.name || 'כללי',
+      category_name: categories[0]?.name || t.allCategories,
       price: 0,
       cost: 0,
       sku: `SKU-${Date.now().toString().slice(-4)}`,
@@ -121,10 +123,10 @@ export default function ProductsManagementPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-slate-900">
-            ניהול קטלוג (מוצרים, וריאנטים וקטגוריות)
+            {t.productsManagement}
           </h2>
           <p className="text-xs text-slate-500">
-            הוספה, עריכה, הגדרת ספי מלאי, וריאנטים ותוספות, ושיוך מדפסות יעד
+            {t.products} &bull; {t.categoriesTab} &bull; {t.variants} &bull; {t.modifierGroups}
           </p>
         </div>
 
@@ -135,7 +137,7 @@ export default function ProductsManagementPage() {
             className="py-2.5 px-4 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-md shadow-sky-600/20 flex items-center gap-2"
           >
             <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>סורק תפריטים מבוסס AI</span>
+            <span>{t.aiMenuScanner}</span>
           </button>
 
           {activeTab === 'products' ? (
@@ -144,7 +146,7 @@ export default function ProductsManagementPage() {
               className="py-2.5 px-5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs shadow-md shadow-sky-600/20 flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
-              <span>מוצר חדש</span>
+              <span>{t.addProduct}</span>
             </button>
           ) : (
             <button
@@ -152,7 +154,7 @@ export default function ProductsManagementPage() {
               className="py-2.5 px-5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs shadow-md shadow-sky-600/20 flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
-              <span>קטגוריה חדשה</span>
+              <span>{t.add} ({t.categoriesTab})</span>
             </button>
           )}
         </div>
@@ -169,7 +171,7 @@ export default function ProductsManagementPage() {
           }`}
         >
           <Package className="w-4 h-4" />
-          <span>מוצרים ({items.length})</span>
+          <span>{t.productsTab} ({items.length})</span>
         </button>
 
         <button
@@ -181,7 +183,7 @@ export default function ProductsManagementPage() {
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>קטגוריות וחיווט מדפסות ({categories.length})</span>
+          <span>{t.categoriesTab} ({categories.length})</span>
         </button>
       </div>
 
@@ -194,24 +196,24 @@ export default function ProductsManagementPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="חפש מוצר לפי שם, מק״ט או ברקוד..."
+              placeholder={t.searchPlaceholder}
               className="flex-1 text-xs bg-transparent focus:outline-none text-slate-800"
             />
           </div>
 
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
+              <table className={`w-full ${isRtl ? 'text-right' : 'text-left'} text-xs`}>
                 <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                   <tr>
-                    <th className="p-4">מוצר</th>
-                    <th className="p-4">קטגוריה</th>
-                    <th className="p-4">מחיר מכירה</th>
-                    <th className="p-4">עלות</th>
-                    <th className="p-4">מק״ט / ברקוד</th>
-                    <th className="p-4">יתרת מלאי</th>
-                    <th className="p-4">מועדף</th>
-                    <th className="p-4 text-left">פעולות</th>
+                    <th className="p-4">{t.productName}</th>
+                    <th className="p-4">{t.categoryName}</th>
+                    <th className="p-4">{t.price}</th>
+                    <th className="p-4">{t.cost}</th>
+                    <th className="p-4">{t.sku} / {t.barcode}</th>
+                    <th className="p-4">{t.stockLevel}</th>
+                    <th className="p-4">{t.favorites}</th>
+                    <th className={`p-4 ${isRtl ? 'text-left' : 'text-right'}`}>{t.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -239,7 +241,7 @@ export default function ProductsManagementPage() {
                             <h4 className="font-extrabold text-slate-900">{item.name}</h4>
                             {item.variants && item.variants.length > 0 && (
                               <span className="text-[10px] text-sky-600 font-bold">
-                                {item.variants.length} וריאנטים
+                                {item.variants.length} {t.variants}
                               </span>
                             )}
                           </div>
@@ -273,7 +275,7 @@ export default function ProductsManagementPage() {
                             {item.in_stock} {item.unit_of_measure}
                           </span>
                         ) : (
-                          <span className="text-slate-400">לא במעקב</span>
+                          <span className="text-slate-400">-</span>
                         )}
                       </td>
                       <td className="p-4">
@@ -283,22 +285,26 @@ export default function ProductsManagementPage() {
                           <span className="text-slate-300">-</span>
                         )}
                       </td>
-                      <td className="p-4 text-left">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className={`p-4 ${isRtl ? 'text-left' : 'text-right'}`}>
+                        <div className={`flex items-center ${isRtl ? 'justify-end' : 'justify-start'} gap-1.5`}>
                           <button
                             onClick={() => {
                               setEditingItem(item)
                               setIsProductModalOpen(true)
                             }}
                             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600"
-                            title="ערוך מוצר"
+                            title={t.editProduct}
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => deleteItemFromCatalog(item.id)}
+                            onClick={() => {
+                              if (confirm(t.confirmDeleteProduct)) {
+                                deleteItemFromCatalog(item.id)
+                              }
+                            }}
                             className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
-                            title="מחק מוצר"
+                            title={t.deleteProduct}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -332,7 +338,7 @@ export default function ProductsManagementPage() {
                   <div>
                     <h3 className="text-sm font-black text-slate-800">{cat.name}</h3>
                     <span className="text-[11px] text-slate-400">
-                      {items.filter((i) => i.category_id === cat.id).length} מוצרים
+                      {items.filter((i) => i.category_id === cat.id).length} {t.products}
                     </span>
                   </div>
                 </div>
@@ -342,14 +348,14 @@ export default function ProductsManagementPage() {
               <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 text-slate-600 font-bold">
                   <Printer className="w-4 h-4 text-sky-600" />
-                  <span>חיווט מדפסת:</span>
+                  <span>{t.targetPrinter}:</span>
                 </div>
                 <span className="px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 font-extrabold text-[10px]">
                   {cat.target_printer === 'KITCHEN'
-                    ? 'מדפסת מטבח'
+                    ? t.kitchenPrinter
                     : cat.target_printer === 'BAR'
-                    ? 'מדפסת בר'
-                    : 'מדפסת קופה'}
+                    ? t.barPrinter
+                    : t.cashierPrinter}
                 </span>
               </div>
             </div>
@@ -363,7 +369,7 @@ export default function ProductsManagementPage() {
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden">
             <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
               <h3 className="text-base font-black">
-                {editingItem.id ? 'עריכת מוצר' : 'מוצר חדש בקטלוג'}
+                {editingItem.id ? t.editProduct : t.addProduct}
               </h3>
               <button
                 onClick={() => setIsProductModalOpen(false)}
@@ -376,7 +382,7 @@ export default function ProductsManagementPage() {
             <form onSubmit={handleSaveProduct} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  שם המוצר *
+                  {t.productName} *
                 </label>
                 <input
                   type="text"
@@ -390,7 +396,7 @@ export default function ProductsManagementPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                    קטגוריה
+                    {t.categoryName}
                   </label>
                   <select
                     value={editingItem.category_id}
@@ -412,7 +418,7 @@ export default function ProductsManagementPage() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                    יחידת מידה
+                    {t.products}
                   </label>
                   <select
                     value={editingItem.unit_of_measure}
@@ -424,10 +430,10 @@ export default function ProductsManagementPage() {
                     }
                     className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-white text-slate-800 font-bold"
                   >
-                    <option value="item">פריט (Each)</option>
-                    <option value="kg">ק״ג (Kg)</option>
-                    <option value="lb">ליברות (Lb)</option>
-                    <option value="cup">כוס (Cup)</option>
+                    <option value="item">Each</option>
+                    <option value="kg">Kg</option>
+                    <option value="lb">Lb</option>
+                    <option value="cup">Cup</option>
                   </select>
                 </div>
               </div>
@@ -435,7 +441,7 @@ export default function ProductsManagementPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                    מחיר מכירה ({settings.currency_symbol}) *
+                    {t.price} ({settings.currency_symbol}) *
                   </label>
                   <input
                     type="number"
@@ -451,7 +457,7 @@ export default function ProductsManagementPage() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                    עלות המוצר (COGS)
+                    {t.cost} ({settings.currency_symbol})
                   </label>
                   <input
                     type="number"
@@ -468,7 +474,7 @@ export default function ProductsManagementPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                    מק״ט (SKU)
+                    {t.sku}
                   </label>
                   <input
                     type="text"
@@ -480,7 +486,7 @@ export default function ProductsManagementPage() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                    ברקוד (Barcode)
+                    {t.barcode}
                   </label>
                   <input
                     type="text"
@@ -496,7 +502,7 @@ export default function ProductsManagementPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                    מלאי קיים
+                    {t.stockLevel}
                   </label>
                   <input
                     type="number"
@@ -510,7 +516,7 @@ export default function ProductsManagementPage() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                    סף התראת מלאי נמוך
+                    {t.lowStockThreshold}
                   </label>
                   <input
                     type="number"
@@ -526,21 +532,6 @@ export default function ProductsManagementPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  קישור לתמונה (URL)
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  value={editingItem.image_url || ''}
-                  onChange={(e) =>
-                    setEditingItem({ ...editingItem, image_url: e.target.value })
-                  }
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-white text-slate-800"
-                />
-              </div>
-
               <div className="flex items-center gap-4 pt-2">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -551,7 +542,7 @@ export default function ProductsManagementPage() {
                     }
                     className="w-4 h-4 accent-amber-500"
                   />
-                  <span className="text-xs font-bold text-slate-700">סמן כמועדף בקופה</span>
+                  <span className="text-xs font-bold text-slate-700">{t.favorites}</span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -563,7 +554,7 @@ export default function ProductsManagementPage() {
                     }
                     className="w-4 h-4 accent-sky-600"
                   />
-                  <span className="text-xs font-bold text-slate-700">עקוב אחר מלאי</span>
+                  <span className="text-xs font-bold text-slate-700">{t.trackStock}</span>
                 </label>
               </div>
 
@@ -573,13 +564,13 @@ export default function ProductsManagementPage() {
                   onClick={() => setIsProductModalOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                 >
-                  ביטול
+                  {t.cancel}
                 </button>
                 <button
                   type="submit"
                   className="px-6 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black shadow-md shadow-sky-600/20"
                 >
-                  שמור מוצר
+                  {t.save}
                 </button>
               </div>
             </form>
@@ -591,16 +582,16 @@ export default function ProductsManagementPage() {
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
-            <h3 className="text-base font-black text-slate-800">הוספת קטגוריה חדשה</h3>
+            <h3 className="text-base font-black text-slate-800">{t.add} ({t.categoriesTab})</h3>
             <form onSubmit={handleSaveCategory} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  שם הקטגוריה *
+                  {t.categoryName} *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="למשל: יינות ומשקאות בוטיק"
+                  placeholder={t.categoryName}
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-white text-slate-800"
@@ -609,7 +600,7 @@ export default function ProductsManagementPage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  צבע תגית
+                  {t.colorTag}
                 </label>
                 <input
                   type="color"
@@ -621,16 +612,16 @@ export default function ProductsManagementPage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  חיווט מדפסת יעד
+                  {t.targetPrinter}
                 </label>
                 <select
                   value={newCatPrinter}
                   onChange={(e) => setNewCatPrinter(e.target.value as any)}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-white text-slate-800"
                 >
-                  <option value="KITCHEN">מדפסת מטבח (מנות חמות ובישול)</option>
-                  <option value="BAR">מדפסת בר (משקאות, בירות וקפה)</option>
-                  <option value="CASHIER">מדפסת קופה בלבד</option>
+                  <option value="KITCHEN">{t.kitchenPrinter}</option>
+                  <option value="BAR">{t.barPrinter}</option>
+                  <option value="CASHIER">{t.cashierPrinter}</option>
                 </select>
               </div>
 
@@ -640,13 +631,13 @@ export default function ProductsManagementPage() {
                   onClick={() => setIsCategoryModalOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
                 >
-                  ביטול
+                  {t.cancel}
                 </button>
                 <button
                   type="submit"
                   className="px-6 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black shadow-md shadow-sky-600/20"
                 >
-                  שמור קטגוריה
+                  {t.save}
                 </button>
               </div>
             </form>

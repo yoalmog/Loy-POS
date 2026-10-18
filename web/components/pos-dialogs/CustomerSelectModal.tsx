@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { X, Search, UserPlus, Award, Phone, Mail, Check, Star } from 'lucide-react'
 import { Customer } from '@/lib/types'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
 
 export default function CustomerSelectModal({
   isOpen,
@@ -21,6 +22,8 @@ export default function CustomerSelectModal({
     settings,
     addCustomer,
   } = usePos()
+
+  const { t, isRtl } = useTheme()
 
   const [search, setSearch] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
@@ -63,7 +66,7 @@ export default function CustomerSelectModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden text-start">
         {/* Header */}
         <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -71,8 +74,8 @@ export default function CustomerSelectModal({
               <Award className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black">שיוך לקוח ומועדון לקוחות</h3>
-              <p className="text-xs text-slate-400">צבירת נקודות ומימוש הנחה מיידית בקופה</p>
+              <h3 className="text-base font-black">{t.customer} & {t.loyaltyPoints}</h3>
+              <p className="text-xs text-slate-400">{t.points} & {t.redeemPoints}</p>
             </div>
           </div>
           <button
@@ -86,13 +89,15 @@ export default function CustomerSelectModal({
         {/* Search & Actions */}
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute top-3 right-3" />
+            <Search className={`w-4 h-4 text-slate-400 absolute top-3 ${isRtl ? 'right-3' : 'left-3'}`} />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="חפש לפי שם, נייד או אימייל..."
-              className="w-full pr-9 pl-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white"
+              placeholder={t.searchPlaceholder}
+              className={`w-full py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 bg-white ${
+                isRtl ? 'pr-9 pl-4' : 'pl-9 pr-4'
+              }`}
             />
           </div>
           <button
@@ -100,18 +105,18 @@ export default function CustomerSelectModal({
             className="py-2.5 px-3.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
           >
             <UserPlus className="w-4 h-4" />
-            <span>חדש</span>
+            <span>{t.add}</span>
           </button>
         </div>
 
         {/* Add Customer Form */}
         {showAddForm && (
           <form onSubmit={handleCreateCustomer} className="p-4 bg-sky-50 border-b border-sky-100 space-y-3">
-            <h4 className="text-xs font-black text-sky-900">הוספת לקוח חדש</h4>
+            <h4 className="text-xs font-black text-sky-900">{t.addCustomer}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <input
                 type="text"
-                placeholder="שם מלא *"
+                placeholder={`${t.customerName} *`}
                 required
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -119,7 +124,7 @@ export default function CustomerSelectModal({
               />
               <input
                 type="tel"
-                placeholder="מספר טלפון"
+                placeholder={t.phone}
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
                 className="p-2 rounded-xl border border-slate-200 text-xs bg-white text-slate-800"
@@ -131,13 +136,13 @@ export default function CustomerSelectModal({
                 onClick={() => setShowAddForm(false)}
                 className="px-3 py-1.5 rounded-xl text-xs text-slate-600 hover:bg-slate-200"
               >
-                ביטול
+                {t.cancel}
               </button>
               <button
                 type="submit"
                 className="px-4 py-1.5 rounded-xl bg-sky-600 text-white text-xs font-bold"
               >
-                שמור ושייך
+                {t.saveCustomer}
               </button>
             </div>
           </form>
@@ -151,27 +156,27 @@ export default function CustomerSelectModal({
                 <div className="flex items-center gap-2">
                   <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                   <span className="text-xs font-bold text-amber-900">
-                    לקוח משויך כרגע: <strong>{selectedCustomer.name}</strong>
+                    {t.customer}: <strong>{selectedCustomer.name}</strong>
                   </span>
                 </div>
                 <button
                   onClick={() => selectCustomer(null)}
                   className="text-xs font-bold text-red-600 hover:underline"
                 >
-                  הסר שיוך
+                  {t.delete}
                 </button>
               </div>
 
               {/* Loyalty points redemption control */}
               <div className="bg-white p-2.5 rounded-xl border border-amber-100 flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-slate-500">יתרת נקודות מועדון: </span>
+                  <span className="text-slate-500">{t.pointsBalance}: </span>
                   <span className="font-extrabold text-amber-600">
-                    {selectedCustomer.points_balance} נק׳
+                    {selectedCustomer.points_balance} {t.points}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="text-slate-600 font-semibold">למימוש:</label>
+                  <label className="text-slate-600 font-semibold">{t.redeemPoints}:</label>
                   <input
                     type="number"
                     min="0"
@@ -182,7 +187,7 @@ export default function CustomerSelectModal({
                     className="w-20 p-1 border border-slate-300 rounded-lg text-center font-bold text-slate-800"
                   />
                   <span className="text-[11px] text-emerald-600 font-bold">
-                    (הנחה: {settings.currency_symbol}
+                    ({t.discount}: {settings.currency_symbol}
                     {((redeemedPoints / 100) * settings.loyalty_redemption_rate).toFixed(2)})
                   </span>
                 </div>
@@ -191,7 +196,7 @@ export default function CustomerSelectModal({
           )}
 
           {filtered.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 text-xs">לא נמצאו לקוחות</div>
+            <div className="text-center py-8 text-slate-400 text-xs">{t.no} {t.customers}</div>
           ) : (
             filtered.map((cust) => {
               const isSelected = selectedCustomer?.id === cust.id
@@ -213,7 +218,7 @@ export default function CustomerSelectModal({
                       <h4 className="text-xs font-black text-slate-800">{cust.name}</h4>
                       {isSelected && (
                         <span className="px-2 py-0.5 rounded-full bg-sky-600 text-white text-[10px] font-bold">
-                          נבחר
+                          ✓
                         </span>
                       )}
                     </div>
@@ -225,15 +230,15 @@ export default function CustomerSelectModal({
                         </span>
                       )}
                       <span className="font-semibold text-amber-600">
-                        ★ {cust.points_balance} נקודות
+                        ★ {cust.points_balance} {t.points}
                       </span>
                     </div>
                   </div>
 
-                  <div className="text-left text-[11px] text-slate-400">
-                    <div>ביקורים: {cust.total_visits}</div>
+                  <div className="text-end text-[11px] text-slate-400">
+                    <div>{t.totalVisits}: {cust.total_visits}</div>
                     <div>
-                      רכש: {settings.currency_symbol}
+                      {t.totalSpent}: {settings.currency_symbol}
                       {cust.total_spent.toFixed(0)}
                     </div>
                   </div>

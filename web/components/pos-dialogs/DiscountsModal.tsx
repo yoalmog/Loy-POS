@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { X, Percent, Tag, Check, Sparkles } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
 
 export default function DiscountsModal({
   isOpen,
@@ -20,6 +21,8 @@ export default function DiscountsModal({
     promotions,
     settings,
   } = usePos()
+
+  const { t, isRtl } = useTheme()
 
   const [percent, setPercent] = useState<number>(ticketDiscountPercent)
   const [fixed, setFixed] = useState<number>(ticketDiscountFixed)
@@ -46,7 +49,7 @@ export default function DiscountsModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden text-start">
         {/* Header */}
         <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -54,8 +57,8 @@ export default function DiscountsModal({
               <Percent className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black">הנחות ומבצעים (Discounts & Promos)</h3>
-              <p className="text-xs text-slate-400">הנחה באחוזים, בסכום קבוע או קוד קופון</p>
+              <h3 className="text-base font-black">{t.discount} & {t.orderDiscount}</h3>
+              <p className="text-xs text-slate-400">{t.lineDiscount} / {t.orderDiscount}</p>
             </div>
           </div>
           <button
@@ -71,12 +74,12 @@ export default function DiscountsModal({
           {/* Coupon Code Section */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
             <label className="block text-xs font-bold uppercase text-slate-600">
-              הזן קוד קופון ומבצע
+              {t.discount}
             </label>
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                placeholder="למשל: HAPPYHOUR"
+                placeholder="PROMO / COUPON"
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value)}
                 className="flex-1 p-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 uppercase font-bold"
@@ -86,7 +89,7 @@ export default function DiscountsModal({
                 onClick={handleApplyCoupon}
                 className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold"
               >
-                הפעל
+                {t.confirm}
               </button>
             </div>
 
@@ -102,7 +105,7 @@ export default function DiscountsModal({
 
             {/* Quick Available Coupons */}
             <div className="pt-1">
-              <span className="text-[11px] font-semibold text-slate-400">מבצעים קיימים: </span>
+              <span className="text-[11px] font-semibold text-slate-400">{t.discount}: </span>
               <div className="flex flex-wrap gap-1.5 mt-1">
                 {promotions.map((p) => (
                   <button
@@ -124,7 +127,7 @@ export default function DiscountsModal({
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase text-slate-600">
-                הנחה באחוזים (%)
+                {t.discount} (%)
               </label>
               <div className="flex items-center gap-1">
                 <input
@@ -161,7 +164,7 @@ export default function DiscountsModal({
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase text-slate-600">
-                הנחה בסכום קבוע ({settings.currency_symbol})
+                {t.discount} ({settings.currency_symbol})
               </label>
               <div className="flex items-center gap-1">
                 <input
@@ -206,7 +209,7 @@ export default function DiscountsModal({
             }}
             className="text-xs text-red-500 font-bold hover:underline"
           >
-            איפוס כל ההנחות
+            {t.delete} {t.discount}
           </button>
 
           <div className="flex items-center gap-2">
@@ -214,13 +217,13 @@ export default function DiscountsModal({
               onClick={onClose}
               className="py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold"
             >
-              ביטול
+              {t.cancel}
             </button>
             <button
               onClick={handleSave}
               className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-lg shadow-emerald-600/25"
             >
-              החל הנחה
+              {t.confirm}
             </button>
           </div>
         </div>

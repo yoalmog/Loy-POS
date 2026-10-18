@@ -12,10 +12,14 @@ import {
   Award,
 } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
+import { getTranslation } from '@/lib/i18n'
 import SalesChart from '@/components/SalesChart'
 
 export default function ReportsAndAnalyticsPage() {
   const { receipts, items, categories, settings } = usePos()
+  const { language } = useTheme()
+  const t = getTranslation(language)
 
   // Completed receipts only
   const validReceipts = receipts.filter((r) => !r.is_refunded)
@@ -72,17 +76,17 @@ export default function ReportsAndAnalyticsPage() {
       {/* Header */}
       <div>
         <h2 className="text-xl font-black text-slate-900">
-          דוחות ואנליטיקה (Reports & Business Intelligence)
+          {t.reportsTitle}
         </h2>
         <p className="text-xs text-slate-500">
-          רווחיות, עלות המכר (COGS), פילוח לפי אמצעי תשלום ומוצרים מובילים
+          {t.reports} • {t.grossProfit}
         </p>
       </div>
 
       {/* Financial Health / Profitability Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">הכנסה ברוטו</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase">{t.grossSales}</span>
           <div className="text-lg font-black text-slate-900 mt-1">
             {settings.currency_symbol}
             {grossSales.toFixed(2)}
@@ -90,7 +94,7 @@ export default function ReportsAndAnalyticsPage() {
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">הנחות שניתנו</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase">{t.discount}</span>
           <div className="text-lg font-black text-red-600 mt-1">
             -{settings.currency_symbol}
             {totalDiscounts.toFixed(2)}
@@ -98,7 +102,7 @@ export default function ReportsAndAnalyticsPage() {
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">מכירות נטו</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase">{t.netSales}</span>
           <div className="text-lg font-black text-slate-900 mt-1">
             {settings.currency_symbol}
             {netSales.toFixed(2)}
@@ -106,7 +110,7 @@ export default function ReportsAndAnalyticsPage() {
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">עלות המכר (COGS)</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase">{t.cogs}</span>
           <div className="text-lg font-black text-amber-600 mt-1">
             {settings.currency_symbol}
             {totalCogs.toFixed(2)}
@@ -114,7 +118,7 @@ export default function ReportsAndAnalyticsPage() {
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">רווח נקי</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase">{t.grossProfit}</span>
           <div className="text-lg font-black text-emerald-600 mt-1">
             {settings.currency_symbol}
             {netProfit.toFixed(2)}
@@ -122,7 +126,7 @@ export default function ReportsAndAnalyticsPage() {
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[11px] font-bold text-slate-400 uppercase">שיעור רווחיות (%)</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase">{t.profitMargin}</span>
           <div className="text-lg font-black text-indigo-600 mt-1">
             {profitMargin.toFixed(1)}%
           </div>
@@ -135,11 +139,11 @@ export default function ReportsAndAnalyticsPage() {
         <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-extrabold text-slate-800">מגמת הכנסות</h3>
-              <p className="text-xs text-slate-400">התפלגות תקבולים לאורך היממה</p>
+              <h3 className="text-sm font-extrabold text-slate-800">{t.hourlySales}</h3>
+              <p className="text-xs text-slate-400">{t.hourlySalesTrend}</p>
             </div>
             <span className="text-xs font-bold text-sky-600 bg-sky-50 px-3 py-1 rounded-xl">
-              יומי
+              {t.all}
             </span>
           </div>
           <div className="h-64">
@@ -150,13 +154,13 @@ export default function ReportsAndAnalyticsPage() {
         {/* Payment Method Distribution */}
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
           <div>
-            <h3 className="text-sm font-extrabold text-slate-800">פילוח לפי אמצעי תשלום</h3>
-            <p className="text-xs text-slate-400">חלוקת סך הגבייה לפי סוג תשלום</p>
+            <h3 className="text-sm font-extrabold text-slate-800">{t.paymentDistribution}</h3>
+            <p className="text-xs text-slate-400">{t.sales}</p>
           </div>
 
           <div className="space-y-3">
             {Object.keys(paymentBreakdown).length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-8">אין עדיין עסקאות מתועדות</p>
+              <p className="text-xs text-slate-400 text-center py-8">{t.emptyCart}</p>
             ) : (
               Object.entries(paymentBreakdown).map(([type, amount]) => {
                 const percent = totalRevenue > 0 ? (amount / totalRevenue) * 100 : 0
@@ -188,27 +192,27 @@ export default function ReportsAndAnalyticsPage() {
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-extrabold text-slate-800">
-              5 המוצרים המובילים (Top 5 Best Sellers)
+              {t.topSellingItems}
             </h3>
-            <p className="text-xs text-slate-400">לפי היקף הכנסות וכמות מנות שנמכרו</p>
+            <p className="text-xs text-slate-400">{t.productsManagement}</p>
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs">
+          <table className="w-full text-start text-xs">
             <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
               <tr>
-                <th className="p-4">דירוג</th>
-                <th className="p-4">שם המוצר</th>
-                <th className="p-4">כמות שנמכרה</th>
-                <th className="p-4">הכנסה כוללת</th>
+                <th className="p-4">#</th>
+                <th className="p-4">{t.productName}</th>
+                <th className="p-4">{t.inStock}</th>
+                <th className="p-4">{t.total}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {topProducts.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center py-8 text-slate-400">
-                    אין עדיין נתוני מכירות
+                    {t.emptyCart}
                   </td>
                 </tr>
               ) : (
@@ -220,7 +224,7 @@ export default function ReportsAndAnalyticsPage() {
                       </span>
                     </td>
                     <td className="p-4 font-black text-slate-900">{prod.name}</td>
-                    <td className="p-4 font-bold text-slate-700">{prod.quantity} יחידות</td>
+                    <td className="p-4 font-bold text-slate-700">{prod.quantity}</td>
                     <td className="p-4 font-black text-sky-600 text-sm">
                       {settings.currency_symbol}
                       {prod.revenue.toFixed(2)}

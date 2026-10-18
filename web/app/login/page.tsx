@@ -6,6 +6,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
+import { getTranslation } from '@/lib/i18n'
 import {
   Lock,
   Mail,
@@ -21,6 +23,8 @@ import {
 export default function LoginPage() {
   const router = useRouter()
   const { staffList, settings, switchStaffWithPin } = usePos()
+  const { language } = useTheme()
+  const t = getTranslation(language)
 
   const [authMode, setAuthMode] = useState<'pin' | 'email'>('pin')
   const [pin, setPin] = useState('')
@@ -34,7 +38,7 @@ export default function LoginPage() {
   function handlePinLogin(e?: React.FormEvent) {
     if (e) e.preventDefault()
     if (!pin || pin.length < 4) {
-      setError('אנא הזן קוד PIN בעל 4 ספרות')
+      setError(t.enterPin)
       return
     }
 
@@ -48,7 +52,7 @@ export default function LoginPage() {
     if (staff || isOwner) {
       const activeStaff = staff || {
         id: 'owner-root',
-        name: 'בעלים / מנהל ראשי',
+        name: 'Owner / Admin',
         role: 'OWNER' as const,
         pin: settings.owner_pin || '1234',
         avatarColor: '#10B981',
@@ -59,18 +63,18 @@ export default function LoginPage() {
       switchStaffWithPin(pin)
 
       if (activeStaff.role === 'CASHIER') {
-        setSuccessMsg('קופאי מורשה. מעביר למסך קופה...')
+        setSuccessMsg(t.success)
         setTimeout(() => {
           router.replace('/pos')
         }, 600)
       } else {
-        setSuccessMsg(`שלום ${activeStaff.name}! מעביר לדשבורד...`)
+        setSuccessMsg(`${activeStaff.name} • ${t.success}`)
         setTimeout(() => {
           router.replace('/dashboard')
         }, 600)
       }
     } else {
-      setError('קוד PIN שגוי. נסה שוב או פנה למנהל המערכת.')
+      setError(t.error)
       setLoading(false)
     }
   }
@@ -83,7 +87,7 @@ export default function LoginPage() {
 
     try {
       if (!isSupabaseConfigured()) {
-        throw new Error('חיבור Supabase טרם הוגדר בשרת. אנא התחבר באמצעות קוד PIN של הצוות.')
+        throw new Error(t.offlineMode)
       }
 
       const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -101,7 +105,7 @@ export default function LoginPage() {
         .single()
 
       const role = profile?.role || 'admin'
-      const name = profile?.full_name || data.user.email?.split('@')[0] || 'מנהל'
+      const name = profile?.full_name || data.user.email?.split('@')[0] || 'Admin'
 
       const authStaff = {
         id: data.user.id,
@@ -118,7 +122,7 @@ export default function LoginPage() {
         router.replace('/dashboard')
       }
     } catch (err: any) {
-      setError(err.message || 'ההתחברות נכשלה. בדוק את הדוא״ל והסיסמה.')
+      setError(err.message || t.error)
       setLoading(false)
     }
   }
@@ -135,7 +139,7 @@ export default function LoginPage() {
           if (staff || isOwner) {
             const activeStaff = staff || {
               id: 'owner-root',
-              name: 'בעלים / מנהל ראשי',
+              name: 'Owner / Admin',
               role: 'OWNER' as const,
               pin: settings.owner_pin || '1234',
               avatarColor: '#10B981',
@@ -148,7 +152,7 @@ export default function LoginPage() {
               router.replace('/dashboard')
             }
           } else {
-            setError('קוד PIN שגוי')
+            setError(t.error)
             setPin('')
           }
         }, 150)
@@ -157,7 +161,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 p-4 font-sans dir-rtl text-right">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 p-4 font-sans text-start">
       <div className="max-w-md w-full bg-slate-900/90 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-800 text-slate-100">
         {/* Header Banner */}
         <div className="bg-gradient-to-r from-sky-600 to-indigo-600 p-7 text-white text-center relative overflow-hidden">
@@ -167,7 +171,7 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-black tracking-tight">{settings.store_name}</h1>
           <p className="text-sky-100 text-xs mt-1 font-medium">
-            כניסה מאובטחת לפורטל הניהול והבקרה (Back Office)
+            {t.portalTitle}
           </p>
         </div>
 
@@ -185,7 +189,7 @@ export default function LoginPage() {
             }`}
           >
             <KeyRound className="w-4 h-4" />
-            <span>קוד PIN צוות</span>
+            <span>PIN ({t.customer})</span>
           </button>
           <button
             onClick={() => {
@@ -199,7 +203,7 @@ export default function LoginPage() {
             }`}
           >
             <Mail className="w-4 h-4" />
-            <span>דוא״ל וסיסמה (ענן)</span>
+            <span>{t.onlineCloud}</span>
           </button>
         </div>
 
@@ -223,7 +227,7 @@ export default function LoginPage() {
               {/* PIN Display */}
               <div className="text-center">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                  הזן קוד PIN מנהל / בעלים (4 ספרות)
+                  {t.enterPin} (4 digits)
                 </label>
                 <div className="flex justify-center gap-3">
                   {[0, 1, 2, 3].map((idx) => (
@@ -271,18 +275,17 @@ export default function LoginPage() {
               </div>
 
               <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
-                <p className="font-bold text-slate-300">הרשאות כניסה ברירת מחדל:</p>
-                <p>• בעלים / דשבורד מלא: <code className="text-sky-400 font-mono">1234</code></p>
-                <p>• מנהלת (שרה לוי): <code className="text-sky-400 font-mono">2222</code></p>
-                <p>• קופאי (אלכס): <code className="text-slate-400 font-mono">1111</code> (מופנה לקופה בלבד)</p>
+                <p className="font-bold text-slate-300">{t.ownerAuthRequired}:</p>
+                <p>• {t.ownerAuthRequired}: <code className="text-sky-400 font-mono">1234</code></p>
+                <p>• {t.register}: <code className="text-slate-400 font-mono">1111</code></p>
               </div>
             </div>
           ) : (
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">כתובת אימייל</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">{t.email}</label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500">
+                  <span className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none text-slate-500">
                     <Mail className="w-4 h-4" />
                   </span>
                   <input
@@ -291,15 +294,15 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@aurapos.example.com"
-                    className="w-full pr-10 pl-4 py-3 rounded-xl bg-slate-950/80 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+                    className="w-full ps-10 pe-4 py-3 rounded-xl bg-slate-950/80 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">סיסמה</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">{t.enterPin}</label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500">
+                  <span className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none text-slate-500">
                     <Lock className="w-4 h-4" />
                   </span>
                   <input
@@ -308,7 +311,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pr-10 pl-4 py-3 rounded-xl bg-slate-950/80 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+                    className="w-full ps-10 pe-4 py-3 rounded-xl bg-slate-950/80 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
@@ -318,8 +321,8 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full py-3.5 px-4 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-sky-600/30 transition-all flex items-center justify-center gap-2 group mt-2"
               >
-                <span>{loading ? 'מאמת נתונים...' : 'התחבר לדשבורד'}</span>
-                <ArrowRight className="w-4 h-4 group-hover:-translate-x-1 transition-transform rotate-180" />
+                <span>{loading ? t.loading : t.dashboard}</span>
+                <ArrowRight className="w-4 h-4 ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform rtl:rotate-180" />
               </button>
             </form>
           )}

@@ -3,11 +3,12 @@
 import React, { useState } from 'react'
 import { ShieldAlert, X, Check, Lock } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
 
 export default function OwnerAuthModal({
   isOpen,
-  title = 'אישור בעל עסק נדרש',
-  description = 'פעולה זו רגישה ודורשת הזנת קוד PIN של בעל העסק (ברירת מחדל: 1234)',
+  title,
+  description,
   onApproved,
   onClose,
 }: {
@@ -18,10 +19,14 @@ export default function OwnerAuthModal({
   onClose: () => void
 }) {
   const { verifyOwnerPin } = usePos()
+  const { t } = useTheme()
   const [pin, setPin] = useState('')
   const [error, setError] = useState(false)
 
   if (!isOpen) return null
+
+  const displayTitle = title || t.ownerAuthRequired
+  const displayDescription = description || t.ownerAuthRequired
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -44,8 +49,8 @@ export default function OwnerAuthModal({
         </div>
 
         <div>
-          <h3 className="text-base font-black text-slate-800">{title}</h3>
-          <p className="text-xs text-slate-500 mt-1">{description}</p>
+          <h3 className="text-base font-black text-slate-800">{displayTitle}</h3>
+          <p className="text-xs text-slate-500 mt-1">{displayDescription}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -58,12 +63,12 @@ export default function OwnerAuthModal({
               setPin(e.target.value)
               setError(false)
             }}
-            placeholder="קוד PIN (4 ספרות)"
+            placeholder="PIN (4)"
             className="w-full text-center text-2xl font-mono tracking-widest p-3 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 font-black"
           />
 
           {error && (
-            <p className="text-xs font-bold text-red-600">קוד PIN שגוי. נסה שוב.</p>
+            <p className="text-xs font-bold text-red-600">{t.invalidPinError}</p>
           )}
 
           <div className="flex gap-2">
@@ -72,13 +77,13 @@ export default function OwnerAuthModal({
               onClick={onClose}
               className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50"
             >
-              ביטול
+              {t.cancel}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black shadow-md shadow-amber-600/20"
             >
-              אישור
+              {t.confirm}
             </button>
           </div>
         </form>

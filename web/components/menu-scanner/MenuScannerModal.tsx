@@ -23,6 +23,7 @@ import {
 import { Item, Category } from '@/lib/types'
 import { usePos } from '@/lib/context/PosContext'
 import { useAccessibility } from '@/lib/context/AccessibilityContext'
+import { useTheme } from '@/lib/context/ThemeContext'
 
 interface ScannedParsedItem {
   id: string
@@ -41,10 +42,10 @@ const SAMPLE_MENU_IMAGE =
   'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200&auto=format&fit=crop&q=80'
 
 const PHOTO_STYLES = [
-  { id: 'studio', label: 'Studio Editorial', desc: 'שיש לבן נקי, תאורת סטודיו רכה, עומק שדה רדוד' },
-  { id: 'rustic', label: 'Rustic Overhead', desc: 'שולחן עץ כפרי, מבט עליון (Flatlay), עשבי תיבול מפוזרים' },
-  { id: 'cafe', label: 'Vibrant Cafe', desc: 'אור יום טבעי חם, רקע ביסטרו פתוח, צבעים מלאי חיים' },
-  { id: 'dramatic', label: 'Dark Dramatic', desc: 'משטח אבן בזלת כהה, צללים דרמטיים, תאורת הדגשה צידית' },
+  { id: 'studio', label: 'Studio Editorial', desc: 'Clean white marble, studio soft lighting, shallow depth' },
+  { id: 'rustic', label: 'Rustic Overhead', desc: 'Rustic wood table, top-down flatlay, herbs styling' },
+  { id: 'cafe', label: 'Vibrant Cafe', desc: 'Warm natural daylight, open bistro background, lively colors' },
+  { id: 'dramatic', label: 'Dark Dramatic', desc: 'Dark basalt slate, dramatic contrast, rim accent lighting' },
 ]
 
 export default function MenuScannerModal({
@@ -54,8 +55,9 @@ export default function MenuScannerModal({
   isOpen: boolean
   onClose: () => void
 }) {
-  const { items, categories, addItemToCatalog, addCategory } = usePos()
+  const { items, categories, addItemToCatalog, addCategory, settings } = usePos()
   const { announce, triggerSound } = useAccessibility()
+  const { t, isRtl } = useTheme()
 
   // State
   const [step, setStep] = useState<'upload' | 'process' | 'studio' | 'review'>('upload')
@@ -324,7 +326,7 @@ export default function MenuScannerModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden text-start">
         {/* Header */}
         <div className="px-6 py-4 bg-gradient-to-r from-sky-600 to-indigo-700 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -333,10 +335,10 @@ export default function MenuScannerModal({
             </div>
             <div>
               <h2 className="text-lg font-black tracking-tight">
-                סורק תפריטים מבוסס AI וסטודיו לתמונות (Gemini)
+                {t.aiMenuScanner} & {t.geminiStudio}
               </h2>
               <p className="text-xs text-sky-100">
-                עיבוד תמונה, מנוע OCR מבני, יצירת תמונות מזון מקצועיות וייבוא לקטלוג
+                {t.uploadMenu} • {t.processOcr} • {t.generateFoodImage} • {t.importToCatalog}
               </p>
             </div>
           </div>
@@ -349,49 +351,49 @@ export default function MenuScannerModal({
         </div>
 
         {/* Step Navigation Tabs */}
-        <div className="border-b border-slate-200 bg-slate-50 px-6 py-3 flex items-center gap-2 text-xs font-bold">
+        <div className="border-b border-slate-200 bg-slate-50 px-6 py-3 flex items-center gap-2 text-xs font-bold overflow-x-auto">
           <button
             onClick={() => setStep('upload')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all shrink-0 ${
               step === 'upload'
                 ? 'bg-sky-600 text-white shadow'
                 : 'text-slate-600 hover:bg-slate-200'
             }`}
           >
-            1. העלאת תפריט
+            1. {t.uploadMenu}
           </button>
-          <ArrowRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180" />
+          <ArrowRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180 shrink-0" />
           <button
             onClick={() => setStep('process')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all shrink-0 ${
               step === 'process'
                 ? 'bg-sky-600 text-white shadow'
                 : 'text-slate-600 hover:bg-slate-200'
             }`}
           >
-            2. עיבוד תמונה ו-OCR
+            2. {t.processOcr}
           </button>
-          <ArrowRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180" />
+          <ArrowRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180 shrink-0" />
           <button
             onClick={() => setStep('studio')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all shrink-0 ${
               step === 'studio'
                 ? 'bg-sky-600 text-white shadow'
                 : 'text-slate-600 hover:bg-slate-200'
             }`}
           >
-            3. Gemini AI Food Studio
+            3. {t.geminiStudio}
           </button>
-          <ArrowRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180" />
+          <ArrowRight className="w-3.5 h-3.5 text-slate-400 rtl:rotate-180 shrink-0" />
           <button
             onClick={() => setStep('review')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all shrink-0 ${
               step === 'review'
                 ? 'bg-sky-600 text-white shadow'
                 : 'text-slate-600 hover:bg-slate-200'
             }`}
           >
-            4. סקירה וייבוא לקטלוג ({parsedItems.length})
+            4. {t.importToCatalog} ({parsedItems.length})
           </button>
         </div>
 
@@ -405,10 +407,10 @@ export default function MenuScannerModal({
               </div>
               <div>
                 <h3 className="text-xl font-extrabold text-slate-800">
-                  צילום או העלאת תמונת תפריט
+                  {t.uploadMenu}
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">
-                  העלה תצלום תפריט, פלייר או עלון מסעדה. המערכת תזהה את המנות, הווריאנטים והמחירים באופן אוטומטי.
+                  AI Menu & Catalog OCR extraction
                 </p>
               </div>
 
@@ -426,7 +428,7 @@ export default function MenuScannerModal({
                   className="flex-1 py-3.5 px-6 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm shadow-lg shadow-sky-600/25 flex items-center justify-center gap-2 transition-transform active:scale-95"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>בחר קובץ תמונה</span>
+                  <span>{t.uploadMenu}</span>
                 </button>
                 <button
                   onClick={() => {
@@ -436,7 +438,7 @@ export default function MenuScannerModal({
                   className="py-3.5 px-6 rounded-2xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-sm shadow-sm flex items-center justify-center gap-2"
                 >
                   <Sparkles className="w-4 h-4 text-amber-500" />
-                  <span>השתמש בתפריט לדוגמה</span>
+                  <span>Demo Menu</span>
                 </button>
               </div>
             </div>
@@ -451,23 +453,23 @@ export default function MenuScannerModal({
                   <button
                     onClick={handleRotate}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5"
-                    title="סובב 90 מעלות"
+                    title="Rotate 90"
                   >
                     <RotateCw className="w-4 h-4" />
-                    <span>סובב 90° ({rotation}°)</span>
+                    <span>90° ({rotation}°)</span>
                   </button>
 
                   <button
                     onClick={() => setZoom((z) => Math.min(2.5, z + 0.2))}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs"
-                    title="הגדל"
+                    title="Zoom In"
                   >
                     <ZoomIn className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setZoom((z) => Math.max(0.5, z - 0.2))}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs"
-                    title="הקטן"
+                    title="Zoom Out"
                   >
                     <ZoomOut className="w-4 h-4" />
                   </button>
@@ -477,7 +479,7 @@ export default function MenuScannerModal({
                       setPan({ x: 0, y: 0 })
                     }}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs"
-                    title="אפס"
+                    title="Reset"
                   >
                     <Maximize2 className="w-4 h-4" />
                   </button>
@@ -486,7 +488,7 @@ export default function MenuScannerModal({
                 {/* Deskew & Contrast Sliders */}
                 <div className="flex items-center gap-4 text-xs font-semibold text-slate-600">
                   <div className="flex items-center gap-2">
-                    <span>יישור זווית:</span>
+                    <span>Angle:</span>
                     <input
                       type="range"
                       min="-15"
@@ -499,7 +501,7 @@ export default function MenuScannerModal({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span>ניגודיות ל-OCR:</span>
+                    <span>Contrast:</span>
                     <input
                       type="range"
                       min="80"
@@ -523,7 +525,7 @@ export default function MenuScannerModal({
                   ) : (
                     <Sparkles className="w-4 h-4 text-sky-200" />
                   )}
-                  <span>{isProcessingOcr ? 'מפענח OCR...' : 'בצע פענוח OCR מבני'}</span>
+                  <span>{isProcessingOcr ? t.loading : t.processOcr}</span>
                 </button>
               </div>
 
@@ -554,13 +556,13 @@ export default function MenuScannerModal({
                   <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl border border-slate-200 flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                     <span className="text-xs font-bold text-slate-800">
-                      זוהו {parsedItems.length} פריטים עם תיבות גבול (Bounding Boxes)!
+                      {parsedItems.length} {t.products}
                     </span>
                     <button
                       onClick={() => setStep('studio')}
                       className="py-1 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold"
                     >
-                      המשך לסטודיו לתמונות &larr;
+                      {t.geminiStudio} &rarr;
                     </button>
                   </div>
                 )}
@@ -578,10 +580,10 @@ export default function MenuScannerModal({
                   </div>
                   <div>
                     <h3 className="text-base font-extrabold text-slate-800">
-                      Gemini AI Product Image Studio
+                      {t.geminiStudio}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      הפק תצלומי מנות פוטו-ריאליסטיים עבור הפריטים שנסרקו בתפריט לפי סגנון צילום מוגדר
+                      {t.generateFoodImage}
                     </p>
                   </div>
                 </div>
@@ -589,7 +591,7 @@ export default function MenuScannerModal({
                 {/* Photography Style Grid */}
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-                    בחר סגנון צילום קולינרי
+                    {t.theme}
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     {PHOTO_STYLES.map((st) => (
@@ -629,7 +631,7 @@ export default function MenuScannerModal({
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
                           <ImageIcon className="w-6 h-6 mb-1" />
-                          <span className="text-[10px]">ללא תמונה</span>
+                          <span className="text-[10px]">No image</span>
                         </div>
                       )}
                     </div>
@@ -640,7 +642,7 @@ export default function MenuScannerModal({
                           {item.category}
                         </span>
                         <span className="text-sm font-extrabold text-sky-600">
-                          ₪{item.price.toFixed(2)}
+                          {settings.currency_symbol}{item.price.toFixed(2)}
                         </span>
                       </div>
                       <h4 className="text-sm font-black text-slate-800 truncate mt-1">
@@ -657,7 +659,7 @@ export default function MenuScannerModal({
                           className="py-1.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-colors disabled:opacity-50"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
-                          <span>צור תמונת AI ({PHOTO_STYLES.find((s) => s.id === selectedStyle)?.label})</span>
+                          <span>{t.generateFoodImage}</span>
                         </button>
                       </div>
                     </div>
@@ -670,7 +672,7 @@ export default function MenuScannerModal({
                   onClick={() => setStep('review')}
                   className="py-3 px-8 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm shadow-lg shadow-sky-600/25 flex items-center gap-2"
                 >
-                  <span>המשך לסקירה וייבוא לקטלוג</span>
+                  <span>{t.importToCatalog}</span>
                   <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                 </button>
               </div>
@@ -683,10 +685,10 @@ export default function MenuScannerModal({
               <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-extrabold text-slate-800">
-                    השוואת פריטים לקטלוג קיים וייבוא
+                    {t.importToCatalog}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    בדוק את שמות המנות, המחירים והווריאנטים לפני הוספתם הסופית לקופה.
+                    {t.confirmDeleteProduct}
                   </p>
                 </div>
                 <button
@@ -694,7 +696,7 @@ export default function MenuScannerModal({
                   className="py-2.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 flex items-center gap-2"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>ייבא {parsedItems.filter((i) => i.status !== 'IGNORE').length} פריטים לקטלוג</span>
+                  <span>{t.importToCatalog} ({parsedItems.filter((i) => i.status !== 'IGNORE').length})</span>
                 </button>
               </div>
 
@@ -732,19 +734,19 @@ export default function MenuScannerModal({
                             }`}
                           >
                             {item.status === 'NEW'
-                              ? 'מוצר חדש'
+                              ? t.add
                               : item.status === 'UPDATE'
-                              ? 'קיים - עדכן'
-                              : 'התעלם'}
+                              ? t.edit
+                              : t.delete}
                           </span>
                         </div>
                         <p className="text-xs text-slate-500 mt-0.5">
-                          קטגוריה: <strong>{item.category}</strong> • מחיר מומלץ:{' '}
-                          <strong>₪{item.price.toFixed(2)}</strong>
+                          {t.categoryName}: <strong>{item.category}</strong> • {t.price}:{' '}
+                          <strong>{settings.currency_symbol}{item.price.toFixed(2)}</strong>
                         </p>
                         {item.variants.length > 0 && (
                           <p className="text-[11px] text-sky-600 font-medium">
-                            וריאנטים: {item.variants.map((v) => `${v.name} (₪${v.price})`).join(', ')}
+                            {t.variants}: {item.variants.map((v) => `${v.name} (${settings.currency_symbol}${v.price})`).join(', ')}
                           </p>
                         )}
                       </div>
@@ -765,7 +767,7 @@ export default function MenuScannerModal({
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                       >
-                        צור חדש
+                        {t.add}
                       </button>
                       <button
                         onClick={() =>
@@ -781,7 +783,7 @@ export default function MenuScannerModal({
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                       >
-                        התעלם
+                        {t.delete}
                       </button>
                     </div>
                   </div>

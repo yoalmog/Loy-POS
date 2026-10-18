@@ -153,10 +153,10 @@ export default function PosPage() {
           <Link
             href="/dashboard"
             className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-sky-400 transition-colors"
-            title="עבור לניהול Back Office"
+            title={t.backOffice}
           >
             <Layers className="w-4 h-4" />
-            <span className="hidden sm:inline">ניהול Back Office</span>
+            <span className="hidden sm:inline">{t.backOffice}</span>
           </Link>
 
           <div className="h-5 w-px bg-slate-800 hidden sm:block"></div>
@@ -175,18 +175,18 @@ export default function PosPage() {
 
         {/* Center: Search Bar */}
         <div className="flex-1 max-w-md mx-4 relative hidden sm:block">
-          <Search className="w-4 h-4 text-slate-400 absolute top-2.5 right-3" />
+          <Search className="w-4 h-4 text-slate-400 absolute top-2.5 rtl:right-3 ltr:left-3" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t.searchPlaceholder}
-            className="w-full pr-9 pl-4 py-1.5 rounded-xl bg-slate-800 text-white placeholder-slate-400 text-xs border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full rtl:pr-9 rtl:pl-4 ltr:pl-9 ltr:pr-4 py-1.5 rounded-xl bg-slate-800 text-white placeholder-slate-400 text-xs border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute left-2.5 top-2 text-slate-400 hover:text-white"
+              className="absolute rtl:left-2.5 ltr:right-2.5 top-2 text-slate-400 hover:text-white"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -199,30 +199,30 @@ export default function PosPage() {
           <button
             onClick={() => setIsCameraScannerOpen(true)}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors"
-            title="סורק ברקוד במצלמה"
+            title={t.cameraScanner}
           >
             <Barcode className="w-4 h-4 text-sky-400" />
-            <span className="hidden md:inline">סורק מצלמה</span>
+            <span className="hidden md:inline">{t.cameraScanner}</span>
           </button>
 
           {/* AI Menu Scanner */}
           <button
             onClick={() => setIsMenuScannerOpen(true)}
             className="p-2 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-            title="סורק תפריטים מבוסס AI"
+            title={t.aiMenuScanner}
           >
             <Sparkles className="w-4 h-4 text-amber-300" />
-            <span className="hidden lg:inline">סורק תפריטים AI</span>
+            <span className="hidden lg:inline">{t.aiMenuScanner}</span>
           </button>
 
           {/* Held Orders Badge */}
           <button
             onClick={() => setIsHeldOrdersModalOpen(true)}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 relative transition-colors"
-            title="הזמנות מושהות"
+            title={t.heldOrders}
           >
             <Clock className="w-4 h-4 text-amber-400" />
-            <span className="hidden md:inline">מושהות</span>
+            <span className="hidden md:inline">{t.heldOrders}</span>
             {heldOrders.length > 0 && (
               <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black animate-bounce">
                 {heldOrders.length}
@@ -234,7 +234,7 @@ export default function PosPage() {
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300"
-            title={soundEnabled ? 'השתק צלילים' : 'הפעל צלילים'}
+            title={t.soundEffects}
           >
             {soundEnabled ? (
               <Volume2 className="w-4 h-4 text-emerald-400" />
@@ -253,8 +253,8 @@ export default function PosPage() {
             }`}
             title={
               syncStatus.isOnline
-                ? `סנכרון תקין (${syncStatus.pendingCount} ממתינים)`
-                : 'מצב אופליין'
+                ? `${t.onlineCloud} (${syncStatus.pendingCount})`
+                : t.offlineMode
             }
           >
             {syncStatus.isOnline ? (
@@ -273,7 +273,7 @@ export default function PosPage() {
           <button
             onClick={() => setIsLocked(true)}
             className="p-2 rounded-xl bg-red-600/80 hover:bg-red-600 text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
-            title="נעל קופה (מעבר קופאי)"
+            title={t.lockScreen}
           >
             <Lock className="w-4 h-4" />
           </button>
@@ -295,7 +295,7 @@ export default function PosPage() {
 
       {/* 2. MAIN REGISTER WORKSPACE: SPLIT GRID + CART */}
       <div className="flex-1 flex overflow-hidden">
-        {/* LEFT / MAIN COLUMN: PRODUCT CATALOG GRID & CATEGORY CHIPS */}
+        {/* MAIN COLUMN: PRODUCT CATALOG GRID & CATEGORY CHIPS */}
         <main className="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-hidden">
           {/* Category Chips Bar */}
           <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0 shadow-sm">
@@ -349,7 +349,7 @@ export default function PosPage() {
             {filteredItems.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2">
                 <Search className="w-12 h-12 opacity-30" />
-                <p className="text-sm font-bold">לא נמצאו מוצרים התואמים לסינון</p>
+                <p className="text-sm font-bold">{t.searchPlaceholder}</p>
                 <button
                   onClick={() => {
                     setSelectedCategoryId('ALL')
@@ -357,7 +357,7 @@ export default function PosPage() {
                   }}
                   className="text-xs text-sky-600 font-bold hover:underline"
                 >
-                  הצג את כל המוצרים
+                  {t.allCategories}
                 </button>
               </div>
             ) : (
@@ -381,15 +381,15 @@ export default function PosPage() {
                     >
                       {/* Favorite indicator badge */}
                       {item.is_favorite && (
-                        <div className="absolute top-2.5 left-2.5 z-10 p-1 rounded-full bg-white/90 backdrop-blur-md shadow-sm">
+                        <div className="absolute top-2.5 start-2.5 z-10 p-1 rounded-full bg-white/90 backdrop-blur-md shadow-sm">
                           <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                         </div>
                       )}
 
                       {/* Low stock warning badge */}
                       {isLowStock && (
-                        <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 rounded-full bg-red-600 text-white text-[9px] font-black uppercase shadow-sm">
-                          מלאי נמוך ({item.in_stock})
+                        <div className="absolute top-2.5 end-2.5 z-10 px-2 py-0.5 rounded-full bg-red-600 text-white text-[9px] font-black uppercase shadow-sm">
+                          {t.lowStock} ({item.in_stock})
                         </div>
                       )}
 
@@ -422,7 +422,7 @@ export default function PosPage() {
                             </span>
                             {hasVariants && (
                               <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded-md">
-                                וריאנטים
+                                {t.variants}
                               </span>
                             )}
                           </div>
@@ -450,10 +450,10 @@ export default function PosPage() {
           </div>
         </main>
 
-        {/* RIGHT COLUMN: ACTIVE CART & CHECKOUT CONTROLLER */}
+        {/* ASIDE COLUMN: ACTIVE CART & CHECKOUT CONTROLLER */}
         <aside
-          className={`w-full lg:w-96 bg-white border-l border-slate-200 flex flex-col h-full shadow-xl shrink-0 transition-transform duration-300 fixed inset-y-0 right-0 z-40 lg:static ${
-            isMobileCartOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+          className={`w-full lg:w-96 bg-white border-s border-slate-200 flex flex-col h-full shadow-xl shrink-0 transition-transform duration-300 fixed inset-y-0 end-0 z-40 lg:static ${
+            isMobileCartOpen ? 'translate-x-0' : 'rtl:translate-x-full ltr:-translate-x-full lg:translate-x-0'
           }`}
         >
           {/* Cart Header */}
@@ -464,11 +464,11 @@ export default function PosPage() {
               </div>
               <div>
                 <h3 className="text-xs font-black text-slate-900">{ticketName}</h3>
-                <p className="text-[11px] text-slate-500">{itemCount} פריטים בעגלה</p>
+                <p className="text-[11px] text-slate-500">{itemCount} {t.cart}</p>
               </div>
             </div>
 
-            {/* Dining Options Segment (Dine in, Takeout, Delivery) */}
+            {/* Dining Options Segment */}
             <div className="flex bg-slate-200 p-0.5 rounded-xl text-[10px] font-bold">
               {(['Dine in', 'Takeout', 'Delivery'] as const).map((opt) => (
                 <button
@@ -480,7 +480,7 @@ export default function PosPage() {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {opt === 'Dine in' ? 'ישיבה' : opt === 'Takeout' ? 'T.A' : 'משלוח'}
+                  {opt === 'Dine in' ? t.dineIn : opt === 'Takeout' ? t.takeout : t.delivery}
                 </button>
               ))}
             </div>
@@ -501,13 +501,13 @@ export default function PosPage() {
             >
               <User className="w-4 h-4 text-sky-600" />
               <span>
-                {selectedCustomer ? selectedCustomer.name : 'שייך לקוח למועדון (+)'}
+                {selectedCustomer ? selectedCustomer.name : `${t.customer} (+)`}
               </span>
             </button>
 
             {selectedCustomer && (
               <span className="text-[11px] font-extrabold text-amber-600">
-                ★ {selectedCustomer.points_balance} נק׳
+                ★ {selectedCustomer.points_balance} {t.points}
               </span>
             )}
           </div>
@@ -519,7 +519,7 @@ export default function PosPage() {
                 <ShoppingCart className="w-12 h-12 opacity-20" />
                 <p className="text-xs font-bold text-slate-500">{t.emptyCart}</p>
                 <p className="text-[11px] text-slate-400">
-                  סורק הברקוד פעיל ברקע בכל עת ללא צורך בלחיצה
+                  {t.cameraScanner}
                 </p>
               </div>
             ) : (
@@ -577,7 +577,7 @@ export default function PosPage() {
                     <button
                       onClick={() => removeCartItem(line.cart_id)}
                       className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"
-                      title="הסר שורה"
+                      title={t.delete}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -609,7 +609,7 @@ export default function PosPage() {
               )}
 
               <div className="flex justify-between text-slate-500 text-[11px]">
-                <span>מע״מ ({settings.tax_rate}%):</span>
+                <span>{t.tax} ({settings.tax_rate}%):</span>
                 <span>
                   {settings.currency_symbol}
                   {taxAmount.toFixed(2)}
@@ -635,7 +635,7 @@ export default function PosPage() {
                 className="py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 disabled:opacity-40 transition-colors flex flex-col items-center gap-1"
               >
                 <Clock className="w-4 h-4 text-amber-500" />
-                <span>השהה</span>
+                <span>{t.parkOrder}</span>
               </button>
 
               <button
@@ -644,7 +644,7 @@ export default function PosPage() {
                 className="py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 disabled:opacity-40 transition-colors flex flex-col items-center gap-1"
               >
                 <Percent className="w-4 h-4 text-emerald-500" />
-                <span>הנחות</span>
+                <span>{t.discount}</span>
               </button>
 
               <button
@@ -653,7 +653,7 @@ export default function PosPage() {
                 className="py-2.5 rounded-xl border border-slate-200 text-red-600 font-bold text-xs hover:bg-red-50 disabled:opacity-40 transition-colors flex flex-col items-center gap-1"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>נקה</span>
+                <span>{t.clearCart}</span>
               </button>
             </div>
 

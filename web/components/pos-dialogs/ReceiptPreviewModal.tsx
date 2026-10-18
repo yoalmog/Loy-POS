@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { X, Printer, CheckCircle2, QrCode, Download, Share2 } from 'lucide-react'
 import { Receipt } from '@/lib/types'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
+import { getTranslation } from '@/lib/i18n'
 import { printerManager } from '@/lib/hardware/printerManager'
 import QRCode from 'qrcode'
 import confetti from 'canvas-confetti'
@@ -18,6 +20,8 @@ export default function ReceiptPreviewModal({
   onClose: () => void
 }) {
   const { settings } = usePos()
+  const { language } = useTheme()
+  const t = getTranslation(language)
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('')
 
   useEffect(() => {
@@ -52,7 +56,7 @@ export default function ReceiptPreviewModal({
         <div className="p-4 bg-emerald-600 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5" />
-            <h3 className="text-base font-black">העסקה הושלמה בהצלחה!</h3>
+            <h3 className="text-base font-black">{t.completed}</h3>
           </div>
           <button
             onClick={onClose}
@@ -69,7 +73,7 @@ export default function ReceiptPreviewModal({
             <div className="text-center space-y-1 mb-3">
               <h2 className="text-base font-black font-sans">{settings.store_name}</h2>
               <p className="text-[11px] text-slate-500">{settings.address}</p>
-              <p className="text-[11px] text-slate-500">טלפון: {settings.phone}</p>
+              <p className="text-[11px] text-slate-500">{t.phone}: {settings.phone}</p>
               {settings.receipt_header && (
                 <p className="text-[11px] font-sans font-bold text-slate-700 mt-1">
                   {settings.receipt_header}
@@ -82,26 +86,26 @@ export default function ReceiptPreviewModal({
             {/* Receipt Info */}
             <div className="space-y-1 text-[11px]">
               <div className="flex justify-between">
-                <span>מספר קבלה:</span>
+                <span>{t.receiptPreview}:</span>
                 <span className="font-bold">{receipt.receipt_number}</span>
               </div>
               <div className="flex justify-between">
-                <span>תאריך ושעה:</span>
+                <span>{t.dateTime}:</span>
                 <span>
-                  {new Date(receipt.created_at).toLocaleDateString('he-IL')} •{' '}
-                  {new Date(receipt.created_at).toLocaleTimeString('he-IL', {
+                  {new Date(receipt.created_at).toLocaleDateString()} •{' '}
+                  {new Date(receipt.created_at).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>קופאי: {receipt.cashier_name}</span>
+                <span>{receipt.cashier_name}</span>
                 <span>{receipt.dining_option}</span>
               </div>
               {receipt.customer_name && (
                 <div className="flex justify-between font-bold text-sky-700">
-                  <span>לקוח מועדון:</span>
+                  <span>{t.customer}:</span>
                   <span>{receipt.customer_name}</span>
                 </div>
               )}
@@ -112,8 +116,8 @@ export default function ReceiptPreviewModal({
             {/* Item Rows */}
             <div className="space-y-2">
               <div className="flex justify-between font-bold text-slate-500 text-[10px]">
-                <span>פריט</span>
-                <span>סה״כ</span>
+                <span>{t.productName}</span>
+                <span>{t.total}</span>
               </div>
 
               {receipt.items.map((item, idx) => (
@@ -131,17 +135,17 @@ export default function ReceiptPreviewModal({
                     </span>
                   </div>
                   {item.selected_variant && (
-                    <div className="text-[10px] text-slate-500 pr-2">
+                    <div className="text-[10px] text-slate-500 rtl:pr-2 ltr:pl-2">
                       • {item.selected_variant.name}
                     </div>
                   )}
                   {item.selected_modifiers && item.selected_modifiers.length > 0 && (
-                    <div className="text-[10px] text-slate-500 pr-2">
+                    <div className="text-[10px] text-slate-500 rtl:pr-2 ltr:pl-2">
                       {item.selected_modifiers.map((m) => `+ ${m.name}`).join(', ')}
                     </div>
                   )}
                   {item.comment && (
-                    <div className="text-[10px] text-amber-700 font-sans pr-2">
+                    <div className="text-[10px] text-amber-700 font-sans rtl:pr-2 ltr:pl-2">
                       * {item.comment}
                     </div>
                   )}
@@ -154,7 +158,7 @@ export default function ReceiptPreviewModal({
             {/* Totals */}
             <div className="space-y-1">
               <div className="flex justify-between">
-                <span>סכום ביניים:</span>
+                <span>{t.subtotal}:</span>
                 <span>
                   {settings.currency_symbol}
                   {receipt.subtotal.toFixed(2)}
@@ -162,7 +166,7 @@ export default function ReceiptPreviewModal({
               </div>
               {receipt.discount_amount > 0 && (
                 <div className="flex justify-between text-red-600 font-bold">
-                  <span>הנחה:</span>
+                  <span>{t.discount}:</span>
                   <span>
                     -{settings.currency_symbol}
                     {receipt.discount_amount.toFixed(2)}
@@ -170,7 +174,7 @@ export default function ReceiptPreviewModal({
                 </div>
               )}
               <div className="flex justify-between text-slate-500">
-                <span>מע״מ ({settings.tax_rate}%):</span>
+                <span>{t.tax} ({settings.tax_rate}%):</span>
                 <span>
                   {settings.currency_symbol}
                   {receipt.tax_amount.toFixed(2)}
@@ -178,7 +182,7 @@ export default function ReceiptPreviewModal({
               </div>
               <div className="border-b-2 border-slate-900 my-1.5"></div>
               <div className="flex justify-between text-sm font-black">
-                <span>סה״כ שולם:</span>
+                <span>{t.total}:</span>
                 <span>
                   {settings.currency_symbol}
                   {receipt.total_amount.toFixed(2)}
@@ -190,13 +194,13 @@ export default function ReceiptPreviewModal({
 
             {/* Payment method */}
             <div className="flex justify-between text-[11px]">
-              <span>אמצעי תשלום:</span>
+              <span>{t.paymentDistribution}:</span>
               <span className="font-bold">{receipt.payment_type}</span>
             </div>
             {receipt.points_earned ? (
               <div className="flex justify-between text-[11px] text-emerald-700 font-bold">
-                <span>נקודות מועדון שנצברו:</span>
-                <span>+{receipt.points_earned} נק'</span>
+                <span>{t.loyaltyPoints}:</span>
+                <span>+{receipt.points_earned} {t.points}</span>
               </div>
             ) : null}
 
@@ -205,7 +209,7 @@ export default function ReceiptPreviewModal({
               <div className="my-4 text-center flex flex-col items-center">
                 <img src={qrCodeUrl} alt="Digital Receipt QR" className="w-24 h-24 mx-auto" />
                 <span className="text-[9px] text-slate-400 mt-1">
-                  סרוק לצפייה בקבלה דיגיטלית וסקר שביעות רצון
+                  QR • {t.receiptPreview}
                 </span>
               </div>
             )}
@@ -214,7 +218,7 @@ export default function ReceiptPreviewModal({
             <div className="text-center font-sans text-[10px] text-slate-500 space-y-1 mt-3">
               {settings.receipt_footer && <p>{settings.receipt_footer}</p>}
               {settings.return_policy && <p className="text-[9px]">{settings.return_policy}</p>}
-              <p className="font-bold text-slate-800">*** תודה ולהתראות ***</p>
+              <p className="font-bold text-slate-800">*** {t.appName} ***</p>
             </div>
           </div>
         </div>
@@ -225,7 +229,7 @@ export default function ReceiptPreviewModal({
             onClick={onClose}
             className="py-2.5 px-5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold"
           >
-            סגור עסקה
+            {t.closeSale}
           </button>
 
           <button
@@ -233,7 +237,7 @@ export default function ReceiptPreviewModal({
             className="py-2.5 px-6 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black shadow-lg shadow-sky-600/25 flex items-center gap-2"
           >
             <Printer className="w-4 h-4" />
-            <span>הדפס קבלה שוב</span>
+            <span>{t.printReceipt}</span>
           </button>
         </div>
       </div>

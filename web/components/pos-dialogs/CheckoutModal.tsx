@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 import { PaymentType, Receipt } from '@/lib/types'
 import { usePos } from '@/lib/context/PosContext'
+import { useTheme } from '@/lib/context/ThemeContext'
+import { getTranslation } from '@/lib/i18n'
 import QRCode from 'qrcode'
 
 export default function CheckoutModal({
@@ -37,6 +39,9 @@ export default function CheckoutModal({
     redeemedPoints,
     processPayment,
   } = usePos()
+
+  const { language } = useTheme()
+  const t = getTranslation(language)
 
   const [paymentType, setPaymentType] = useState<PaymentType>('CASH')
   const [tenderedAmount, setTenderedAmount] = useState<number>(grandTotal)
@@ -112,9 +117,9 @@ export default function CheckoutModal({
               <Banknote className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-black">סיום עסקה ותשלום (Checkout)</h3>
+              <h3 className="text-lg font-black">{t.charge} ({t.pay})</h3>
               <p className="text-xs text-slate-400">
-                בחר אמצעי תשלום, קבל מזומן או סרוק קוד QR דיגיטלי
+                {t.cash} • {t.card} • {t.digitalWallet} • {t.qrPayment}
               </p>
             </div>
           </div>
@@ -132,26 +137,26 @@ export default function CheckoutModal({
           <div className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white p-5 rounded-3xl shadow-lg flex items-center justify-between">
             <div>
               <span className="text-xs font-bold text-sky-200 uppercase tracking-wider">
-                סה״כ לתשלום
+                {t.total}
               </span>
               <div className="text-3xl font-black mt-0.5">
                 {settings.currency_symbol}
                 {grandTotal.toFixed(2)}
               </div>
               <div className="text-xs text-sky-100 flex items-center gap-3 mt-1 font-medium">
-                <span>סכום ביניים: {settings.currency_symbol}{subtotal.toFixed(2)}</span>
-                {totalDiscount > 0 && <span>• הנחה: -{settings.currency_symbol}{totalDiscount.toFixed(2)}</span>}
-                <span>• מע״מ ({settings.tax_rate}%): {settings.currency_symbol}{taxAmount.toFixed(2)}</span>
+                <span>{t.subtotal}: {settings.currency_symbol}{subtotal.toFixed(2)}</span>
+                {totalDiscount > 0 && <span>• {t.discount}: -{settings.currency_symbol}{totalDiscount.toFixed(2)}</span>}
+                <span>• {t.tax} ({settings.tax_rate}%): {settings.currency_symbol}{taxAmount.toFixed(2)}</span>
               </div>
             </div>
 
             {selectedCustomer && (
-              <div className="text-left bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/20">
-                <span className="text-[10px] text-sky-200 uppercase font-bold block">לקוח מועדון</span>
+              <div className="text-start bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/20">
+                <span className="text-[10px] text-sky-200 uppercase font-bold block">{t.customer}</span>
                 <span className="text-xs font-black">{selectedCustomer.name}</span>
                 {redeemedPoints > 0 && (
                   <span className="text-[11px] text-emerald-300 font-bold block">
-                    מומשו {redeemedPoints} נק׳
+                    {t.redeemPoints}: {redeemedPoints} {t.points}
                   </span>
                 )}
               </div>
@@ -161,7 +166,7 @@ export default function CheckoutModal({
           {/* Payment Method Selector Grid */}
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-2.5">
-              בחר אמצעי תשלום (Tender Type)
+              {t.paymentDistribution}
             </label>
             <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
               <button
@@ -174,7 +179,7 @@ export default function CheckoutModal({
                 }`}
               >
                 <Banknote className="w-5 h-5 text-emerald-600" />
-                <span>מזומן</span>
+                <span>{t.cash}</span>
               </button>
 
               <button
@@ -187,7 +192,7 @@ export default function CheckoutModal({
                 }`}
               >
                 <CreditCard className="w-5 h-5 text-sky-600" />
-                <span>כרטיס אשראי</span>
+                <span>{t.card}</span>
               </button>
 
               <button
@@ -200,7 +205,7 @@ export default function CheckoutModal({
                 }`}
               >
                 <QrCode className="w-5 h-5 text-purple-600" />
-                <span>Yape QR</span>
+                <span>{t.qrPayment}</span>
               </button>
 
               <button
@@ -226,7 +231,7 @@ export default function CheckoutModal({
                 }`}
               >
                 <Smartphone className="w-5 h-5 text-amber-600" />
-                <span>Apple/Google</span>
+                <span>{t.digitalWallet}</span>
               </button>
 
               <button
@@ -239,7 +244,7 @@ export default function CheckoutModal({
                 }`}
               >
                 <Building className="w-5 h-5 text-indigo-600" />
-                <span>העברה</span>
+                <span>{t.bankTransfer}</span>
               </button>
             </div>
           </div>
@@ -251,7 +256,7 @@ export default function CheckoutModal({
             <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase text-slate-600">
-                  סכום שהתקבל במזומן:
+                  {t.tendered}:
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-xl font-black text-slate-800">
@@ -280,7 +285,7 @@ export default function CheckoutModal({
                         : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800'
                     }`}
                   >
-                    {amount === grandTotal ? 'בדיוק' : `${settings.currency_symbol}${amount}`}
+                    {amount === grandTotal ? t.exactCash : `${settings.currency_symbol}${amount}`}
                   </button>
                 ))}
               </div>
@@ -295,7 +300,7 @@ export default function CheckoutModal({
               >
                 <div>
                   <span className="text-xs font-bold uppercase">
-                    {changeDue > 0 ? 'עודף להחזיר ללקוח:' : 'חסר לתשלום:'}
+                    {changeDue > 0 ? `${t.changeDue}:` : `${t.total}:`}
                   </span>
                   <div className="text-2xl font-black">
                     {settings.currency_symbol}
@@ -304,7 +309,7 @@ export default function CheckoutModal({
                 </div>
                 {changeDue > 0 && (
                   <div className="text-xs font-bold px-3 py-1.5 rounded-xl bg-emerald-600 text-white shadow-sm">
-                    מגירת המזומנים תיפתח אוטומטית
+                    {t.kickDrawer}
                   </div>
                 )}
               </div>
@@ -328,20 +333,20 @@ export default function CheckoutModal({
                 )}
               </div>
 
-              <div className="space-y-3 flex-1 text-right">
+              <div className="space-y-3 flex-1 text-start">
                 <span className="px-3 py-1 rounded-full text-xs font-extrabold uppercase bg-purple-100 text-purple-800">
-                  תשלום דיגיטלי {paymentType} QR
+                  {t.qrPayment}
                 </span>
-                <h4 className="text-lg font-black text-slate-800">סרוק מהנייד לביצוע תשלום</h4>
+                <h4 className="text-lg font-black text-slate-800">{t.qrPayment}</h4>
                 <div className="text-xs text-slate-600 space-y-1">
                   <div>
-                    בעל החשבון: <strong>{settings.qr_payment_yape_name}</strong>
+                    {t.storeName}: <strong>{settings.qr_payment_yape_name}</strong>
                   </div>
                   <div>
-                    מספר טלפון: <strong>{settings.qr_payment_yape_phone}</strong>
+                    {t.storePhone}: <strong>{settings.qr_payment_yape_phone}</strong>
                   </div>
                   <div>
-                    סכום לתשלום: <strong>{settings.currency_symbol}{grandTotal.toFixed(2)}</strong>
+                    {t.total}: <strong>{settings.currency_symbol}{grandTotal.toFixed(2)}</strong>
                   </div>
                 </div>
 
@@ -354,7 +359,7 @@ export default function CheckoutModal({
                       className="w-4 h-4 accent-purple-600 rounded"
                     />
                     <span className="text-xs font-bold text-slate-700">
-                      הלקוח ביצע את ההעברה והציג אישור תשלום בנייד
+                      {t.confirm}
                     </span>
                   </label>
                 </div>
@@ -366,23 +371,22 @@ export default function CheckoutModal({
           {paymentType === 'CARD' && (
             <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
               <h4 className="text-xs font-bold uppercase text-slate-600">
-                פרטי עסקה באשראי (EMV / Contactless)
+                {t.card} (EMV / Contactless)
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">מספר אסמכתא / אישור:</label>
+                  <label className="block text-xs text-slate-500 mb-1">AUTH REF:</label>
                   <input
                     type="text"
-                    placeholder="למשל: 084920"
+                    placeholder="084920"
                     value={cardAuthRef}
                     onChange={(e) => setCardAuthRef(e.target.value)}
                     className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50 font-mono"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1">סוג כרטיס:</label>
+                  <label className="block text-xs text-slate-500 mb-1">{t.card}:</label>
                   <select className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-slate-50">
-                    <option>כרטיס מקומי / שובר</option>
                     <option>Visa</option>
                     <option>MasterCard</option>
                     <option>American Express</option>
@@ -399,7 +403,7 @@ export default function CheckoutModal({
             onClick={onClose}
             className="py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold"
           >
-            חזור לעגלה
+            {t.back}
           </button>
 
           <button
@@ -413,7 +417,7 @@ export default function CheckoutModal({
           >
             <CheckCircle2 className="w-5 h-5" />
             <span>
-              {isProcessing ? 'מעבד עסקה...' : `אשר תשלום (${settings.currency_symbol}${grandTotal.toFixed(2)})`}
+              {isProcessing ? t.loading : `${t.confirm} (${settings.currency_symbol}${grandTotal.toFixed(2)})`}
             </span>
           </button>
         </div>
