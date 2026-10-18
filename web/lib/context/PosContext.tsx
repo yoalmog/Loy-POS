@@ -31,6 +31,7 @@ import { syncEngine, SyncStatus } from '../db/sync'
 import { hardwareBarcodeScanner } from '../hardware/barcodeScanner'
 import { printerManager } from '../hardware/printerManager'
 import { useAccessibility } from './AccessibilityContext'
+import { supabase, isSupabaseConfigured } from '../supabase/client'
 
 interface PosContextType {
   // Catalog & State
@@ -204,6 +205,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
 
   async function refreshData() {
     try {
+      // 1. Initial hydration from IndexedDB for instant offline-first rendering
       const dbItems = await idbGetAll<Item>('items')
       const dbCategories = await idbGetAll<Category>('categories')
       const dbCustomers = await idbGetAll<Customer>('customers')
@@ -225,6 +227,51 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
 
       const openShift = dbShifts.find((s) => s.is_open) || null
       setCurrentShift(openShift)
+
+      // 2. If Supabase is configured with live credentials, sync real data from cloud
+      if (isSupabaseConfigured()) {
+        try {
+          const [itemsRes, catsRes, custsRes, receiptsRes, settingsRes] = await Promise.allSettled([
+            supabase.from('items').select('*'),
+            supabase.from('categories').select('*'),
+            supabase.from('customers').select('*'),
+            supabase.from('receipts').select('*').order('created_at', { ascending: false }),
+            supabase.from('store_settings').select('*').eq('id', 'main').single(),
+          ])
+
+          if (catsRes.status === 'fulfilled' && catsRes.value.data && catsRes.value.data.length > 0) {
+            const cloudCats = catsRes.value.data as Category[]
+            setCategories(cloudCats)
+            for (const c of cloudCats) await idbPut('categories', c)
+          }
+
+          if (itemsRes.status === 'fulfilled' && itemsRes.value.data && itemsRes.value.data.length > 0) {
+            const cloudItems = itemsRes.value.data as Item[]
+            setItems(cloudItems)
+            for (const it of cloudItems) await idbPut('items', it)
+          }
+
+          if (custsRes.status === 'fulfilled' && custsRes.value.data && custsRes.value.data.length > 0) {
+            const cloudCusts = custsRes.value.data as Customer[]
+            setCustomers(cloudCusts)
+            for (const cu of cloudCusts) await idbPut('customers', cu)
+          }
+
+          if (receiptsRes.status === 'fulfilled' && receiptsRes.value.data && receiptsRes.value.data.length > 0) {
+            const cloudReceipts = receiptsRes.value.data as Receipt[]
+            setReceipts(cloudReceipts)
+            for (const r of cloudReceipts) await idbPut('receipts', r)
+          }
+
+          if (settingsRes.status === 'fulfilled' && settingsRes.value.data) {
+            const cloudSettings = { ...DEFAULT_SETTINGS, ...settingsRes.value.data }
+            setSettings(cloudSettings)
+            await idbPut('store_settings', cloudSettings)
+          }
+        } catch (cloudErr) {
+          console.warn('Cloud sync background fetch fallback to local cache:', cloudErr)
+        }
+      }
     } catch (err) {
       console.error('Error refreshing data from IndexedDB:', err)
     }
@@ -699,31 +746,124 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   async function updateSettings(newSettings: StoreSettings) {
     await idbPut('store_settings', newSettings)
     setSettings(newSettings)
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('store_settings').upsert({
+          id: 'main',
+          store_name: newSettings.store_name,
+          address: newSettings.address,
+          phone: newSettings.phone,
+          email: newSettings.email,
+          currency: newSettings.currency,
+          currency_symbol: newSettings.currency_symbol,
+          tax_rate: newSettings.tax_rate,
+        })
+      } catch (err) {
+        console.warn('Supabase store_settings sync warning:', err)
+      }
+    }
     announce('הגדרות החנות עודכנו')
   }
 
   async function addItemToCatalog(item: Item) {
     await idbPut('items', item)
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('items').upsert({
+          id: item.id,
+          name: item.name,
+          category_id: item.category_id,
+          category_name: item.category_name,
+          price: item.price,
+          cost: item.cost,
+          sku: item.sku,
+          barcode: item.barcode,
+          sold_by: item.sold_by,
+          in_stock: item.in_stock,
+          low_stock_threshold: item.low_stock_threshold,
+          track_stock: item.track_stock,
+          color_hex: item.color_hex,
+        })
+      } catch (err) {
+        console.warn('Supabase items sync warning:', err)
+      }
+    }
     await refreshData()
   }
 
   async function updateItemInCatalog(item: Item) {
     await idbPut('items', item)
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('items').upsert({
+          id: item.id,
+          name: item.name,
+          category_id: item.category_id,
+          category_name: item.category_name,
+          price: item.price,
+          cost: item.cost,
+          sku: item.sku,
+          barcode: item.barcode,
+          sold_by: item.sold_by,
+          in_stock: item.in_stock,
+          low_stock_threshold: item.low_stock_threshold,
+          track_stock: item.track_stock,
+          color_hex: item.color_hex,
+        })
+      } catch (err) {
+        console.warn('Supabase items update warning:', err)
+      }
+    }
     await refreshData()
   }
 
   async function deleteItemFromCatalog(itemId: number) {
     await idbDelete('items', itemId)
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('items').delete().eq('id', itemId)
+      } catch (err) {
+        console.warn('Supabase items delete warning:', err)
+      }
+    }
     await refreshData()
   }
 
   async function addCategory(cat: Category) {
     await idbPut('categories', cat)
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('categories').upsert({
+          id: cat.id,
+          name: cat.name,
+          color_hex: cat.color_hex,
+        })
+      } catch (err) {
+        console.warn('Supabase categories sync warning:', err)
+      }
+    }
     await refreshData()
   }
 
   async function addCustomer(cust: Customer) {
     await idbPut('customers', cust)
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('customers').upsert({
+          id: cust.id,
+          name: cust.name,
+          phone: cust.phone,
+          email: cust.email,
+          customer_code: cust.customer_code,
+          points_balance: cust.points_balance,
+          total_visits: cust.total_visits,
+          total_spent: cust.total_spent,
+          note: cust.note,
+        })
+      } catch (err) {
+        console.warn('Supabase customers sync warning:', err)
+      }
+    }
     await refreshData()
   }
 

@@ -270,3 +270,22 @@ CREATE POLICY "Allow public write access to profiles" ON public.profiles FOR ALL
 INSERT INTO public.store_settings (id, store_name, address, phone, email, currency, currency_symbol, tax_rate)
 VALUES ('main', 'AuraPOS Bistro & Grill', '124 Market Street, San Francisco, CA', '+1 (555) 019-2831', 'contact@aurapos.example.com', 'USD', '$', 8.25)
 ON CONFLICT (id) DO NOTHING;
+
+-- ====================================================================
+-- 8. STORED PROCEDURES & ATOMIC TRANSACTIONS
+-- ====================================================================
+
+CREATE OR REPLACE FUNCTION public.adjust_item_stock(p_item_id BIGINT, p_delta NUMERIC)
+RETURNS NUMERIC AS $$
+DECLARE
+    new_stock NUMERIC;
+BEGIN
+    UPDATE public.items
+    SET in_stock = COALESCE(in_stock, 0) + p_delta,
+        updated_at = NOW()
+    WHERE id = p_item_id
+    RETURNING in_stock INTO new_stock;
+
+    RETURN new_stock;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

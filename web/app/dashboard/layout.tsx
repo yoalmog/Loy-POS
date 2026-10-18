@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
@@ -39,6 +39,56 @@ export default function DashboardLayout({
   const { settings, currentStaff, syncStatus } = usePos()
   const { t, isRtl } = useTheme()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    async function checkAuth() {
+      // 1. Check Supabase active session
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          setIsAuthenticated(true)
+          return
+        }
+      } catch (e) {
+        // Fallback to local staff session check
+      }
+
+      // 2. Check local authenticated staff in localStorage
+      const staffAuth = typeof window !== 'undefined' ? localStorage.getItem('aurapos_auth_staff') : null
+      if (staffAuth) {
+        try {
+          const parsed = JSON.parse(staffAuth)
+          if (parsed && (parsed.role === 'OWNER' || parsed.role === 'MANAGER')) {
+            setIsAuthenticated(true)
+            return
+          }
+        } catch {}
+      }
+
+      // 3. Check currentStaff in PosContext
+      if (currentStaff && (currentStaff.role === 'OWNER' || currentStaff.role === 'MANAGER')) {
+        setIsAuthenticated(true)
+        return
+      }
+
+      // Not authenticated -> redirect to login
+      setIsAuthenticated(false)
+      router.replace('/login')
+    }
+
+    checkAuth()
+  }, [currentStaff, router])
+
+  async function handleLogout() {
+    try {
+      await supabase.auth.signOut()
+    } catch {}
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('aurapos_auth_staff')
+    }
+    router.replace('/login')
+  }
 
   const navItems = [
     { label: t.dashboard, href: '/dashboard', icon: LayoutDashboard },
@@ -51,11 +101,21 @@ export default function DashboardLayout({
     { label: t.settings, href: '/dashboard/settings', icon: Settings },
   ]
 
-  async function handleLogout() {
-    try {
-      await supabase.auth.signOut()
-    } catch {}
-    router.push('/login')
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="p-4 rounded-2xl bg-sky-600 animate-pulse text-white shadow-xl shadow-sky-600/30">
+            <Store className="w-8 h-8" />
+          </div>
+          <p className="text-xs font-bold text-slate-400">מאמת הרשאות גישה לדשבורד...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isAuthenticated === false) {
+    return null
   }
 
   return (
