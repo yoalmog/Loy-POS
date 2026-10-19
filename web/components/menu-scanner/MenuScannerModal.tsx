@@ -74,6 +74,7 @@ export default function MenuScannerModal({
   const [selectedItemForStudio, setSelectedItemForStudio] = useState<string | null>(null)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const sourceImageRef = useRef<HTMLImageElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -82,8 +83,10 @@ export default function MenuScannerModal({
   const [ocrProgressPercent, setOcrProgressPercent] = useState<number>(0)
   const [rawOcrText, setRawOcrText] = useState<string>('')
   const [isGrayscale, setIsGrayscale] = useState<boolean>(false)
+  const [isImageReady, setIsImageReady] = useState<boolean>(false)
 
-  // Draw image on canvas with transforms
+  // Draw a complete, fitted preview. OCR uses the full-resolution source so
+  // portrait camera captures are not clipped by this display canvas.
   useEffect(() => {
     if (!canvasRef.current || !imageSrc || step !== 'process') return
 
@@ -91,29 +94,47 @@ export default function MenuScannerModal({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    let cancelled = false
+    setIsImageReady(false)
+    sourceImageRef.current = null
+
     const img = new Image()
     img.crossOrigin = 'anonymous'
-    img.src = imageSrc
     img.onload = () => {
+      if (cancelled) return
+
       canvas.width = 800
       canvas.height = 550
 
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.save()
 
+      const sourceWidth = img.naturalWidth || img.width
+      const sourceHeight = img.naturalHeight || img.height
+      const angle = ((rotation + deskew) * Math.PI) / 180
+      const cosine = Math.abs(Math.cos(angle))
+      const sine = Math.abs(Math.sin(angle))
+      const rotatedWidth = sourceWidth * cosine + sourceHeight * sine
+      const rotatedHeight = sourceWidth * sine + sourceHeight * cosine
+      const previewScale = Math.min(
+        (canvas.width - 32) / rotatedWidth,
+        (canvas.height - 32) / rotatedHeight
+      )
+      const drawWidth = sourceWidth * previewScale
+      const drawHeight = sourceHeight * previewScale
+
       // Apply zoom & pan
       ctx.translate(canvas.width / 2 + pan.x, canvas.height / 2 + pan.y)
       ctx.scale(zoom, zoom)
-      ctx.rotate(((rotation + deskew) * Math.PI) / 180)
+      ctx.rotate(angle)
 
       // Contrast & Grayscale filters for optimal OCR accuracy
       const filters = [`contrast(${contrast}%)`]
       if (isGrayscale) filters.push('grayscale(100%)')
       ctx.filter = filters.join(' ')
 
-      // Draw image centered
-      const drawWidth = 500
-      const drawHeight = (500 * img.height) / img.width
+      // Draw the entire image at its aspect ratio. Rotation is already factored
+      // into previewScale, so a 3:4 or 9:16 photo remains visible in full.
       ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight)
 
       // Draw OCR Bounding boxes overlay
@@ -137,6 +158,19 @@ export default function MenuScannerModal({
       }
 
       ctx.restore()
+      sourceImageRef.current = img
+      setIsImageReady(true)
+    }
+    img.onerror = () => {
+      if (cancelled) return
+      sourceImageRef.current = null
+      setIsImageReady(false)
+      setUploadError('No se pudo cargar la imagen para el escaneo OCR.')
+    }
+    img.src = imageSrc
+
+    return () => {
+      cancelled = true
     }
   }, [imageSrc, rotation, deskew, contrast, zoom, pan, parsedItems, step, isGrayscale])
 
@@ -160,12 +194,20 @@ export default function MenuScannerModal({
     const reader = new FileReader()
     reader.onload = (event) => {
       setImageSrc(event.target?.result as string)
+      setParsedItems([])
+      setRawOcrText('')
+      setRotation(0)
+      setDeskew(0)
+      setZoom(1)
+      setPan({ x: 0, y: 0 })
+      setIsImageReady(false)
       setStep('process')
     }
     reader.onerror = () => {
       setUploadError('Error al leer el archivo de imagen.')
     }
     reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
   function handleRotate() {
