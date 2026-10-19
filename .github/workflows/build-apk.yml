@@ -102,11 +102,11 @@ jobs:
           fi
 
       - name: Build Debug APK
-        if: ${{ github.event.inputs.build_type == 'debug' || github.event.inputs.build_type == 'both' || github.event_name != 'workflow_dispatch' }}
+        if: ${{ inputs.build_type != 'release' }}
         run: ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: Build Release APK
-        if: ${{ (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && env.HAS_RELEASE_KEY == 'true' }}
+        if: ${{ (inputs.build_type == 'release' || inputs.build_type == 'both') && env.HAS_RELEASE_KEY == 'true' }}
         env:
           HAS_RELEASE_KEY: ${{ secrets.KEYSTORE_BASE64 != '' }}
           KEYSTORE_PATH: my-upload-key.jks
@@ -115,22 +115,27 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease --stacktrace --no-daemon
 
+      - name: Verify and List APK Files
+        run: |
+          echo "=== Generated APK Files ==="
+          find app/build/outputs/apk -name "*.apk" -type f -exec ls -lh {} + || echo "No APK found"
+
       - name: Upload Debug APK
-        if: always()
+        if: ${{ inputs.build_type != 'release' }}
         uses: actions/upload-artifact@v4
         with:
           name: LoyPOS-debug-apk
           path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 30
 
       - name: Upload Release APK
-        if: always()
+        if: ${{ (inputs.build_type == 'release' || inputs.build_type == 'both') && env.HAS_RELEASE_KEY == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: LoyPOS-release-apk
           path: app/build/outputs/apk/release/*.apk
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 30
 
       - name: Release to GitHub Releases
