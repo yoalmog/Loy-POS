@@ -308,29 +308,47 @@ class PosRepository(val database: AppDatabase) {
         // 6. Post completed receipt to Supabase database if configured
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                if (com.example.data.api.SupabaseApiClient.isConfigured()) {
-                    val dto = com.example.data.api.SupabaseReceiptDto(
-                        id = "rcpt_$receiptId",
-                        receipt_number = receiptNumber,
-                        created_at = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date()),
-                        shift_id = shiftId,
-                        cashier_name = cashierName,
-                        ticket_name = ticketName,
-                        diningOption.label,
-                        subtotal = subtotal,
-                        tax_amount = taxAmount,
-                        discount_amount = discountAmount,
-                        tip_amount = tipAmount,
-                        total_amount = totalAmount,
-                        payment_type = paymentType.name,
-                        payment_details_json = paymentDetails,
-                        customer_id = customerId,
-                        customer_name = customerName,
-                        is_refunded = false,
-                        items_summary_json = itemsSummary,
-                        idempotency_key = "idemp_$receiptId"
+                val dto = com.example.data.api.SupabaseReceiptDto(
+                    id = "rcpt_$receiptId",
+                    receipt_number = receiptNumber,
+                    created_at = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date()),
+                    shift_id = shiftId,
+                    cashier_name = cashierName,
+                    ticket_name = ticketName,
+                    dining_option = diningOption.label,
+                    subtotal = subtotal,
+                    tax_amount = taxAmount,
+                    discount_amount = discountAmount,
+                    tip_amount = tipAmount,
+                    total_amount = totalAmount,
+                    payment_type = paymentType.name,
+                    payment_details_json = paymentDetails,
+                    customer_id = customerId,
+                    customer_name = customerName,
+                    is_refunded = false,
+                    items_summary_json = itemsSummary,
+                    idempotency_key = "idemp_$receiptId"
+                )
+
+                // 1. Post to Back Office API for synchronized cloud reporting
+                try {
+                    com.example.data.api.BackOfficeApiClient.api.postSync(
+                        com.example.data.api.SyncPushRequest(
+                            receipts = listOf(dto),
+                            device_id = "android-pos"
+                        )
                     )
-                    com.example.data.api.SupabaseApiClient.api.postReceipt(dto)
+                } catch (be: Exception) {
+                    // Back Office API unreachable; offline queue handles retry
+                }
+
+                // 2. Post to direct Supabase client if configured
+                if (com.example.data.api.SupabaseApiClient.isConfigured()) {
+                    try {
+                        com.example.data.api.SupabaseApiClient.api.postReceipt(dto)
+                    } catch (se: Exception) {
+                        // Supabase direct write failed; local copy preserved
+                    }
                 }
             } catch (e: Exception) {
                 // Stored in local Room database; will sync during next SyncWorker pass

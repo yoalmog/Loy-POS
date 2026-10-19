@@ -30,6 +30,8 @@ export default function ProductsManagementPage() {
     updateItemInCatalog,
     deleteItemFromCatalog,
     addCategory,
+    updateCategory,
+    deleteCategory,
   } = usePos()
   const { t, isRtl, language } = useTheme()
 
@@ -41,14 +43,15 @@ export default function ProductsManagementPage() {
   const [editingItem, setEditingItem] = useState<Item | null>(null)
   const [isProductModalOpen, setIsProductModalOpen] = useState(false)
 
-  // Category Add Modal State
+  // Category Add / Edit Modal State
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [newCatName, setNewCatName] = useState('')
   const [newCatNameEs, setNewCatNameEs] = useState('')
   const [newCatNameEn, setNewCatNameEn] = useState('')
   const [newCatNameHe, setNewCatNameHe] = useState('')
   const [newCatColor, setNewCatColor] = useState('#0288D1')
-  const [newCatPrinter, setNewCatPrinter] = useState<'CASHIER' | 'KITCHEN' | 'BAR'>('KITCHEN')
+  const [newCatPrinter, setNewCatPrinter] = useState<'CASHIER' | 'KITCHEN' | 'BAR' | 'NONE'>('KITCHEN')
 
   // Filtered Products (Multilingual search across ES, EN, HE, SKU, barcode)
   const filteredItems = items.filter((i) => matchItemSearch(i, search, language))
@@ -116,20 +119,37 @@ export default function ProductsManagementPage() {
     const effectiveName = newCatNameEs || newCatName
     if (!effectiveName) return
 
-    const newCat: Category = {
-      id: Date.now(),
-      name: effectiveName,
-      name_translations: {
-        es: newCatNameEs || effectiveName,
-        en: newCatNameEn || '',
-        he: newCatNameHe || '',
-      },
-      color_hex: newCatColor,
-      target_printer: newCatPrinter,
-      sort_order: categories.length + 1,
+    if (editingCategory) {
+      const updatedCat: Category = {
+        ...editingCategory,
+        name: effectiveName,
+        name_translations: {
+          es: newCatNameEs || effectiveName,
+          en: newCatNameEn || '',
+          he: newCatNameHe || '',
+        },
+        color_hex: newCatColor,
+        target_printer: newCatPrinter,
+      }
+      await updateCategory(updatedCat)
+    } else {
+      const newCat: Category = {
+        id: Date.now(),
+        name: effectiveName,
+        name_translations: {
+          es: newCatNameEs || effectiveName,
+          en: newCatNameEn || '',
+          he: newCatNameHe || '',
+        },
+        color_hex: newCatColor,
+        target_printer: newCatPrinter,
+        sort_order: categories.length + 1,
+      }
+      await addCategory(newCat)
     }
-    await addCategory(newCat)
+
     setIsCategoryModalOpen(false)
+    setEditingCategory(null)
     setNewCatName('')
     setNewCatNameEs('')
     setNewCatNameEn('')
@@ -360,6 +380,41 @@ export default function ProductsManagementPage() {
                       {items.filter((i) => i.category_id === cat.id).length} {t.products}
                     </span>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      setEditingCategory(cat)
+                      setNewCatName(cat.name)
+                      setNewCatNameEs(cat.name_translations?.es || cat.name)
+                      setNewCatNameEn(cat.name_translations?.en || '')
+                      setNewCatNameHe(cat.name_translations?.he || '')
+                      setNewCatColor(cat.color_hex || '#0288D1')
+                      setNewCatPrinter(cat.target_printer || 'KITCHEN')
+                      setIsCategoryModalOpen(true)
+                    }}
+                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition-colors"
+                    title={t.edit}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const assignedCount = items.filter((i) => i.category_id === cat.id).length
+                      const confirmMsg =
+                        assignedCount > 0
+                          ? `Esta categoría tiene ${assignedCount} producto(s) asignados. Se reasignarán a la categoría General antes de eliminar. ¿Desea continuar?`
+                          : `¿Eliminar la categoría "${cat.name}"?`
+                      if (confirm(confirmMsg)) {
+                        await deleteCategory(cat.id, 1)
+                      }
+                    }}
+                    className="p-2 rounded-xl hover:bg-red-50 text-red-500 transition-colors"
+                    title={t.delete}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
@@ -660,7 +715,9 @@ export default function ProductsManagementPage() {
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4">
-            <h3 className="text-base font-black text-slate-800">{t.add} ({t.categoriesTab})</h3>
+            <h3 className="text-base font-black text-slate-800">
+              {editingCategory ? t.edit : t.add} ({t.categoriesTab})
+            </h3>
             <form onSubmit={handleSaveCategory} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">

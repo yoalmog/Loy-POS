@@ -119,6 +119,8 @@ interface PosContextType {
   updateItemInCatalog: (item: Item) => Promise<void>
   deleteItemFromCatalog: (itemId: number) => Promise<void>
   addCategory: (cat: Category) => Promise<void>
+  updateCategory: (cat: Category) => Promise<void>
+  deleteCategory: (catId: number, reassignToCatId?: number) => Promise<void>
   addCustomer: (cust: Customer) => Promise<void>
 }
 
@@ -838,9 +840,76 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
           id: cat.id,
           name: cat.name,
           color_hex: cat.color_hex,
+          name_translations: cat.name_translations,
+          target_printer: cat.target_printer,
         })
       } catch (err) {
         console.warn('Supabase categories sync warning:', err)
+      }
+    }
+    await refreshData()
+  }
+
+  async function updateCategory(cat: Category) {
+    await idbPut('categories', cat)
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase
+          .from('categories')
+          .update({
+            name: cat.name,
+            color_hex: cat.color_hex,
+            name_translations: cat.name_translations,
+            target_printer: cat.target_printer,
+          })
+          .eq('id', cat.id)
+      } catch (err) {
+        console.warn('Supabase categories update warning:', err)
+      }
+    }
+    // Update any items referencing this category name
+    const affectedItems = items.filter((i) => i.category_id === cat.id)
+    for (const it of affectedItems) {
+      if (it.category_name !== cat.name) {
+        await idbPut('items', { ...it, category_name: cat.name })
+      }
+    }
+    await refreshData()
+  }
+
+  async function deleteCategory(catId: number, reassignToCatId?: number) {
+    const targetCatId = reassignToCatId || 1
+    const targetCat = categories.find((c) => c.id === targetCatId)
+    const assignedItems = items.filter((i) => i.category_id === catId)
+
+    for (const item of assignedItems) {
+      const updated = {
+        ...item,
+        category_id: targetCatId,
+        category_name: targetCat?.name || 'General',
+      }
+      await idbPut('items', updated)
+      if (isSupabaseConfigured()) {
+        try {
+          await supabase
+            .from('items')
+            .update({
+              category_id: targetCatId,
+              category_name: targetCat?.name || 'General',
+            })
+            .eq('id', item.id)
+        } catch (e) {
+          console.warn('Reassign item error:', e)
+        }
+      }
+    }
+
+    await idbDelete('categories', catId)
+    if (isSupabaseConfigured()) {
+      try {
+        await supabase.from('categories').delete().eq('id', catId)
+      } catch (err) {
+        console.warn('Supabase categories delete warning:', err)
       }
     }
     await refreshData()
@@ -925,6 +994,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         updateItemInCatalog,
         deleteItemFromCatalog,
         addCategory,
+        updateCategory,
+        deleteCategory,
         addCustomer,
       }}
     >

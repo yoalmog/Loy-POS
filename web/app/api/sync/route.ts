@@ -21,8 +21,8 @@ export async function GET() {
     if (isSupabaseConfigured()) {
       try {
         const [itemsRes, catsRes, settingsRes] = await Promise.allSettled([
-          supabase.from('items').select('*'),
-          supabase.from('categories').select('*'),
+          supabase.from('items').select('*').order('id', { ascending: true }),
+          supabase.from('categories').select('*').order('id', { ascending: true }),
           supabase.from('store_settings').select('*').eq('id', 'main').single(),
         ])
 
@@ -61,9 +61,60 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const payload = await request.json()
-    // Process receipts, shift updates or offline orders if passed
-    if (payload.receipts && Array.isArray(payload.receipts) && isSupabaseConfigured()) {
-      await supabase.from('receipts').upsert(payload.receipts)
+    let processedCount = 0
+
+    if (payload.receipts && Array.isArray(payload.receipts) && payload.receipts.length > 0) {
+      if (isSupabaseConfigured()) {
+        for (const receipt of payload.receipts) {
+          // Idempotency check: see if receipt with this ID or idempotency_key already exists
+          const receiptKey = receipt.idempotency_key || receipt.id
+          if (receiptKey) {
+            const { data: existing } = await supabase
+              .from('receipts')
+              .select('id')
+              .or(`id.eq.${receipt.id},idempotency_key.eq.${receiptKey}`)
+              .limit(1)
+
+            if (existing && existing.length > 0) {
+              // Already recorded; skip duplicate stock deduction
+              continue
+            }
+          }
+
+          // Insert receipt
+          await supabase.from('receipts').upsert([receipt])
+          processedCount++
+
+          // Parse sold items from summary to decrement inventory safely
+          if (receipt.items_summary_json) {
+            try {
+              const summaryItems = JSON.parse(receipt.items_summary_json)
+              if (Array.isArray(summaryItems)) {
+                for (const item of summaryItems) {
+                  const itemId = item.item_id || item.id
+                  const qty = Number(item.quantity || 1)
+                  if (itemId && qty > 0) {
+                    const { data: currentItem } = await supabase
+                      .from('items')
+                      .select('in_stock, track_stock')
+                      .eq('id', itemId)
+                      .single()
+
+                    if (currentItem && currentItem.track_stock) {
+                      const newStock = Math.max(0, (currentItem.in_stock || 0) - qty)
+                      await supabase.from('items').update({ in_stock: newStock }).eq('id', itemId)
+                    }
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn('Could not parse receipt item summary for stock adjustment:', err)
+            }
+          }
+        }
+      } else {
+        processedCount = payload.receipts.length
+      }
     }
 
     return NextResponse.json(
@@ -71,6 +122,7 @@ export async function POST(request: NextRequest) {
         success: true,
         synced_at: Date.now(),
         received_receipts_count: payload.receipts?.length || 0,
+        new_receipts_processed: processedCount,
       },
       { headers: corsHeaders }
     )
