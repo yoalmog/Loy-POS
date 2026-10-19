@@ -28,6 +28,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.SubcomposeAsyncImage
 import com.example.data.model.*
 import com.example.ui.pos.components.*
 import java.util.Locale
@@ -61,10 +63,14 @@ fun SalesRegisterScreen(
     var showMobileCartSheet by remember { mutableStateOf(false) }
     var showDiscountDialog by remember { mutableStateOf(false) }
 
-    // Filter items by category & search query
-    val displayedItems = remember(allItems, uiState.selectedCategoryId, uiState.searchQuery) {
+    // Filter items by category, favorites & search query
+    val displayedItems = remember(allItems, uiState.selectedCategoryId, uiState.isFavoritesSelected, uiState.searchQuery) {
         allItems.filter { item ->
-            val matchCategory = uiState.selectedCategoryId == null || item.categoryId == uiState.selectedCategoryId
+            val matchCategory = when {
+                uiState.isFavoritesSelected -> item.id in listOf(101L, 102L, 103L, 105L, 106L) || item.inStock >= 40.0
+                uiState.selectedCategoryId != null -> item.categoryId == uiState.selectedCategoryId
+                else -> true
+            }
             val matchSearch = uiState.searchQuery.isBlank() ||
                     item.name.contains(uiState.searchQuery, ignoreCase = true) ||
                     item.sku.contains(uiState.searchQuery, ignoreCase = true) ||
@@ -87,61 +93,85 @@ fun SalesRegisterScreen(
 
         Scaffold(
             topBar = {
+                var showMoreMenu by remember { mutableStateOf(false) }
+
                 TopAppBar(
                     title = {
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = uiState.storeName,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                // Shift status badge
-                                Surface(
-                                    color = if (currentShift?.isOpen == true) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.errorContainer,
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.clickable { viewModel.setShiftDialog(true) }
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .clip(CircleShape)
-                                                .background(
-                                                    if (currentShift?.isOpen == true) MaterialTheme.colorScheme.primary
-                                                    else MaterialTheme.colorScheme.error
-                                                )
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            text = if (currentShift?.isOpen == true) "Shift Open" else "Shift Closed",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold
-                                        )
+                        if (uiState.isSearchActive) {
+                            TextField(
+                                value = uiState.searchQuery,
+                                onValueChange = { viewModel.setSearchQuery(it) },
+                                placeholder = {
+                                    Text(
+                                        "Search menu, barcode or SKU...",
+                                        color = Color.White.copy(alpha = 0.7f),
+                                        fontSize = 14.sp
+                                    )
+                                },
+                                singleLine = true,
+                                trailingIcon = {
+                                    if (uiState.searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                                            Icon(Icons.Default.Close, contentDescription = "Clear", tint = Color.White)
+                                        }
                                     }
-                                }
-                            }
-                            Text(
-                                text = "Cashier: ${uiState.cashierName} • Ticket: ${uiState.currentTicketName}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    cursorColor = Color.White,
+                                    focusedIndicatorColor = Color.White.copy(alpha = 0.6f),
+                                    unfocusedIndicatorColor = Color.Transparent
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("appbar_search_input")
                             )
+                        } else {
+                            Column(modifier = Modifier.clickable { viewModel.setOpenTicketsDialog(true) }) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = uiState.currentTicketName,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(
+                                        Icons.Default.ArrowDropDown,
+                                        contentDescription = "Switch Ticket",
+                                        tint = Color.White.copy(alpha = 0.8f),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "${uiState.cashierName} • ${if (currentShift?.isOpen == true) "Turno Abierto" else "Turno Cerrado"}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
                         }
                     },
                     navigationIcon = {
                         IconButton(onClick = onOpenDrawer, modifier = Modifier.testTag("drawer_menu_button")) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
                         }
                     },
                     actions = {
+                        // Search Toggle Button
+                        IconButton(onClick = { viewModel.setSearchActive(!uiState.isSearchActive) }) {
+                            Icon(
+                                if (uiState.isSearchActive) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = "Search",
+                                tint = Color.White
+                            )
+                        }
+
                         // Barcode Scan Button
                         IconButton(onClick = { viewModel.setBarcodeDialog(true) }) {
-                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan Barcode")
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan Barcode", tint = Color.White)
                         }
 
                         // Customer Loyalty Button
@@ -149,41 +179,20 @@ fun SalesRegisterScreen(
                             BadgedBox(
                                 badge = {
                                     if (uiState.selectedCustomer != null) {
-                                        Badge(containerColor = MaterialTheme.colorScheme.primary) { Text("★") }
+                                        Badge(containerColor = Color(0xFFFFD54F), contentColor = Color.Black) { Text("★") }
                                     }
                                 }
                             ) {
-                                Icon(Icons.Default.Person, contentDescription = "Customer")
+                                Icon(Icons.Default.Person, contentDescription = "Customer", tint = Color.White)
                             }
                         }
 
-                        // Thermal Printer Settings Button
-                        IconButton(onClick = { viewModel.setPrinterSettingsDialog(true) }) {
-                            Icon(Icons.Default.Print, contentDescription = "Thermal Printer")
-                        }
-
-                        // Low Stock Warning Alert Button
-                        IconButton(onClick = { viewModel.setLowStockDialog(true) }) {
-                            BadgedBox(
-                                badge = {
-                                    if (lowStockProducts.isNotEmpty()) {
-                                        Badge(containerColor = Color(0xFFE65100)) {
-                                            Text("${lowStockProducts.size}")
-                                        }
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Warning,
-                                    contentDescription = "Low Stock Warning",
-                                    tint = if (lowStockProducts.isNotEmpty()) Color(0xFFE65100) else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        // Sync & Connectivity Status Button
+                        // Sync Status & Trigger Button
                         IconButton(
-                            onClick = { viewModel.setSyncStatusDialog(true) },
+                            onClick = {
+                                syncManager.triggerSync()
+                                viewModel.setSyncStatusDialog(true)
+                            },
                             modifier = Modifier.testTag("sync_status_button")
                         ) {
                             BadgedBox(
@@ -191,28 +200,84 @@ fun SalesRegisterScreen(
                                     Surface(
                                         modifier = Modifier.size(8.dp),
                                         shape = CircleShape,
-                                        color = if (isOnline) Color(0xFF2E7D32) else Color(0xFFE65100)
+                                        color = if (isOnline) Color(0xFF81C784) else Color(0xFFFFB74D)
                                     ) {}
                                 }
                             ) {
                                 Icon(
-                                    imageVector = if (isOnline) Icons.Default.Wifi else Icons.Default.WifiOff,
+                                    imageVector = if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
                                     contentDescription = "Sync Status",
-                                    tint = if (isOnline) Color(0xFF2E7D32) else Color(0xFFE65100)
+                                    tint = Color.White
                                 )
                             }
                         }
 
-                        // Grid / List toggle
+                        // Grid / List View Toggle
                         IconButton(onClick = { viewModel.toggleLayoutMode() }) {
                             Icon(
                                 if (uiState.isGridLayout) Icons.Default.ViewList else Icons.Default.GridView,
-                                contentDescription = "Toggle View"
+                                contentDescription = "Toggle View",
+                                tint = Color.White
                             )
+                        }
+
+                        // More Options Dropdown Menu
+                        Box {
+                            IconButton(onClick = { showMoreMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "More Options", tint = Color.White)
+                            }
+                            DropdownMenu(
+                                expanded = showMoreMenu,
+                                onDismissRequest = { showMoreMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Shift Management") },
+                                    leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        viewModel.setShiftDialog(true)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Thermal Printer Settings") },
+                                    leadingIcon = { Icon(Icons.Default.Print, contentDescription = null) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        viewModel.setPrinterSettingsDialog(true)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Review Low Stock (${lowStockProducts.size})") },
+                                    leadingIcon = { Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFE65100)) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        viewModel.setLowStockDialog(true)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Open Online Back Office") },
+                                    leadingIcon = { Icon(Icons.Default.OpenInNew, contentDescription = null, tint = Color(0xFF2E7D32)) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        try {
+                                            val intent = android.content.Intent(
+                                                android.content.Intent.ACTION_VIEW,
+                                                android.net.Uri.parse(com.example.util.AppConfig.BACK_OFFICE_URL)
+                                            )
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                        }
+                                    }
+                                )
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = Color(0xFF2E7D32),
+                        titleContentColor = Color.White,
+                        navigationIconContentColor = Color.White,
+                        actionIconContentColor = Color.White
                     )
                 )
             },
@@ -247,7 +312,11 @@ fun SalesRegisterScreen(
                     CategoryFilterRow(
                         categories = categories,
                         selectedCategoryId = uiState.selectedCategoryId,
-                        onCategorySelect = { viewModel.selectCategory(it) }
+                        isKeypadSelected = uiState.isKeypadSelected,
+                        isFavoritesSelected = uiState.isFavoritesSelected,
+                        onCategorySelect = { viewModel.selectCategory(it) },
+                        onFavoritesSelect = { viewModel.selectFavoritesTab() },
+                        onKeypadSelect = { viewModel.selectKeypadTab() }
                     )
 
                     // Low Stock Alert Warning Banner
@@ -391,15 +460,107 @@ fun SalesRegisterScreen(
                         }
                     }
 
-                    // Items Grid or List
-                    if (displayedItems.isEmpty()) {
+                    // Items Grid, List or Loyverse Keypad
+                    if (uiState.isKeypadSelected) {
+                        LoyverseKeypadView(
+                            inputAmountCents = uiState.keypadInputAmount,
+                            onDigit = { viewModel.onKeypadDigit(it) },
+                            onBackspace = { viewModel.onKeypadBackspace() },
+                            onClear = { viewModel.onKeypadClear() },
+                            onAddToTicket = { viewModel.addKeypadAmountToTicket() }
+                        )
+                    } else if (displayedItems.isEmpty()) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("No items found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (syncState == com.example.util.SyncState.SYNCING && allItems.isEmpty()) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    CircularProgressIndicator(color = Color(0xFF2E7D32))
+                                    Text(
+                                        text = "Connecting to Back Office & loading catalog...",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            } else if (syncState == com.example.util.SyncState.ERROR && allItems.isEmpty()) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.padding(24.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.CloudOff,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    Text(
+                                        text = "Unable to connect to Back Office",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                    Text(
+                                        text = "Check network connection or tap retry to re-sync.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Button(
+                                        onClick = { syncManager.triggerSync() },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                                    ) {
+                                        Icon(Icons.Default.Refresh, contentDescription = null)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Retry Sync")
+                                    }
+                                }
+                            } else if (uiState.searchQuery.isNotEmpty()) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "No items match '${uiState.searchQuery}'",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            } else if (uiState.isFavoritesSelected) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Star,
+                                        contentDescription = null,
+                                        tint = Color(0xFFFFB300),
+                                        modifier = Modifier.size(40.dp)
+                                    )
+                                    Text(
+                                        text = "No favorite items yet",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            } else {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "No items in this category",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
                     } else if (uiState.isGridLayout) {
                         LazyVerticalGrid(
@@ -680,28 +841,56 @@ fun SalesRegisterScreen(
 fun CategoryFilterRow(
     categories: List<CategoryEntity>,
     selectedCategoryId: Long?,
-    onCategorySelect: (Long?) -> Unit
+    isKeypadSelected: Boolean,
+    isFavoritesSelected: Boolean,
+    onCategorySelect: (Long?) -> Unit,
+    onFavoritesSelect: () -> Unit,
+    onKeypadSelect: () -> Unit
 ) {
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        // All Items tab
         item {
             FilterChip(
-                selected = selectedCategoryId == null,
+                selected = !isKeypadSelected && !isFavoritesSelected && selectedCategoryId == null,
                 onClick = { onCategorySelect(null) },
                 label = { Text("All Items", fontWeight = FontWeight.Bold) },
-                leadingIcon = { Icon(Icons.Default.Apps, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                leadingIcon = { Icon(Icons.Default.Apps, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(0xFF2E7D32).copy(alpha = 0.15f),
+                    selectedLabelColor = Color(0xFF2E7D32),
+                    selectedLeadingIconColor = Color(0xFF2E7D32)
+                )
             )
         }
+
+        // Favorites tab
+        item {
+            FilterChip(
+                selected = !isKeypadSelected && isFavoritesSelected,
+                onClick = { onFavoritesSelect() },
+                label = { Text("Favorites", fontWeight = FontWeight.Bold) },
+                leadingIcon = { Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFFFFB300)) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(0xFFFFB300).copy(alpha = 0.15f),
+                    selectedLabelColor = Color(0xFFF57F17),
+                    selectedLeadingIconColor = Color(0xFFF57F17)
+                )
+            )
+        }
+
+        // Dynamic categories from Back Office / Room
         items(categories) { category ->
-            val isSelected = selectedCategoryId == category.id
+            val isSelected = !isKeypadSelected && !isFavoritesSelected && selectedCategoryId == category.id
             val chipColor = try {
                 Color(android.graphics.Color.parseColor(category.colorHex))
             } catch (e: Exception) {
-                MaterialTheme.colorScheme.primary
+                Color(0xFF2E7D32)
             }
 
             FilterChip(
@@ -711,11 +900,30 @@ fun CategoryFilterRow(
                 leadingIcon = {
                     Box(
                         modifier = Modifier
-                            .size(12.dp)
+                            .size(10.dp)
                             .clip(CircleShape)
                             .background(chipColor)
                     )
-                }
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = chipColor.copy(alpha = 0.15f),
+                    selectedLabelColor = chipColor
+                )
+            )
+        }
+
+        // Keypad tab
+        item {
+            FilterChip(
+                selected = isKeypadSelected,
+                onClick = { onKeypadSelect() },
+                label = { Text("Keypad", fontWeight = FontWeight.Bold) },
+                leadingIcon = { Icon(Icons.Default.Dialpad, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(0xFF2E7D32).copy(alpha = 0.15f),
+                    selectedLabelColor = Color(0xFF2E7D32),
+                    selectedLeadingIconColor = Color(0xFF2E7D32)
+                )
             )
         }
     }
@@ -740,90 +948,143 @@ fun ItemGridCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(130.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
             .testTag("item_card_${item.id}"),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Top Accent Color stripe
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Image area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(6.dp)
-                    .background(cardAccentColor)
-            )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(10.dp),
-                verticalArrangement = Arrangement.SpaceBetween
+                    .height(96.dp)
+                    .background(cardAccentColor.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
             ) {
-                // Name & Stock badge
-                Column {
-                    Text(
-                        text = item.name,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                if (item.imageUrl.isNotBlank()) {
+                    SubcomposeAsyncImage(
+                        model = item.imageUrl,
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                        loading = {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = cardAccentColor
+                                )
+                            }
+                        },
+                        error = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(cardAccentColor),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = item.name.take(2).uppercase(),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = item.categoryName,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(cardAccentColor),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = item.name.take(2).uppercase(),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
 
-                // Price and stock warning status
-                Column {
-                    if (isOutOfStock) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.errorContainer,
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
+                // Top Accent Stripe
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .background(cardAccentColor)
+                        .align(Alignment.TopCenter)
+                )
+
+                // Stock status overlay if low or out of stock
+                if (isOutOfStock) {
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.7f),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = "OUT OF STOCK",
-                                color = MaterialTheme.colorScheme.error,
+                                color = Color.White,
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                            )
-                        }
-                    } else if (isLowStock) {
-                        Surface(
-                            color = Color(0xFFFFF3E0),
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                text = "Low: ${item.inStock.toInt()} left",
-                                color = Color(0xFFE65100),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                } else if (isLowStock) {
+                    Surface(
+                        color = Color(0xFFE65100).copy(alpha = 0.9f),
+                        shape = RoundedCornerShape(bottomStart = 6.dp),
+                        modifier = Modifier.align(Alignment.TopEnd)
                     ) {
                         Text(
-                            text = "$${String.format(Locale.US, "%.2f", item.price)}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.primary
+                            text = "${item.inStock.toInt()} left",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
-                        if (item.soldBy == SoldBy.WEIGHT) {
-                            Text("/ kg", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                    }
+                }
+            }
+
+            // Text Info area
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = item.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "$${String.format(Locale.US, "%.2f", item.price)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2E7D32)
+                    )
+                    if (item.soldBy == SoldBy.WEIGHT) {
+                        Text(
+                            text = "/kg",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -847,28 +1108,45 @@ fun ItemListRow(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .testTag("item_row_${item.id}"),
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(48.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(cardAccentColor.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = item.name.take(1).uppercase(),
-                    fontWeight = FontWeight.Bold,
-                    color = cardAccentColor
-                )
+                if (item.imageUrl.isNotBlank()) {
+                    SubcomposeAsyncImage(
+                        model = item.imageUrl,
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                        error = {
+                            Text(
+                                text = item.name.take(1).uppercase(),
+                                fontWeight = FontWeight.Bold,
+                                color = cardAccentColor
+                            )
+                        }
+                    )
+                } else {
+                    Text(
+                        text = item.name.take(1).uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        color = cardAccentColor
+                    )
+                }
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -882,7 +1160,148 @@ fun ItemListRow(
             Text(
                 "$${String.format(Locale.US, "%.2f", item.price)}${if (item.soldBy == SoldBy.WEIGHT) "/kg" else ""}",
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = Color(0xFF2E7D32)
+            )
+        }
+    }
+}
+
+@Composable
+fun LoyverseKeypadView(
+    inputAmountCents: String,
+    onDigit: (String) -> Unit,
+    onBackspace: () -> Unit,
+    onClear: () -> Unit,
+    onAddToTicket: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val amountVal = (inputAmountCents.toDoubleOrNull() ?: 0.0) / 100.0
+    val formattedAmount = "$${String.format(Locale.US, "%.2f", amountVal)}"
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Display Area
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(72.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Custom Amount",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = formattedAmount,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF2E7D32)
+                )
+            }
+        }
+
+        // Keypad Grid
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val rows = listOf(
+                listOf("1", "2", "3"),
+                listOf("4", "5", "6"),
+                listOf("7", "8", "9"),
+                listOf("C", "0", "00")
+            )
+
+            for (row in rows) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    for (key in row) {
+                        Button(
+                            onClick = {
+                                when (key) {
+                                    "C" -> onClear()
+                                    else -> onDigit(key)
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (key == "C") MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (key == "C") MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp)
+                        ) {
+                            Text(
+                                text = key,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Backspace row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { onBackspace() },
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.Backspace, contentDescription = "Backspace", modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Delete")
+                }
+            }
+        }
+
+        // Add to Ticket Button
+        Button(
+            onClick = onAddToTicket,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF2E7D32),
+                contentColor = Color.White
+            ),
+            enabled = amountVal > 0.0
+        ) {
+            Icon(Icons.Default.ShoppingCart, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Add to Ticket  ($formattedAmount)",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
             )
         }
     }

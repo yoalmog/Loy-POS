@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
         Timecard::class,
         LoyaltyPoint::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -65,6 +65,18 @@ abstract class AppDatabase : RoomDatabase() {
                 instance
             }
         }
+
+        val CANONICAL_INITIAL_PRODUCTS = listOf(
+            Product(id = 101, name = "Hamburguesa Clásica Angus", price = 58.00, category = "Hamburguesas y Carnes", stockLevel = 45, imageUrl = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"),
+            Product(id = 102, name = "Smash Burger Doble", price = 64.00, category = "Hamburguesas y Carnes", stockLevel = 32, imageUrl = "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=80"),
+            Product(id = 103, name = "Pizza Margherita Napolitana", price = 52.00, category = "Pizzas y Hornadas", stockLevel = 60, imageUrl = "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=600&auto=format&fit=crop&q=80"),
+            Product(id = 104, name = "Ensalada César Crujiente", price = 46.00, category = "Ensaladas y Guarniciones", stockLevel = 28, imageUrl = "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=600&auto=format&fit=crop&q=80"),
+            Product(id = 105, name = "Papas Fritas Rústicas", price = 24.00, category = "Ensaladas y Guarniciones", stockLevel = 80, imageUrl = "https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80"),
+            Product(id = 106, name = "Coca-Cola Zero (Botella)", price = 14.00, category = "Bebidas Frías", stockLevel = 120, imageUrl = "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80"),
+            Product(id = 107, name = "Capuchino Artesanal", price = 15.00, category = "Café y Bebidas Calientes", stockLevel = 200, imageUrl = "https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&auto=format&fit=crop&q=80"),
+            Product(id = 108, name = "Cerveza de Barril Artesanal", price = 29.00, category = "Cervezas y Licores", stockLevel = 50, imageUrl = "https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=600&auto=format&fit=crop&q=80"),
+            Product(id = 109, name = "Volcán de Chocolate Fundido", price = 38.00, category = "Postres y Helados", stockLevel = 18, imageUrl = "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80")
+        )
     }
 
     private class DatabaseCallback : RoomDatabase.Callback() {
@@ -93,243 +105,190 @@ abstract class AppDatabase : RoomDatabase() {
 }
 
 suspend fun populateInitialBistroData(db: AppDatabase) {
-    // 1. Categories
-    val catBurgers = CategoryEntity(id = 1, name = "Burgers", colorHex = "#D32F2F")
-    val catCombos = CategoryEntity(id = 2, name = "Combos & Meals", colorHex = "#E65100")
-    val catSides = CategoryEntity(id = 3, name = "Sides & Fries", colorHex = "#F57F17")
-    val catDrinks = CategoryEntity(id = 4, name = "Cold Drinks", colorHex = "#0288D1")
-    val catHot = CategoryEntity(id = 5, name = "Hot Drinks", colorHex = "#5D4037")
-    val catDesserts = CategoryEntity(id = 6, name = "Desserts", colorHex = "#7B1FA2")
-
-    db.categoryDao().insertAll(listOf(catBurgers, catCombos, catSides, catDrinks, catHot, catDesserts))
+    // 1. Categories matching Back Office
+    val categories = listOf(
+        CategoryEntity(id = 1, name = "Hamburguesas y Carnes", colorHex = "#EF4444"),
+        CategoryEntity(id = 2, name = "Pizzas y Hornadas", colorHex = "#F59E0B"),
+        CategoryEntity(id = 3, name = "Ensaladas y Guarniciones", colorHex = "#10B981"),
+        CategoryEntity(id = 4, name = "Bebidas Frías", colorHex = "#06B6D4"),
+        CategoryEntity(id = 5, name = "Café y Bebidas Calientes", colorHex = "#8B5CF6"),
+        CategoryEntity(id = 6, name = "Cervezas y Licores", colorHex = "#F97316"),
+        CategoryEntity(id = 7, name = "Postres y Helados", colorHex = "#EC4899")
+    )
+    db.categoryDao().insertAll(categories)
 
     // 2. Modifier Groups
     val modBurgerToppings = ModifierGroupEntity(
         id = 1,
-        name = "Add-ons",
-        optionsJson = "Extra Cheddar:1.00,Crispy Bacon:1.75,Pickled Jalapeños:0.75,Grilled Mushrooms:1.25,Fried Egg:1.50"
+        name = "Ingredientes Adicionales",
+        optionsJson = "Queso Cheddar Fundido:8.00,Cebolla Caramelizada:6.00,Huevo Frito:7.00,Tiras de Asado Ahumado:16.00"
     )
     val modDrinkSizes = ModifierGroupEntity(
         id = 2,
-        name = "Size",
-        optionsJson = "Regular:0.00,Large:0.80,Monster Size:1.50"
+        name = "Tamaño",
+        optionsJson = "Personal:0.00,Familiar:10.00"
     )
     val modDressing = ModifierGroupEntity(
         id = 3,
-        name = "Sauces",
-        optionsJson = "Truffle Mayo:0.50,Smoky BBQ:0.50,Garlic Herb:0.50,Spicy Sriracha:0.50"
+        name = "Salsas",
+        optionsJson = "Mayonesa Trufada:4.00,Salsa BBQ Ahumada:3.50,Chimichurri Casero:4.00"
     )
     db.modifierGroupDao().insertAll(listOf(modBurgerToppings, modDrinkSizes, modDressing))
 
-    // 3. Fast Food & Bistro Items
+    // 3. Fast Food & Bistro Items with Real Image URLs
     val items = listOf(
         ItemEntity(
-            id = 1,
-            name = "Classic Bistro Burger",
+            id = 101,
+            name = "Hamburguesa Clásica Angus",
             categoryId = 1,
-            categoryName = "Burgers",
-            price = 9.50,
-            cost = 3.80,
-            sku = "1001",
-            barcode = "200001001000",
+            categoryName = "Hamburguesas y Carnes",
+            price = 58.00,
+            cost = 18.00,
+            sku = "BGR-ANG-01",
+            barcode = "729000100101",
             soldBy = SoldBy.EACH,
             inStock = 45.0,
             lowStockThreshold = 10.0,
             trackStock = true,
-            colorHex = "#D32F2F",
-            modifierIds = "1"
+            colorHex = "#EF4444",
+            modifierIds = "1",
+            imageUrl = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"
         ),
         ItemEntity(
-            id = 2,
-            name = "Double Bacon Cheeseburger",
+            id = 102,
+            name = "Smash Burger Doble",
             categoryId = 1,
-            categoryName = "Burgers",
-            price = 12.75,
-            cost = 5.10,
-            sku = "1002",
-            barcode = "200001002000",
+            categoryName = "Hamburguesas y Carnes",
+            price = 64.00,
+            cost = 21.00,
+            sku = "BGR-SMASH-02",
+            barcode = "729000100102",
             soldBy = SoldBy.EACH,
-            inStock = 30.0,
+            inStock = 32.0,
             lowStockThreshold = 8.0,
             trackStock = true,
-            colorHex = "#C62828",
-            modifierIds = "1"
+            colorHex = "#DC2626",
+            modifierIds = "1",
+            imageUrl = "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=80"
         ),
         ItemEntity(
-            id = 3,
-            name = "Crispy Truffle Chicken Burger",
-            categoryId = 1,
-            categoryName = "Burgers",
-            price = 11.00,
-            cost = 4.20,
-            sku = "1003",
-            barcode = "200001003000",
-            soldBy = SoldBy.EACH,
-            inStock = 22.0,
-            lowStockThreshold = 5.0,
-            trackStock = true,
-            colorHex = "#AD1457",
-            modifierIds = "1,3"
-        ),
-        ItemEntity(
-            id = 4,
-            name = "Bistro Deluxe Combo",
+            id = 103,
+            name = "Pizza Margherita Napolitana",
             categoryId = 2,
-            categoryName = "Combos & Meals",
-            price = 15.50,
-            cost = 5.90,
-            sku = "1004",
-            barcode = "200001004000",
-            soldBy = SoldBy.EACH,
-            inStock = 25.0,
-            lowStockThreshold = 5.0,
-            trackStock = true,
-            colorHex = "#EF6C00",
-            modifierIds = "2,3"
-        ),
-        ItemEntity(
-            id = 5,
-            name = "Family Feast Basket",
-            categoryId = 2,
-            categoryName = "Combos & Meals",
-            price = 32.00,
-            cost = 13.00,
-            sku = "1005",
-            barcode = "200001005000",
-            soldBy = SoldBy.EACH,
-            inStock = 12.0,
-            lowStockThreshold = 4.0,
-            trackStock = true,
-            colorHex = "#E65100",
-            modifierIds = ""
-        ),
-        ItemEntity(
-            id = 6,
-            name = "Rustic French Fries",
-            categoryId = 3,
-            categoryName = "Sides & Fries",
-            price = 4.25,
-            cost = 1.10,
-            sku = "1006",
-            barcode = "200001006000",
+            categoryName = "Pizzas y Hornadas",
+            price = 52.00,
+            cost = 12.00,
+            sku = "PIZ-MARG-01",
+            barcode = "729000100103",
             soldBy = SoldBy.EACH,
             inStock = 60.0,
-            lowStockThreshold = 15.0,
+            lowStockThreshold = 12.0,
             trackStock = true,
-            colorHex = "#F57F17",
-            modifierIds = "3"
+            colorHex = "#F59E0B",
+            modifierIds = "",
+            imageUrl = "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=600&auto=format&fit=crop&q=80"
         ),
         ItemEntity(
-            id = 7,
-            name = "Crispy Onion Rings",
+            id = 104,
+            name = "Ensalada César Crujiente",
             categoryId = 3,
-            categoryName = "Sides & Fries",
-            price = 5.00,
-            cost = 1.40,
-            sku = "1007",
-            barcode = "200001007000",
+            categoryName = "Ensaladas y Guarniciones",
+            price = 46.00,
+            cost = 11.00,
+            sku = "SLD-CES-01",
+            barcode = "729000100104",
             soldBy = SoldBy.EACH,
-            inStock = 40.0,
-            lowStockThreshold = 10.0,
+            inStock = 28.0,
+            lowStockThreshold = 6.0,
             trackStock = true,
-            colorHex = "#F9A825",
-            modifierIds = "3"
+            colorHex = "#10B981",
+            modifierIds = "3",
+            imageUrl = "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=600&auto=format&fit=crop&q=80"
         ),
         ItemEntity(
-            id = 8,
-            name = "Fresh Deli Roast Beef",
+            id = 105,
+            name = "Papas Fritas Rústicas",
             categoryId = 3,
-            categoryName = "Sides & Fries",
-            price = 18.00, // $18 per kg
-            cost = 9.00,
-            sku = "1008",
-            barcode = "021008000000", // Weight-embedded barcode prefix
-            soldBy = SoldBy.WEIGHT,
-            inStock = 15.5, // 15.5 kg in stock
-            lowStockThreshold = 3.0,
+            categoryName = "Ensaladas y Guarniciones",
+            price = 24.00,
+            cost = 5.00,
+            sku = "SID-FRY-01",
+            barcode = "729000100105",
+            soldBy = SoldBy.EACH,
+            inStock = 80.0,
+            lowStockThreshold = 20.0,
             trackStock = true,
-            colorHex = "#8D6E63",
-            modifierIds = ""
+            colorHex = "#059669",
+            modifierIds = "3",
+            imageUrl = "https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80"
         ),
         ItemEntity(
-            id = 9,
-            name = "Craft Lemonade & Mint",
+            id = 106,
+            name = "Coca-Cola Zero (Botella)",
             categoryId = 4,
-            categoryName = "Cold Drinks",
-            price = 3.75,
-            cost = 0.90,
-            sku = "1009",
-            barcode = "200001009000",
+            categoryName = "Bebidas Frías",
+            price = 14.00,
+            cost = 4.00,
+            sku = "DRK-COK-01",
+            barcode = "729000100106",
+            soldBy = SoldBy.EACH,
+            inStock = 120.0,
+            lowStockThreshold = 24.0,
+            trackStock = true,
+            colorHex = "#06B6D4",
+            modifierIds = "",
+            imageUrl = "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80"
+        ),
+        ItemEntity(
+            id = 107,
+            name = "Capuchino Artesanal",
+            categoryId = 5,
+            categoryName = "Café y Bebidas Calientes",
+            price = 15.00,
+            cost = 3.00,
+            sku = "HOT-CAP-01",
+            barcode = "729000100107",
+            soldBy = SoldBy.EACH,
+            inStock = 200.0,
+            lowStockThreshold = 30.0,
+            trackStock = false,
+            colorHex = "#8B5CF6",
+            modifierIds = "2",
+            imageUrl = "https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&auto=format&fit=crop&q=80"
+        ),
+        ItemEntity(
+            id = 108,
+            name = "Cerveza de Barril Artesanal",
+            categoryId = 6,
+            categoryName = "Cervezas y Licores",
+            price = 29.00,
+            cost = 8.00,
+            sku = "ALC-BER-01",
+            barcode = "729000100108",
             soldBy = SoldBy.EACH,
             inStock = 50.0,
-            lowStockThreshold = 10.0,
+            lowStockThreshold = 15.0,
             trackStock = true,
-            colorHex = "#00ACC1",
-            modifierIds = "2"
+            colorHex = "#F97316",
+            modifierIds = "",
+            imageUrl = "https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=600&auto=format&fit=crop&q=80"
         ),
         ItemEntity(
-            id = 10,
-            name = "Iced Vanilla Cold Brew",
-            categoryId = 4,
-            categoryName = "Cold Drinks",
-            price = 4.95,
-            cost = 1.20,
-            sku = "1010",
-            barcode = "200001010000",
-            soldBy = SoldBy.EACH,
-            inStock = 35.0,
-            lowStockThreshold = 8.0,
-            trackStock = true,
-            colorHex = "#0288D1",
-            modifierIds = "2"
-        ),
-        ItemEntity(
-            id = 11,
-            name = "Hot Caramel Cappuccino",
-            categoryId = 5,
-            categoryName = "Hot Drinks",
-            price = 4.50,
-            cost = 1.05,
-            sku = "1011",
-            barcode = "200001011000",
-            soldBy = SoldBy.EACH,
-            inStock = 40.0,
-            lowStockThreshold = 8.0,
-            trackStock = true,
-            colorHex = "#6D4C41",
-            modifierIds = "2"
-        ),
-        ItemEntity(
-            id = 12,
-            name = "Warm Chocolate Lava Cake",
-            categoryId = 6,
-            categoryName = "Desserts",
-            price = 6.50,
-            cost = 2.00,
-            sku = "1012",
-            barcode = "200001012000",
+            id = 109,
+            name = "Volcán de Chocolate Fundido",
+            categoryId = 7,
+            categoryName = "Postres y Helados",
+            price = 38.00,
+            cost = 9.50,
+            sku = "DES-CHOC-01",
+            barcode = "729000100109",
             soldBy = SoldBy.EACH,
             inStock = 18.0,
             lowStockThreshold = 5.0,
             trackStock = true,
-            colorHex = "#6A1B9A",
-            modifierIds = ""
-        ),
-        ItemEntity(
-            id = 13,
-            name = "Berry Cheesecake Slice",
-            categoryId = 6,
-            categoryName = "Desserts",
-            price = 5.75,
-            cost = 1.80,
-            sku = "1013",
-            barcode = "200001013000",
-            soldBy = SoldBy.EACH,
-            inStock = 4.0, // Low stock demo!
-            lowStockThreshold = 5.0,
-            trackStock = true,
-            colorHex = "#8E24AA",
-            modifierIds = ""
+            colorHex = "#EC4899",
+            modifierIds = "",
+            imageUrl = "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80"
         )
     )
     db.itemDao().insertAll(items)
@@ -469,16 +428,15 @@ suspend fun populateInitialBistroData(db: AppDatabase) {
 
     // 8. Seed Products for Product Inventory
     val initialProducts = listOf(
-        Product(id = 1, name = "Classic Bistro Burger", price = 9.50, category = "Burgers", stockLevel = 45, imageUrl = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"),
-        Product(id = 2, name = "Double Bacon Cheeseburger", price = 12.75, category = "Burgers", stockLevel = 30, imageUrl = "https://images.unsplash.com/photo-1586190848861-99aa4a171e90"),
-        Product(id = 3, name = "Crispy Chicken Sandwich", price = 11.00, category = "Burgers", stockLevel = 22, imageUrl = "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b"),
-        Product(id = 4, name = "Bistro Deluxe Combo", price = 15.50, category = "Combos", stockLevel = 25, imageUrl = "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5"),
-        Product(id = 5, name = "Rustic French Fries", price = 4.25, category = "Sides", stockLevel = 60, imageUrl = "https://images.unsplash.com/photo-1573080496219-bb080dd4f877"),
-        Product(id = 6, name = "Crispy Onion Rings", price = 5.00, category = "Sides", stockLevel = 40, imageUrl = "https://images.unsplash.com/photo-1639024471287-035216709848"),
-        Product(id = 7, name = "Craft Lemonade & Mint", price = 3.75, category = "Drinks", stockLevel = 50, imageUrl = "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd"),
-        Product(id = 8, name = "Iced Vanilla Cold Brew", price = 4.95, category = "Drinks", stockLevel = 35, imageUrl = "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5"),
-        Product(id = 9, name = "Chocolate Lava Cake", price = 6.50, category = "Desserts", stockLevel = 18, imageUrl = "https://images.unsplash.com/photo-1606313564200-e75d5e30476c"),
-        Product(id = 10, name = "Berry Cheesecake Slice", price = 5.75, category = "Desserts", stockLevel = 4, imageUrl = "https://images.unsplash.com/photo-1533134242443-d4fd215305ad")
+        Product(id = 101, name = "Hamburguesa Clásica Angus", price = 58.00, category = "Hamburguesas y Carnes", stockLevel = 45, imageUrl = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"),
+        Product(id = 102, name = "Smash Burger Doble", price = 64.00, category = "Hamburguesas y Carnes", stockLevel = 32, imageUrl = "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=80"),
+        Product(id = 103, name = "Pizza Margherita Napolitana", price = 52.00, category = "Pizzas y Hornadas", stockLevel = 60, imageUrl = "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=600&auto=format&fit=crop&q=80"),
+        Product(id = 104, name = "Ensalada César Crujiente", price = 46.00, category = "Ensaladas y Guarniciones", stockLevel = 28, imageUrl = "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=600&auto=format&fit=crop&q=80"),
+        Product(id = 105, name = "Papas Fritas Rústicas", price = 24.00, category = "Ensaladas y Guarniciones", stockLevel = 80, imageUrl = "https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80"),
+        Product(id = 106, name = "Coca-Cola Zero (Botella)", price = 14.00, category = "Bebidas Frías", stockLevel = 120, imageUrl = "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80"),
+        Product(id = 107, name = "Capuchino Artesanal", price = 15.00, category = "Café y Bebidas Calientes", stockLevel = 200, imageUrl = "https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&auto=format&fit=crop&q=80"),
+        Product(id = 108, name = "Cerveza de Barril Artesanal", price = 29.00, category = "Cervezas y Licores", stockLevel = 50, imageUrl = "https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=600&auto=format&fit=crop&q=80"),
+        Product(id = 109, name = "Volcán de Chocolate Fundido", price = 38.00, category = "Postres y Helados", stockLevel = 18, imageUrl = "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80")
     )
     db.productDao().insertAll(initialProducts)
 

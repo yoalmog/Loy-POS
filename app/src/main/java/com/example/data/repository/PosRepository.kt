@@ -8,12 +8,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class PosRepository(private val database: AppDatabase) {
+class PosRepository(val database: AppDatabase) {
 
     init {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             try {
-                if (!com.example.data.api.SupabaseApiClient.isConfigured() && database.itemDao().countItems() == 0) {
+                if (database.itemDao().countItems() == 0) {
                     com.example.data.db.populateInitialBistroData(database)
                 }
             } catch (e: Exception) {

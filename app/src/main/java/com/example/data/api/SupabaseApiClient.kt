@@ -27,7 +27,8 @@ data class SupabaseItemDto(
     val low_stock_threshold: Double = 5.0,
     val track_stock: Boolean = true,
     val color_hex: String? = "#0288D1",
-    val modifier_ids: String? = ""
+    val modifier_ids: String? = "",
+    val image_url: String? = ""
 )
 
 data class SupabaseCategoryDto(
@@ -185,3 +186,61 @@ object SupabaseApiClient {
         return !url.contains("placeholder-project") && key.isNotEmpty()
     }
 }
+
+// Back Office Sync DTOs
+data class BackOfficeSyncResponse(
+    val items: List<SupabaseItemDto> = emptyList(),
+    val categories: List<SupabaseCategoryDto> = emptyList(),
+    val timestamp: Long = 0L,
+    val server_status: String = "online"
+)
+
+data class SyncPushRequest(
+    val receipts: List<SupabaseReceiptDto> = emptyList(),
+    val device_id: String = "android-pos"
+)
+
+data class SyncPushResponse(
+    val success: Boolean = true,
+    val synced_at: Long = 0L,
+    val received_receipts_count: Int = 0
+)
+
+interface BackOfficeRestApi {
+    @GET("api/sync")
+    suspend fun getSyncSnapshot(): BackOfficeSyncResponse
+
+    @GET("api/products")
+    suspend fun getProducts(@Query("category_id") categoryId: Long? = null): List<SupabaseItemDto>
+
+    @GET("api/categories")
+    suspend fun getCategories(): List<SupabaseCategoryDto>
+
+    @POST("api/sync")
+    suspend fun postSync(@Body payload: SyncPushRequest): Response<SyncPushResponse>
+}
+
+object BackOfficeApiClient {
+    private val moshi = Moshi.Builder()
+        .add(KotlinJsonAdapterFactory())
+        .build()
+
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BASIC
+        })
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .writeTimeout(15, TimeUnit.SECONDS)
+        .build()
+
+    val api: BackOfficeRestApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(com.example.util.AppConfig.BACK_OFFICE_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(BackOfficeRestApi::class.java)
+    }
+}
+

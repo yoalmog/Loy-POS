@@ -34,6 +34,10 @@ data class PosUiState(
     val showDatabaseBackupDialog: Boolean = false,
     val lowStockThreshold: Int = 5,
     val lowStockBannerDismissed: Boolean = false,
+    val isKeypadSelected: Boolean = false,
+    val isFavoritesSelected: Boolean = false,
+    val isSearchActive: Boolean = false,
+    val keypadInputAmount: String = "",
     val completedReceipt: ReceiptEntity? = null,
     val cashierName: String = "Alex (Cashier)",
     val storeName: String = "Bistro & Grill #1",
@@ -135,8 +139,88 @@ class PosViewModel(val repository: PosRepository) : ViewModel() {
         _uiState.update { it.copy(searchQuery = query) }
     }
 
+    fun setSearchActive(active: Boolean) {
+        _uiState.update { it.copy(isSearchActive = active, searchQuery = if (!active) "" else it.searchQuery) }
+    }
+
     fun selectCategory(categoryId: Long?) {
-        _uiState.update { it.copy(selectedCategoryId = categoryId) }
+        _uiState.update {
+            it.copy(
+                selectedCategoryId = categoryId,
+                isKeypadSelected = false,
+                isFavoritesSelected = false
+            )
+        }
+    }
+
+    fun selectFavoritesTab() {
+        _uiState.update {
+            it.copy(
+                isFavoritesSelected = true,
+                isKeypadSelected = false,
+                selectedCategoryId = null
+            )
+        }
+    }
+
+    fun selectKeypadTab() {
+        _uiState.update {
+            it.copy(
+                isKeypadSelected = true,
+                isFavoritesSelected = false,
+                selectedCategoryId = null
+            )
+        }
+    }
+
+    fun onKeypadDigit(digit: String) {
+        _uiState.update { state ->
+            val current = state.keypadInputAmount
+            if (current.length < 9) {
+                state.copy(keypadInputAmount = current + digit)
+            } else state
+        }
+    }
+
+    fun onKeypadBackspace() {
+        _uiState.update { state ->
+            if (state.keypadInputAmount.isNotEmpty()) {
+                state.copy(keypadInputAmount = state.keypadInputAmount.dropLast(1))
+            } else state
+        }
+    }
+
+    fun onKeypadClear() {
+        _uiState.update { it.copy(keypadInputAmount = "") }
+    }
+
+    fun addKeypadAmountToTicket() {
+        val raw = _uiState.value.keypadInputAmount
+        val amount = (raw.toDoubleOrNull() ?: 0.0) / 100.0
+        if (amount > 0.0) {
+            addCustomAmount(amount, "Custom Amount")
+            _uiState.update { it.copy(keypadInputAmount = "") }
+        }
+    }
+
+    fun addCustomAmount(amount: Double, itemName: String = "Custom Amount") {
+        if (amount <= 0.0) return
+        _uiState.update { state ->
+            val updatedItems = state.cartItems.toMutableList()
+            updatedItems.add(
+                TicketItemEntity(
+                    ticketId = state.activeTicketId ?: 0L,
+                    itemId = 999999L,
+                    itemName = itemName,
+                    unitPrice = amount,
+                    quantity = 1.0,
+                    selectedModifiersJson = "",
+                    modifiersCost = 0.0,
+                    comment = ""
+                )
+            )
+            state.copy(cartItems = updatedItems)
+        }
     }
 
     fun toggleLayoutMode() {

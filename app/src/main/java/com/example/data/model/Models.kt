@@ -52,7 +52,8 @@ data class ItemEntity(
     val lowStockThreshold: Double = 5.0,
     val trackStock: Boolean = true,
     val colorHex: String = "#4CAF50",
-    val modifierIds: String = "" // Comma-separated ModifierGroup ids
+    val modifierIds: String = "", // Comma-separated ModifierGroup ids
+    val imageUrl: String = ""
 )
 
 @Entity(tableName = "modifiers")

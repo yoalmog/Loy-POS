@@ -9,4 +9,5 @@ object AppConfig {
      * Accessible by the "Open Online Back Office Website" button in Settings/BackOffice.
      */
     const val BACK_OFFICE_URL: String = "https://loy-pos.vercel.app/admin"
+    const val BACK_OFFICE_BASE_URL: String = "https://loy-pos.vercel.app/"
 }

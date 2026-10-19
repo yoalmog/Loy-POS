@@ -86,17 +86,24 @@ class SyncManager(
     }
 
     private suspend fun performRealDatabaseSync() = withContext(Dispatchers.IO) {
-        if (!SupabaseApiClient.isConfigured()) {
-            // If Supabase credentials are not configured yet, fallback gracefully
-            delay(500)
-            return@withContext
-        }
+        var syncedAny = false
 
+        // 1. Primary Sync: Fetch live snapshot from Back Office API
         try {
-            // 1. Fetch products & items from Supabase
-            val remoteItems = SupabaseApiClient.api.getItems()
-            if (remoteItems.isNotEmpty()) {
-                val localItems = remoteItems.map { dto ->
+            val syncResponse = com.example.data.api.BackOfficeApiClient.api.getSyncSnapshot()
+            if (syncResponse.categories.isNotEmpty()) {
+                val localCategories = syncResponse.categories.map { catDto ->
+                    com.example.data.model.CategoryEntity(
+                        id = catDto.id ?: 0L,
+                        name = catDto.name,
+                        colorHex = catDto.color_hex ?: "#2E7D32"
+                    )
+                }
+                repository.database.categoryDao().insertAll(localCategories)
+            }
+
+            if (syncResponse.items.isNotEmpty()) {
+                val localItems = syncResponse.items.map { dto ->
                     ItemEntity(
                         id = dto.id ?: 0L,
                         name = dto.name,
@@ -111,13 +118,65 @@ class SyncManager(
                         lowStockThreshold = dto.low_stock_threshold,
                         trackStock = dto.track_stock,
                         colorHex = dto.color_hex ?: "#0288D1",
-                        modifierIds = dto.modifier_ids ?: ""
+                        modifierIds = dto.modifier_ids ?: "",
+                        imageUrl = dto.image_url ?: ""
                     )
                 }
                 repository.insertItemsFromSync(localItems)
+
+                // Keep Product inventory table in sync with ItemEntity
+                val products = localItems.map { item ->
+                    Product(
+                        id = item.id,
+                        name = item.name,
+                        price = item.price,
+                        category = item.categoryName,
+                        stockLevel = item.inStock.toInt(),
+                        imageUrl = item.imageUrl
+                    )
+                }
+                repository.database.productDao().insertAll(products)
+                syncedAny = true
             }
         } catch (e: Exception) {
-            // Log sync exception
+            // Back Office network error - will attempt fallback
+        }
+
+        // 2. Secondary Sync: Direct Supabase client if configured
+        if (SupabaseApiClient.isConfigured()) {
+            try {
+                val remoteItems = SupabaseApiClient.api.getItems()
+                if (remoteItems.isNotEmpty()) {
+                    val localItems = remoteItems.map { dto ->
+                        ItemEntity(
+                            id = dto.id ?: 0L,
+                            name = dto.name,
+                            categoryId = dto.category_id ?: 1L,
+                            categoryName = dto.category_name ?: "General",
+                            price = dto.price,
+                            cost = dto.cost ?: 0.0,
+                            sku = dto.sku ?: "",
+                            barcode = dto.barcode ?: "",
+                            soldBy = if (dto.sold_by == "WEIGHT") com.example.data.model.SoldBy.WEIGHT else com.example.data.model.SoldBy.EACH,
+                            inStock = dto.in_stock,
+                            lowStockThreshold = dto.low_stock_threshold,
+                            trackStock = dto.track_stock,
+                            colorHex = dto.color_hex ?: "#0288D1",
+                            modifierIds = dto.modifier_ids ?: "",
+                            imageUrl = dto.image_url ?: ""
+                        )
+                    }
+                    repository.insertItemsFromSync(localItems)
+                    syncedAny = true
+                }
+            } catch (e: Exception) {
+                // Ignore secondary error
+            }
+        }
+
+        if (!syncedAny && repository.database.itemDao().countItems() == 0) {
+            // Ensure local DB is never empty
+            com.example.data.db.populateInitialBistroData(repository.database)
         }
     }
 }
