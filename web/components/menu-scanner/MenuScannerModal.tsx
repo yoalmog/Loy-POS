@@ -78,6 +78,10 @@ export default function MenuScannerModal({
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [importSummary, setImportSummary] = useState<string | null>(null)
+  const [ocrProgressText, setOcrProgressText] = useState<string>('')
+  const [ocrProgressPercent, setOcrProgressPercent] = useState<number>(0)
+  const [rawOcrText, setRawOcrText] = useState<string>('')
+  const [isGrayscale, setIsGrayscale] = useState<boolean>(false)
 
   // Draw image on canvas with transforms
   useEffect(() => {
@@ -102,8 +106,10 @@ export default function MenuScannerModal({
       ctx.scale(zoom, zoom)
       ctx.rotate(((rotation + deskew) * Math.PI) / 180)
 
-      // Contrast filter
-      ctx.filter = `contrast(${contrast}%)`
+      // Contrast & Grayscale filters for optimal OCR accuracy
+      const filters = [`contrast(${contrast}%)`]
+      if (isGrayscale) filters.push('grayscale(100%)')
+      ctx.filter = filters.join(' ')
 
       // Draw image centered
       const drawWidth = 500
@@ -132,7 +138,7 @@ export default function MenuScannerModal({
 
       ctx.restore()
     }
-  }, [imageSrc, rotation, deskew, contrast, zoom, pan, parsedItems, step])
+  }, [imageSrc, rotation, deskew, contrast, zoom, pan, parsedItems, step, isGrayscale])
 
   if (!isOpen) return null
 
@@ -166,102 +172,154 @@ export default function MenuScannerModal({
     setRotation((prev) => (prev + 90) % 360)
   }
 
-  // Real OCR structural parser via /api/scan-menu
+  // Real OCR engine powered by Tesseract.js client-side & server parser
   async function runOcrExtraction() {
     setIsProcessingOcr(true)
+    setUploadError(null)
+    setOcrProgressPercent(10)
+    setOcrProgressText('Preparando imagen para OCR...')
     triggerSound('beep')
 
     try {
+      let extractedText = ''
+
+      // 1. Run real Tesseract OCR on canvas
+      if (canvasRef.current) {
+        try {
+          setOcrProgressText('Cargando motor de reconocimiento Tesseract OCR...')
+          setOcrProgressPercent(25)
+          const Tesseract = (await import('tesseract.js')).default
+
+          const result = await Tesseract.recognize(canvasRef.current, 'spa+eng', {
+            logger: (m: any) => {
+              if (m.status === 'recognizing text') {
+                const progress = m.progress || 0
+                const pct = Math.round(25 + progress * 60)
+                setOcrProgressPercent(pct)
+                setOcrProgressText(`Reconociendo caracteres: ${Math.round(progress * 100)}%`)
+              }
+            },
+          })
+
+          extractedText = result.data.text || ''
+          setRawOcrText(extractedText)
+        } catch (tessErr) {
+          console.warn('Tesseract client OCR warning, falling back to server vision:', tessErr)
+        }
+      }
+
+      setOcrProgressPercent(88)
+      setOcrProgressText('Analizando platos, precios y categorías...')
+
+      // 2. Query /api/scan-menu with extractedText or image base64
       const response = await fetch('/api/scan-menu', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageSrc }),
+        body: JSON.stringify({
+          raw_text: extractedText.trim() ? extractedText : undefined,
+          image: !extractedText.trim() ? imageSrc : undefined,
+        }),
       })
 
       if (response.ok) {
         const data = await response.json()
         const candidates = data.candidates || []
 
-        const mapped: ScannedParsedItem[] = candidates.map((c: any, idx: number) => {
-          const match = items.find(
-            (i) => i.name.toLowerCase().trim() === (c.name || '').toLowerCase().trim()
-          )
-          const isRejected = c.status === 'REJECTED' || c.price <= 0
+        if (candidates.length > 0) {
+          const mapped: ScannedParsedItem[] = candidates.map((c: any, idx: number) => {
+            const match = items.find(
+              (i) => i.name.toLowerCase().trim() === (c.name || '').toLowerCase().trim()
+            )
+            const isRejected = c.status === 'REJECTED' || c.price <= 0
 
-          return {
-            id: c.id || `sc_${idx + 1}`,
-            name: c.name || 'Plato del Menú',
-            category: c.category || 'General',
-            price: Number(c.price) || 0,
-            description: c.description || '',
+            return {
+              id: c.id || `sc_${idx + 1}`,
+              name: c.name || 'Plato del Menú',
+              category: c.category || 'General',
+              price: Number(c.price) || 0,
+              description: c.description || '',
+              variants: [],
+              modifiers: [],
+              box: { x: 50, y: 70 + (idx % 6) * 75, width: 400, height: 60 },
+              aiImageUrl:
+                c.aiImageUrl ||
+                'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+              status: isRejected ? 'IGNORE' : match ? 'UPDATE' : 'NEW',
+            }
+          })
+
+          setParsedItems(mapped)
+          setStep('review')
+          announce(`Se extrajeron ${mapped.length} platos del menú`)
+          triggerSound('success')
+          return
+        }
+      }
+
+      // If text was extracted but no items parsed
+      if (extractedText.trim()) {
+        const { parseRawMenuText } = await import('@/lib/ocr/menuParser')
+        const { items: clientParsed } = parseRawMenuText(extractedText, items)
+        if (clientParsed.length > 0) {
+          const mapped: ScannedParsedItem[] = clientParsed.map((p, idx) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            price: p.price,
+            description: p.description,
             variants: [],
             modifiers: [],
             box: { x: 50, y: 70 + (idx % 6) * 75, width: 400, height: 60 },
             aiImageUrl:
-              c.aiImageUrl ||
               'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
-            status: isRejected ? 'IGNORE' : match ? 'UPDATE' : 'NEW',
-          }
-        })
-
-        setParsedItems(mapped)
-        announce(`Se extrajeron ${mapped.length} platos del menú`)
-        triggerSound('success')
-      } else {
-        throw new Error('OCR API error')
+            status: p.status,
+          }))
+          setParsedItems(mapped)
+          setStep('review')
+          announce(`Se extrajeron ${mapped.length} platos del menú`)
+          triggerSound('success')
+          return
+        }
       }
-    } catch (err) {
-      console.warn('OCR API request failed, using intelligent fallback parser:', err)
-      // High-accuracy fallback dataset
-      const fallbackExtracted: ScannedParsedItem[] = [
-        {
-          id: 'sc1',
-          name: 'Lomo Saltado Criollo',
-          category: 'Hamburguesas y Carnes',
-          price: 38.5,
-          description: 'Lomo fino al wok con cebolla, tomate, ají amarillo y papas',
-          variants: [{ name: 'Porción Clásica', price: 38.5 }],
-          modifiers: [],
-          box: { x: 50, y: 70, width: 400, height: 65 },
-          aiImageUrl: 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=600&auto=format&fit=crop&q=80',
-          status: 'NEW',
-        },
-        {
-          id: 'sc2',
-          name: 'Ceviche Clásico de Pescado',
-          category: 'Entradas',
-          price: 34.0,
-          description: 'Pesca del día con choclo, camote glaseado y canchita',
-          variants: [],
-          modifiers: [],
-          box: { x: 50, y: 160, width: 400, height: 60 },
-          aiImageUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&auto=format&fit=crop&q=80',
-          status: 'NEW',
-        },
-        {
-          id: 'sc3',
-          name: 'Hamburguesa Artesanal Doble Queso',
-          category: 'Hamburguesas y Carnes',
-          price: 28.0,
-          description: '200g carne angus, queso cheddar derretido y salsa especial',
-          variants: [],
-          modifiers: [],
-          box: { x: 50, y: 250, width: 400, height: 60 },
-          aiImageUrl: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80',
-          status: 'NEW',
-        },
-      ]
 
-      const updated = fallbackExtracted.map((sc) => {
-        const match = items.find((i) => i.name.toLowerCase() === sc.name.toLowerCase())
-        return match ? { ...sc, status: 'UPDATE' as const } : sc
-      })
-
-      setParsedItems(updated)
-      announce(`Se procesaron ${updated.length} platos del menú`)
-      triggerSound('success')
+      setUploadError(
+        'El OCR leyó la imagen pero no detectó precios claramente. Puede revisar y editar el texto extraído abajo para generar los platos.'
+      )
+    } catch (err: any) {
+      console.warn('OCR extraction error:', err)
+      setUploadError('Error al procesar el OCR. Intente ajustar el contraste o rotar la imagen.')
     } finally {
       setIsProcessingOcr(false)
+      setOcrProgressPercent(0)
+    }
+  }
+
+  // Parse custom text directly
+  async function handleReparseCustomText(text: string) {
+    if (!text.trim()) return
+    const { parseRawMenuText } = await import('@/lib/ocr/menuParser')
+    const { items: clientParsed } = parseRawMenuText(text, items)
+
+    if (clientParsed.length > 0) {
+      const mapped: ScannedParsedItem[] = clientParsed.map((p, idx) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        price: p.price,
+        description: p.description,
+        variants: [],
+        modifiers: [],
+        box: { x: 50, y: 70 + (idx % 6) * 75, width: 400, height: 60 },
+        aiImageUrl:
+          'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+        status: p.status,
+      }))
+      setParsedItems(mapped)
+      setStep('review')
+      announce(`Se procesaron ${mapped.length} platos del texto`)
+      triggerSound('success')
+    } else {
+      setUploadError('No se encontraron platos con precios en el texto ingresado.')
     }
   }
 
@@ -518,6 +576,19 @@ export default function MenuScannerModal({
                   </button>
 
                   <button
+                    onClick={() => setIsGrayscale((g) => !g)}
+                    className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                      isGrayscale
+                        ? 'bg-indigo-600 text-white shadow'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                    title="Modo Blanco y Negro (Mejora contraste de texto)"
+                  >
+                    <Sliders className="w-4 h-4" />
+                    <span>{isGrayscale ? 'B&N Activo' : 'B&N'}</span>
+                  </button>
+
+                  <button
                     onClick={() => setZoom((z) => Math.min(2.5, z + 0.2))}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs"
                     title="Zoom In"
@@ -576,16 +647,35 @@ export default function MenuScannerModal({
                 <button
                   onClick={runOcrExtraction}
                   disabled={isProcessingOcr}
-                  className="py-2 px-5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md shadow-sky-600/20 flex items-center gap-2 disabled:opacity-50"
+                  className="py-2.5 px-6 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md shadow-sky-600/20 flex items-center gap-2 disabled:opacity-50"
                 >
                   {isProcessingOcr ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
                     <Sparkles className="w-4 h-4 text-sky-200" />
                   )}
-                  <span>{isProcessingOcr ? t.loading : t.processOcr}</span>
+                  <span>{isProcessingOcr ? 'Procesando OCR...' : 'Escanear Menú con OCR'}</span>
                 </button>
               </div>
+
+              {/* Real-time OCR Progress Bar */}
+              {isProcessingOcr && (
+                <div className="bg-sky-50 border border-sky-200 p-4 rounded-2xl space-y-2 animate-pulse">
+                  <div className="flex items-center justify-between text-xs font-bold text-sky-900">
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className="w-4 h-4 animate-spin text-sky-600" />
+                      <span>{ocrProgressText || 'Escaneando texto del menú...'}</span>
+                    </div>
+                    <span>{ocrProgressPercent}%</span>
+                  </div>
+                  <div className="w-full bg-sky-200 h-2.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-sky-500 to-indigo-600 h-full transition-all duration-300 rounded-full"
+                      style={{ width: `${ocrProgressPercent}%` }}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Interactive Canvas Viewport */}
               <div className="bg-slate-900 rounded-3xl overflow-hidden border border-slate-300 shadow-inner flex items-center justify-center p-2 relative min-h-[450px]">
@@ -617,13 +707,56 @@ export default function MenuScannerModal({
                       {parsedItems.length} {t.products}
                     </span>
                     <button
-                      onClick={() => setStep('studio')}
-                      className="py-1 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold"
+                      onClick={() => setStep('review')}
+                      className="py-1.5 px-3.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow"
                     >
-                      {t.geminiStudio} &rarr;
+                      Revisar Platos &rarr;
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* Direct OCR Text Editor / Paste Menu Section */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-black uppercase text-slate-800">
+                      Texto Extraído por OCR / Pegar Texto de Menú
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Revise o pegue el texto de su menú (nombres y precios) para analizarlos automáticamente.
+                    </p>
+                  </div>
+                  {rawOcrText && (
+                    <button
+                      onClick={() => handleReparseCustomText(rawOcrText)}
+                      className="py-1 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold"
+                    >
+                      Re-analizar Texto
+                    </button>
+                  )}
+                </div>
+
+                <textarea
+                  value={rawOcrText}
+                  onChange={(e) => setRawOcrText(e.target.value)}
+                  placeholder="Aquí aparecerá el texto leído por el OCR de la imagen. También puede escribir o pegar directamente (ej: Lomo Saltado S/ 38.50)..."
+                  rows={4}
+                  className="w-full p-3 rounded-xl border border-slate-200 text-xs font-mono bg-slate-50 text-slate-800 focus:bg-white focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none"
+                />
+
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400">
+                    Soporta precios con &ldquo;S/&rdquo;, &ldquo;$&rdquo;, &ldquo;€&rdquo;, comas o puntos decimales.
+                  </span>
+                  <button
+                    onClick={() => handleReparseCustomText(rawOcrText)}
+                    disabled={!rawOcrText.trim()}
+                    className="py-2 px-5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold disabled:opacity-40 transition-colors shadow-sm"
+                  >
+                    Extraer Platos del Texto &rarr;
+                  </button>
+                </div>
               </div>
             </div>
           )}

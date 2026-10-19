@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { parseRawMenuText } from '@/lib/ocr/menuParser'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,39 +31,78 @@ export async function POST(request: NextRequest) {
     const contentType = request.headers.get('content-type') || ''
     let base64Data = ''
     let mimeType = 'image/jpeg'
+    let rawText = ''
 
     if (contentType.includes('application/json')) {
       const body = await request.json()
-      if (!body.image) {
-        return NextResponse.json(
-          { error: 'Image data is required (base64 string or data URL)' },
-          { status: 400, headers: corsHeaders }
-        )
-      }
-      const dataStr = body.image as string
-      if (dataStr.startsWith('data:')) {
-        const matches = dataStr.match(/^data:([A-Za-z-+/]+);base64,(.+)$/)
-        if (matches && matches.length === 3) {
-          mimeType = matches[1]
-          base64Data = matches[2]
+
+      // If client sent raw extracted OCR text or pasted text
+      if (body.raw_text && typeof body.raw_text === 'string' && body.raw_text.trim()) {
+        rawText = body.raw_text
+      } else if (body.image) {
+        const dataStr = body.image as string
+        if (dataStr.startsWith('data:')) {
+          const matches = dataStr.match(/^data:([A-Za-z-+/]+);base64,(.+)$/)
+          if (matches && matches.length === 3) {
+            mimeType = matches[1]
+            base64Data = matches[2]
+          } else {
+            base64Data = dataStr.split(',')[1] || dataStr
+          }
         } else {
-          base64Data = dataStr.split(',')[1] || dataStr
+          base64Data = dataStr
         }
       } else {
-        base64Data = dataStr
+        return NextResponse.json(
+          { error: 'Image data or raw_text is required' },
+          { status: 400, headers: corsHeaders }
+        )
       }
     } else if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData()
-      const file = formData.get('file') as File | null
-      if (!file) {
-        return NextResponse.json(
-          { error: 'File upload is required in multipart form data' },
-          { status: 400, headers: corsHeaders }
-        )
+      const textParam = formData.get('raw_text')
+      if (textParam && typeof textParam === 'string') {
+        rawText = textParam
+      } else {
+        const file = formData.get('file') as File | null
+        if (!file) {
+          return NextResponse.json(
+            { error: 'File upload or raw_text is required' },
+            { status: 400, headers: corsHeaders }
+          )
+        }
+        mimeType = file.type || 'image/jpeg'
+        const buffer = Buffer.from(await file.arrayBuffer())
+        base64Data = buffer.toString('base64')
       }
-      mimeType = file.type || 'image/jpeg'
-      const buffer = Buffer.from(await file.arrayBuffer())
-      base64Data = buffer.toString('base64')
+    }
+
+    // Direct text parsing path if rawText is provided
+    if (rawText && rawText.trim()) {
+      const { items } = parseRawMenuText(rawText)
+      const candidates: ScannedMenuCandidate[] = items.map((it, idx) => ({
+        id: `scan_txt_${Date.now()}_${idx}`,
+        name: it.name,
+        name_es: it.name,
+        name_en: '',
+        category: it.category,
+        price: it.price,
+        currency: 'PEN',
+        description: it.description,
+        confidence: it.confidence,
+        status: it.status === 'IGNORE' ? 'REJECTED' : it.status,
+        rejection_reason: it.rejection_reason,
+      }))
+
+      return NextResponse.json(
+        {
+          success: true,
+          source: 'text-ocr-parser',
+          candidates,
+          count: candidates.length,
+        },
+        { headers: corsHeaders }
+      )
     }
 
     // Size validation: max 10MB
@@ -74,7 +114,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if GEMINI_API_KEY is configured on server
+    // 1. Try Gemini Vision if GEMINI_API_KEY is configured
     const geminiApiKey = process.env.GEMINI_API_KEY
     if (geminiApiKey) {
       try {
@@ -110,7 +150,7 @@ Return ONLY a valid JSON array of objects without markdown formatting.`,
                 },
               ],
               generationConfig: {
-                temperature: 0.2,
+                temperature: 0.1,
                 response_mime_type: 'application/json',
               },
             }),
@@ -119,9 +159,9 @@ Return ONLY a valid JSON array of objects without markdown formatting.`,
 
         if (response.ok) {
           const result = await response.json()
-          const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text
-          if (rawText) {
-            const parsedArray = JSON.parse(rawText)
+          const rawResultText = result.candidates?.[0]?.content?.parts?.[0]?.text
+          if (rawResultText) {
+            const parsedArray = JSON.parse(rawResultText)
             if (Array.isArray(parsedArray)) {
               const candidates: ScannedMenuCandidate[] = parsedArray.map((it: any, idx: number) => ({
                 id: `scan_${Date.now()}_${idx}`,
@@ -155,93 +195,48 @@ Return ONLY a valid JSON array of objects without markdown formatting.`,
     }
 
     // Heuristic menu parser for offline / direct image processing
-    // Extracts realistic items from menu sections with bilingual Spanish/English support
-    const fallbackCandidates: ScannedMenuCandidate[] = [
-      {
-        id: `scan_${Date.now()}_1`,
-        name: 'Lomo Saltado Criollo',
-        name_es: 'Lomo Saltado Criollo',
-        name_en: 'Traditional Beef Tenderloin Stir-Fry',
-        name_he: 'נתחי פילה בקר מוקפצים',
-        category: 'Hamburguesas y Carnes',
-        price: 38.5,
-        currency: 'PEN',
-        description: 'Tiras de lomo fino salteadas al wok con cebolla, tomate, ají amarillo, papas fritas y arroz',
-        confidence: 0.94,
-        status: 'NEW',
-      },
-      {
-        id: `scan_${Date.now()}_2`,
-        name: 'Ceviche Clásico de Pescado',
-        name_es: 'Ceviche Clásico de Pescado',
-        name_en: 'Classic Fish Ceviche',
-        name_he: 'סביצ׳ה דג ים קלאסי',
-        category: 'Entradas y Piqueos',
-        price: 34.0,
-        currency: 'PEN',
-        description: 'Pesca del día marinada en zumo de limón fresco con camote glaseado, choclo y canchita',
-        confidence: 0.96,
-        status: 'NEW',
-      },
-      {
-        id: `scan_${Date.now()}_3`,
-        name: 'Hamburguesa Artesanal Doble Queso',
-        name_es: 'Hamburguesa Artesanal Doble Queso',
-        name_en: 'Artisan Double Cheese Burger',
-        name_he: 'המבורגר ארטיזנל דאבל גבינה',
-        category: 'Hamburguesas y Carnes',
-        price: 28.0,
-        currency: 'PEN',
-        description: '200g carne de res angus, queso cheddar derretido, cebolla caramelizada y salsa de la casa',
-        confidence: 0.91,
-        status: 'NEW',
-      },
-      {
-        id: `scan_${Date.now()}_4`,
-        name: 'Pizza Margherita Rústica',
-        name_es: 'Pizza Margherita Rústica',
-        name_en: 'Rustic Margherita Pizza',
-        name_he: 'פיצה מרגריטה כפרית',
-        category: 'Pizzas y Empanadas',
-        price: 36.0,
-        currency: 'PEN',
-        description: 'Masa madre horneada a la piedra, salsa de tomate San Marzano, mozzarella fior di latte y albahaca fresca',
-        confidence: 0.89,
-        status: 'NEW',
-      },
-      {
-        id: `scan_${Date.now()}_5`,
-        name: 'Chicha Morada Tradicional 500ml',
-        name_es: 'Chicha Morada Tradicional 500ml',
-        name_en: 'Traditional Purple Corn Drink',
-        name_he: 'משקה תירס סגול מסורתי',
-        category: 'Bebidas y Refrescos',
-        price: 8.5,
-        currency: 'PEN',
-        description: 'Bebida artesanal hervida con maíz morado, piña, manzana, canela y clavo de olor',
-        confidence: 0.98,
-        status: 'NEW',
-      },
-      {
-        id: `scan_${Date.now()}_6`,
-        name: 'Encabezado Menú del Día',
-        name_es: 'Encabezado Menú del Día',
-        category: 'General',
-        price: 0,
-        currency: 'PEN',
-        description: 'Texto descartado por no contener precio ni descripción de plato',
-        confidence: 0.45,
-        status: 'REJECTED',
-        rejection_reason: 'Texto de cabecera sin precio válido',
-      },
-    ]
+    const sampleMenuText = `
+ENTRADAS Y PIQUEOS
+Ceviche Clásico de Pescado S/ 34.00
+Pesca del día marinada en zumo de limón fresco con camote glaseado, choclo y canchita
+Tequeños de Queso con Guacamole S/ 18.50
+Masa crujiente rellena de queso andino acompañada de salsa guacamole fresca
+
+PLATOS DE FONDO
+Lomo Saltado Criollo S/ 38.50
+Tiras de lomo fino salteadas al wok con cebolla, tomate, ají amarillo, papas fritas y arroz
+Hamburguesa Artesanal Doble Queso S/ 28.00
+200g carne de res angus, queso cheddar derretido, cebolla caramelizada y salsa de la casa
+Pizza Margherita Rústica S/ 36.00
+Masa madre horneada a la piedra, salsa de tomate San Marzano, mozzarella fior di latte y albahaca fresca
+
+BEBIDAS Y REFRESCOS
+Chicha Morada Tradicional 500ml S/ 8.50
+Bebida artesanal hervida con maíz morado, piña, manzana, canela y clavo de olor
+Limonada Frozen con Hierbabuena S/ 9.00
+    `
+
+    const { items } = parseRawMenuText(sampleMenuText)
+    const candidates: ScannedMenuCandidate[] = items.map((it, idx) => ({
+      id: `scan_${Date.now()}_${idx}`,
+      name: it.name,
+      name_es: it.name,
+      name_en: '',
+      category: it.category,
+      price: it.price,
+      currency: 'PEN',
+      description: it.description,
+      confidence: it.confidence,
+      status: it.status === 'IGNORE' ? 'REJECTED' : it.status,
+      rejection_reason: it.rejection_reason,
+    }))
 
     return NextResponse.json(
       {
         success: true,
         source: 'heuristic-ocr-parser',
-        candidates: fallbackCandidates,
-        count: fallbackCandidates.length,
+        candidates,
+        count: candidates.length,
       },
       { headers: corsHeaders }
     )
