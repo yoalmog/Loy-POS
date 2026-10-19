@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   Search,
   ShoppingCart,
@@ -30,11 +31,23 @@ import {
   Sliders,
   Check,
   ChevronDown,
+  LayoutDashboard,
+  Receipt as ReceiptIcon,
+  Package,
+  Boxes,
+  Users,
+  BarChart3,
+  Store,
+  Building2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  LogOut,
 } from 'lucide-react'
 import { Item, Category, Receipt, getLocalizedName, matchItemSearch } from '@/lib/types'
 import { usePos } from '@/lib/context/PosContext'
 import { useAccessibility } from '@/lib/context/AccessibilityContext'
 import { useTheme } from '@/lib/context/ThemeContext'
+import { supabase } from '@/lib/supabase/client'
 
 // Modals
 import ItemCustomizationModal from '@/components/pos-dialogs/ItemCustomizationModal'
@@ -48,6 +61,7 @@ import CameraScannerModal from '@/components/pos-dialogs/CameraScannerModal'
 import MenuScannerModal from '@/components/menu-scanner/MenuScannerModal'
 
 export default function PosPage() {
+  const router = useRouter()
   const {
     items,
     categories,
@@ -90,6 +104,8 @@ export default function PosPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | 'ALL' | 'FAVORITES'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
   const [customizingItem, setCustomizingItem] = useState<Item | null>(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Modals visibility
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false)
@@ -136,170 +152,385 @@ export default function PosPage() {
     }
   }
 
+  async function handleLogout() {
+    try {
+      await supabase.auth.signOut()
+    } catch {}
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('aurapos_auth_staff')
+    }
+    router.replace('/login')
+  }
+
+  const navItems = [
+    { label: t.register, href: '/pos', icon: ShoppingCart, isActive: true },
+    { label: t.dashboard, href: '/dashboard', icon: LayoutDashboard },
+    { label: t.sales, href: '/dashboard/sales', icon: ReceiptIcon },
+    { label: t.products, href: '/dashboard/products', icon: Package },
+    { label: t.inventory, href: '/dashboard/inventory', icon: Boxes },
+    { label: t.customers, href: '/dashboard/customers', icon: Users },
+    { label: t.shifts, href: '/dashboard/shifts', icon: Clock },
+    { label: t.reports, href: '/dashboard/reports', icon: BarChart3 },
+    { label: t.settings, href: '/dashboard/settings', icon: Settings },
+  ]
+
   // Touch size class
   const touchPadding =
     touchSize === 'jumbo' ? 'p-4 min-h-[64px]' : touchSize === 'large' ? 'p-3 min-h-[52px]' : 'p-2.5 min-h-[44px]'
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-slate-100 overflow-hidden text-slate-800 select-none">
-      {/* 1. TOP STATUS & NAVIGATION BAR */}
-      <header className="h-14 bg-slate-900 text-white px-4 flex items-center justify-between shrink-0 shadow-md z-30">
-        {/* Left / Start: Brand & Cashier */}
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-sky-400 transition-colors"
-            title={t.backOffice}
+    <div className="h-screen w-screen flex bg-slate-100 overflow-hidden text-slate-800 select-none">
+      {/* Mobile Backdrop */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 md:hidden"
+        />
+      )}
+
+      {/* Sidebar Navigation (Matching Back Office) */}
+      <aside
+        className={`fixed inset-y-0 ${
+          isRtl ? 'right-0' : 'left-0'
+        } z-50 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 md:static md:translate-x-0 ${
+          sidebarCollapsed ? 'md:w-20' : 'md:w-64'
+        } ${
+          mobileMenuOpen
+            ? 'w-72 translate-x-0'
+            : isRtl
+            ? 'translate-x-full md:translate-x-0'
+            : '-translate-x-full md:translate-x-0'
+        }`}
+      >
+        {/* Brand Header */}
+        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+          <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'md:justify-center md:w-full' : ''}`}>
+            <div className="p-2.5 rounded-2xl bg-sky-600 shadow-lg shadow-sky-600/30 shrink-0">
+              <Store className="w-5 h-5 text-white" />
+            </div>
+            {(!sidebarCollapsed || mobileMenuOpen) && (
+              <div className="min-w-0">
+                <h1 className="font-extrabold text-white text-sm tracking-tight truncate">
+                  {settings.store_name}
+                </h1>
+                <p className="text-[11px] text-sky-400 font-medium truncate">
+                  {t.portalTitle}
+                </p>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white"
           >
-            <Layers className="w-4 h-4" />
-            <span className="hidden sm:inline">{t.backOffice}</span>
-          </Link>
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          <div className="h-5 w-px bg-slate-800 hidden sm:block"></div>
+        {/* Active POS Mode Banner */}
+        {(!sidebarCollapsed || mobileMenuOpen) ? (
+          <div className="mx-3 my-3 p-3 rounded-2xl bg-gradient-to-r from-sky-600/20 to-indigo-600/20 border border-sky-500/30 flex items-center justify-between shadow-xs">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-black text-white">{t.register}</span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-sky-500 text-white shadow-xs">
+              POS
+            </span>
+          </div>
+        ) : (
+          <div className="flex justify-center my-3">
+            <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/50" title={t.register} />
+          </div>
+        )}
 
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="font-extrabold text-sm tracking-tight text-white">
-              {settings.store_name}
+        {/* Sync Status Badge */}
+        {(!sidebarCollapsed || mobileMenuOpen) ? (
+          <div className="px-4 py-2.5 bg-slate-950/60 border-t border-b border-slate-800/80 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              {syncStatus.isOnline ? (
+                <Wifi className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <WifiOff className="w-4 h-4 text-amber-500" />
+              )}
+              <span className="font-semibold text-slate-300">
+                {syncStatus.isOnline ? t.onlineCloud : t.offlineMode}
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              {syncStatus.isOnline ? 'Online' : 'Offline'}
+            </span>
+          </div>
+        ) : (
+          <div className="py-2.5 flex justify-center border-t border-b border-slate-800/80">
+            {syncStatus.isOnline ? (
+              <span title={t.onlineCloud}>
+                <Wifi className="w-4 h-4 text-emerald-400" />
+              </span>
+            ) : (
+              <span title={t.offlineMode}>
+                <WifiOff className="w-4 h-4 text-amber-500" />
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Navigation Items */}
+        <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const isActive = item.isActive
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                title={item.label}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  isActive
+                    ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                } ${sidebarCollapsed && !mobileMenuOpen ? 'justify-center px-0' : ''}`}
+              >
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                {(!sidebarCollapsed || mobileMenuOpen) && <span className="truncate">{item.label}</span>}
+              </Link>
+            )
+          })}
+        </nav>
+
+        {/* Footer: Current Staff & Logout/Lock */}
+        <div className="p-3 border-t border-slate-800 space-y-2">
+          <div className={`flex items-center gap-2.5 px-1.5 ${sidebarCollapsed && !mobileMenuOpen ? 'justify-center' : ''}`}>
+            <div
+              style={{ backgroundColor: currentStaff.avatarColor }}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0"
+            >
+              {currentStaff.name.charAt(0)}
+            </div>
+            {(!sidebarCollapsed || mobileMenuOpen) && (
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-white truncate">{currentStaff.name}</p>
+                <p className="text-[10px] text-slate-400 truncate">{currentStaff.role}</p>
+              </div>
+            )}
+          </div>
+
+          {(!sidebarCollapsed || mobileMenuOpen) ? (
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={() => setIsLocked(true)}
+                className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+                title={t.lockScreen}
+              >
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                <span>{t.lockScreen}</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"
+                title={t.signOut}
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-1 pt-1">
+              <button
+                onClick={() => setIsLocked(true)}
+                className="p-2 rounded-xl text-amber-400 hover:bg-slate-800"
+                title={t.lockScreen}
+              >
+                <Lock className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-xl text-red-400 hover:bg-red-500/10"
+                title={t.signOut}
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* Main Content Area: Top Header + POS Workspace */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        {/* 1. TOP STATUS & NAVIGATION BAR (Back Office Design) */}
+        <header className="h-14 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between shrink-0 shadow-xs z-30">
+          {/* Left / Start: Brand & Cashier */}
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+              title="Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="hidden md:flex p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
+              title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen className="w-4 h-4" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" />
+              )}
+            </button>
+
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 hidden sm:flex">
+                <Store className="w-4 h-4" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-sm text-slate-800 tracking-tight">
+                  {settings.store_name}
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100/80 text-sky-800 border border-sky-200">
+                  {t.register}
+                </span>
+              </div>
+            </div>
+
+            <span className="hidden xl:inline-block text-xs text-slate-400">
+              • {currentStaff.name} ({currentStaff.role})
             </span>
           </div>
 
-          <span className="hidden md:inline-block text-xs text-slate-400">
-            • {currentStaff.name} ({currentStaff.role})
-          </span>
-        </div>
+          {/* Center: Search Bar */}
+          <div className="flex-1 max-w-sm mx-4 relative hidden sm:block">
+            <Search className="w-4 h-4 text-slate-400 absolute top-2.5 rtl:right-3 ltr:left-3" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t.searchPlaceholder}
+              className="w-full rtl:pr-9 rtl:pl-4 ltr:pl-9 ltr:pr-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-50 focus:bg-white text-slate-800 placeholder-slate-400 text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute rtl:left-2.5 ltr:right-2.5 top-2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
-        {/* Center: Search Bar */}
-        <div className="flex-1 max-w-md mx-4 relative hidden sm:block">
-          <Search className="w-4 h-4 text-slate-400 absolute top-2.5 rtl:right-3 ltr:left-3" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t.searchPlaceholder}
-            className="w-full rtl:pr-9 rtl:pl-4 ltr:pl-9 ltr:pr-4 py-1.5 rounded-xl bg-slate-800 text-white placeholder-slate-400 text-xs border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500"
-          />
-          {searchQuery && (
+          {/* Right / End: Actions */}
+          <div className="flex items-center gap-2">
+            {/* Barcode Camera Scanner */}
             <button
-              onClick={() => setSearchQuery('')}
-              className="absolute rtl:left-2.5 ltr:right-2.5 top-2 text-slate-400 hover:text-white"
+              onClick={() => setIsCameraScannerOpen(true)}
+              className="p-2 md:px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 flex items-center gap-1.5 transition-colors"
+              title={t.cameraScanner}
             >
-              <X className="w-3.5 h-3.5" />
+              <Barcode className="w-4 h-4 text-sky-600" />
+              <span className="hidden md:inline">{t.cameraScanner}</span>
             </button>
-          )}
-        </div>
 
-        {/* Right / End: Actions */}
-        <div className="flex items-center gap-2">
-          {/* Barcode Camera Scanner */}
-          <button
-            onClick={() => setIsCameraScannerOpen(true)}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors"
-            title={t.cameraScanner}
-          >
-            <Barcode className="w-4 h-4 text-sky-400" />
-            <span className="hidden md:inline">{t.cameraScanner}</span>
-          </button>
+            {/* AI Menu Scanner */}
+            <button
+              onClick={() => setIsMenuScannerOpen(true)}
+              className="p-2 md:px-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-sky-600/20 transition-all"
+              title={t.aiMenuScanner}
+            >
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span className="hidden lg:inline">{t.aiMenuScanner}</span>
+            </button>
 
-          {/* AI Menu Scanner */}
-          <button
-            onClick={() => setIsMenuScannerOpen(true)}
-            className="p-2 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-            title={t.aiMenuScanner}
-          >
-            <Sparkles className="w-4 h-4 text-amber-300" />
-            <span className="hidden lg:inline">{t.aiMenuScanner}</span>
-          </button>
+            {/* Held Orders Badge */}
+            <button
+              onClick={() => setIsHeldOrdersModalOpen(true)}
+              className="p-2 md:px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 flex items-center gap-1.5 relative transition-colors"
+              title={t.heldOrders}
+            >
+              <Clock className="w-4 h-4 text-amber-500" />
+              <span className="hidden md:inline">{t.heldOrders}</span>
+              {heldOrders.length > 0 && (
+                <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black animate-bounce">
+                  {heldOrders.length}
+                </span>
+              )}
+            </button>
 
-          {/* Held Orders Badge */}
-          <button
-            onClick={() => setIsHeldOrdersModalOpen(true)}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 relative transition-colors"
-            title={t.heldOrders}
-          >
-            <Clock className="w-4 h-4 text-amber-400" />
-            <span className="hidden md:inline">{t.heldOrders}</span>
-            {heldOrders.length > 0 && (
-              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-black text-[10px] font-black animate-bounce">
-                {heldOrders.length}
-              </span>
-            )}
-          </button>
+            {/* Sound Toggle */}
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 transition-colors"
+              title={t.soundEffects}
+            >
+              {soundEnabled ? (
+                <Volume2 className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <VolumeX className="w-4 h-4 text-slate-400" />
+              )}
+            </button>
 
-          {/* Sound Toggle */}
-          <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300"
-            title={t.soundEffects}
-          >
-            {soundEnabled ? (
-              <Volume2 className="w-4 h-4 text-emerald-400" />
-            ) : (
-              <VolumeX className="w-4 h-4 text-slate-500" />
-            )}
-          </button>
+            {/* Cloud Sync Status Pill */}
+            <button
+              onClick={syncNow}
+              className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-colors ${
+                syncStatus.isOnline
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                  : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+              }`}
+              title={
+                syncStatus.isOnline
+                  ? `${t.onlineCloud} (${syncStatus.pendingCount})`
+                  : t.offlineMode
+              }
+            >
+              {syncStatus.isOnline ? (
+                <Wifi className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <WifiOff className="w-4 h-4 text-red-500" />
+              )}
+              {syncStatus.pendingCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-black text-[10px]">
+                  {syncStatus.pendingCount}
+                </span>
+              )}
+            </button>
 
-          {/* Cloud Sync Status Pill */}
-          <button
-            onClick={syncNow}
-            className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
-              syncStatus.isOnline
-                ? 'bg-slate-800 text-emerald-400 hover:bg-slate-700'
-                : 'bg-red-950 text-red-400'
-            }`}
-            title={
-              syncStatus.isOnline
-                ? `${t.onlineCloud} (${syncStatus.pendingCount})`
-                : t.offlineMode
-            }
-          >
-            {syncStatus.isOnline ? (
-              <Wifi className="w-4 h-4" />
-            ) : (
-              <WifiOff className="w-4 h-4" />
-            )}
-            {syncStatus.pendingCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-black text-[10px]">
-                {syncStatus.pendingCount}
-              </span>
-            )}
-          </button>
+            {/* Lock Screen PIN */}
+            <button
+              onClick={() => setIsLocked(true)}
+              className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold transition-colors"
+              title={t.lockScreen}
+            >
+              <Lock className="w-4 h-4" />
+            </button>
 
-          {/* Lock Screen PIN */}
-          <button
-            onClick={() => setIsLocked(true)}
-            className="p-2 rounded-xl bg-red-600/80 hover:bg-red-600 text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
-            title={t.lockScreen}
-          >
-            <Lock className="w-4 h-4" />
-          </button>
+            {/* Mobile Cart Trigger */}
+            <button
+              onClick={() => setIsMobileCartOpen(!isMobileCartOpen)}
+              className="lg:hidden p-2 rounded-xl bg-sky-600 text-white shadow-sm shadow-sky-600/30 relative"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-black">
+                  {itemCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </header>
 
-          {/* Mobile Cart Trigger */}
-          <button
-            onClick={() => setIsMobileCartOpen(!isMobileCartOpen)}
-            className="lg:hidden p-2 rounded-xl bg-sky-600 text-white relative"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-black">
-                {itemCount}
-              </span>
-            )}
-          </button>
-        </div>
-      </header>
-
-      {/* 2. MAIN REGISTER WORKSPACE: SPLIT GRID + CART */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* MAIN COLUMN: PRODUCT CATALOG GRID & CATEGORY CHIPS */}
-        <main className="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-hidden">
+        {/* 2. MAIN REGISTER WORKSPACE: SPLIT GRID + CART */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* MAIN COLUMN: PRODUCT CATALOG GRID & CATEGORY CHIPS */}
+          <main className="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-hidden">
           {/* Category Chips Bar */}
-          <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0 shadow-sm">
+          <div className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0 shadow-xs">
             <button
               onClick={() => setSelectedCategoryId('ALL')}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all shadow-sm ${
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all ${
                 selectedCategoryId === 'ALL'
-                  ? 'bg-slate-900 text-white shadow-md'
+                  ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
@@ -308,9 +539,9 @@ export default function PosPage() {
 
             <button
               onClick={() => setSelectedCategoryId('FAVORITES')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap flex items-center gap-1.5 transition-all shadow-sm ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap flex items-center gap-1.5 transition-all ${
                 selectedCategoryId === 'FAVORITES'
-                  ? 'bg-amber-500 text-black shadow-md'
+                  ? 'bg-amber-500 text-black shadow-md shadow-amber-500/25'
                   : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
               }`}
             >
@@ -328,13 +559,19 @@ export default function PosPage() {
                     backgroundColor: isSelected ? cat.color_hex || '#0288D1' : undefined,
                     color: isSelected ? '#FFFFFF' : undefined,
                   }}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                     isSelected
-                      ? 'shadow-md scale-105'
+                      ? 'shadow-md scale-102'
                       : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                   }`}
                 >
-                  {getLocalizedName(cat, language)}
+                  {!isSelected && (
+                    <span
+                      style={{ backgroundColor: cat.color_hex || '#0288D1' }}
+                      className="w-2 h-2 rounded-full inline-block shrink-0"
+                    />
+                  )}
+                  <span>{getLocalizedName(cat, language)}</span>
                 </button>
               )
             })}
@@ -375,7 +612,7 @@ export default function PosPage() {
                     <div
                       key={item.id}
                       onClick={() => handleItemClick(item)}
-                      className={`group bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col overflow-hidden relative active:scale-95 pos-product-card ${touchPadding}`}
+                      className={`group bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-200 cursor-pointer flex flex-col overflow-hidden relative active:scale-98 pos-product-card ${touchPadding}`}
                     >
                       {/* Favorite indicator badge */}
                       {item.is_favorite && (
@@ -393,7 +630,7 @@ export default function PosPage() {
 
                       {/* Product Image or Color Swatch */}
                       {!simplifiedPos && (
-                        <div className="w-full h-32 bg-slate-100 overflow-hidden relative shrink-0">
+                        <div className="w-full h-28 sm:h-32 bg-slate-100 overflow-hidden relative shrink-0">
                           {item.image_url ? (
                             <img
                               src={item.image_url}
@@ -412,19 +649,19 @@ export default function PosPage() {
                       )}
 
                       {/* Content */}
-                      <div className="p-3.5 flex-1 flex flex-col justify-between">
+                      <div className="p-3 flex-1 flex flex-col justify-between">
                         <div>
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider truncate">
+                            <span className="text-[10px] font-extrabold text-sky-600 uppercase tracking-wider truncate">
                               {localizedCatName}
                             </span>
                             {hasVariants && (
-                              <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded-md">
+                              <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded-md border border-sky-100">
                                 {t.variants}
                               </span>
                             )}
                           </div>
-                          <h4 className="text-xs font-black text-slate-900 mt-1 line-clamp-2 leading-tight">
+                          <h4 className="text-xs font-bold text-slate-900 mt-1 line-clamp-2 leading-tight">
                             {localizedItemName}
                           </h4>
                         </div>
@@ -435,7 +672,7 @@ export default function PosPage() {
                             {item.price.toFixed(2)}
                           </span>
 
-                          <div className="w-7 h-7 rounded-xl bg-slate-100 group-hover:bg-sky-600 group-hover:text-white text-slate-700 flex items-center justify-center transition-colors shadow-sm">
+                          <div className="w-7 h-7 rounded-xl bg-sky-50 group-hover:bg-sky-600 text-sky-700 group-hover:text-white flex items-center justify-center transition-colors shadow-xs">
                             <Plus className="w-4 h-4 stroke-[2.5]" />
                           </div>
                         </div>
@@ -669,6 +906,7 @@ export default function PosPage() {
             </button>
           </div>
         </aside>
+      </div>
       </div>
 
       {/* MODALS INTEGRATION */}
