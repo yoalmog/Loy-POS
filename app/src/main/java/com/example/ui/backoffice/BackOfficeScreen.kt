@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.*
 import com.example.ui.components.ProductInventoryGrid
+import com.example.util.AppConfig
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -706,7 +707,7 @@ fun SettingsTab(
                     Text("Access your full online Back Office website from any desktop, tablet, or phone browser to manage sales, products, inventory, customers, shifts, and reports.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     
                     val context = LocalContext.current
-                    val webUrl = "https://ais-dev-odltv3dmm5ncbpupiqgcw6-113121063300.us-west2.run.app"
+                    val webUrl = AppConfig.BACK_OFFICE_URL
                     
                     Button(
                         onClick = {
