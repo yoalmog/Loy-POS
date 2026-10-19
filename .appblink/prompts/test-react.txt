@@ -1,0 +1,28 @@
+# =========================================================================
+# Prompt Template: test-react.txt
+# Available Variables: {{librarySection}}, {{role}}, {{srcPath}}, {{testPath}}, {{renderInstruction}}, {{hookInstruction}}, {{filename}}, {{src}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Generate a complete React test file.
+
+Framework: Jest{{librarySection}}
+File role: {{role}}
+Source file: {{srcPath}}
+Test file to produce: {{testPath}}
+
+Rules:
+- Return ONLY valid TypeScript/TSX. No markdown fences, no explanations.
+- Compute the correct relative import path from the test file to the source.
+{{renderInstruction}}
+{{hookInstruction}}
+- Mock external dependencies with jest.mock(). Keep mocks minimal.
+- Write at least 3 test cases using describe/it structure.
+- Include one edge-case or error-state test.
+
+Source code ({{filename}}):
+```tsx
+{{src}}
+```

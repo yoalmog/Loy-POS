@@ -1,0 +1,20 @@
+# =========================================================================
+# Prompt Template: l10n-translate-arb.txt
+# Available Variables: {{targetLanguageName}}, {{targetLanguageCode}}, {{sourceStrings}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a professional translator and localization expert.
+
+Translate the following key-value pairs from English into {{targetLanguageName}} (locale code: {{targetLanguageCode}}).
+
+Rules:
+- Return the SAME keys with translated string values.
+- Preserve any {placeholder} variables exactly as they appear (e.g. {count}, {name}).
+- Keep the tone consistent: if the source is formal, keep it formal.
+- Do NOT add any extra keys or metadata keys starting with "@".
+
+Source English strings:
+{{sourceStrings}}

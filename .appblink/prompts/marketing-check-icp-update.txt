@@ -1,0 +1,29 @@
+# =========================================================================
+# Prompt Template: marketing-check-icp-update.txt
+# Available Variables: {{currentIcpSummary}}, {{newFeatureSummary}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Current ICP Segments:
+{{currentIcpSummary}}
+
+Updated Feature Summary:
+{{newFeatureSummary}}
+
+You are a customer research expert. Analyze whether recent product changes meaningfully shift the target customer audience.
+
+A meaningful shift means:
+- A fundamentally new type of user would benefit from the product (new segment to add)
+- An existing ICP segment is no longer the right target
+- The primary use case has pivoted to serve a different industry or role
+
+Do NOT return true for:
+- Minor feature additions (new screens, small improvements)
+- UI or performance improvements
+- Bug fixes
+- Copy or brand changes
+- Adding integrations that don't change who the product is for
+
+Return JSON only: { "needsUpdate": boolean, "reason": string }

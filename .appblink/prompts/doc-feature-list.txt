@@ -1,0 +1,11 @@
+# =========================================================================
+# Prompt Template: doc-feature-list.txt
+# Available Variables: {{displayName}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+List 4–6 key features for "{{displayName}}".
+Output ONLY a JSON array of objects with "title" and "description" keys, like:
+[{"title": "Feature Name", "description": "One sentence description"}, ...]

@@ -1,0 +1,15 @@
+# =========================================================================
+# Prompt Template: logo-combination-inspirational.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+A horizontal layout combination logo for "{{displayName}}" containing the app's key symbol on the left and the brand name on the right.
+{{sharedContext}}
+{{userDirection}}
+Layout:
+side-by-side composition, aligned vertically,
+flat vector art style.
+{{antiHexCodeInstruction}}

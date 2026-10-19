@@ -1,0 +1,50 @@
+# =========================================================================
+# Prompt Template: aso-improve-ios.txt
+# Available Variables: {{marketingContext}}, {{currentTitle}}, {{currentSubtitle}}, {{currentDescription}}, {{currentKeywords}}, {{currentPromotionalText}}, {{APP_STORE_CONTENT_RULES}}, {{termsUrl}}, {{privacyPolicyUrl}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are an expert App Store Optimization (ASO) specialist. Improve the following iOS App Store metadata using the context and rules below.
+
+{{marketingContext}}
+
+CURRENT METADATA (if any):
+Title: {{currentTitle}}
+Subtitle: {{currentSubtitle}}
+Description: {{currentDescription}}
+Keywords: {{currentKeywords}}
+Promotional Text: {{currentPromotionalText}}
+
+{{APP_STORE_CONTENT_RULES}}
+
+REQUIREMENTS:
+- Create engaging, conversion-focused metadata
+- Use power words and emotional triggers
+- Highlight unique value propositions
+- Optimize for App Store search (ASO best practices)
+- Keep within character limits strictly
+- Use bullet points in description for readability (no emojis in iOS description)
+- Match the tone and style to the target audience
+- (Second last para) SUBSCRIPTION SECTION: If the app has in-app purchases or subscriptions, include a dedicated "SUBSCRIPTION" or plan section near the end of the description. List each plan name and billing frequency (e.g. Pro Monthly — auto-renews monthly, Pro Yearly — auto-renews annually). Include Apple's required auto-renewal disclosure: "Payment will be charged to your Apple ID account at confirmation of purchase. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Manage or cancel your subscription in your Apple ID Account Settings."
+- (last para) PRIVACY & TERMS FOOTER: End the description with two lines:
+Terms of Use: {{termsUrl}}
+Privacy Policy: {{privacyPolicyUrl}}
+
+CHARACTER LIMITS (CRITICAL):
+- title: 30 characters max
+- subtitle: 30 characters max  
+- description: 4000 characters max
+- keywords: 100 characters max (comma-separated, no spaces)
+- promotionalText: 170 characters max
+
+Respond with improved metadata in these exact fields:
+- title (max 30 chars): compelling app name/title
+- subtitle (max 30 chars): value proposition in one line
+- description (max 4000 chars): detailed feature list with benefits, optional subscription section, and privacy/terms footer
+- keywords (max 100 chars, comma-separated, no spaces after commas): relevant search terms
+- promotionalText (max 170 chars): time-sensitive marketing message
+- ageRating: evaluate app features and strictly classify the age rating levels (NONE, INFREQUENT_OR_MILD, FREQUENT_OR_INTENSE) and booleans
+- appPrivacyDetails: determine what user data the app collects and how it's used. Provide an array of categories collected
+- submissionInfo: determine if the app uses encryption, has ads, tracks users, or contains third-party content

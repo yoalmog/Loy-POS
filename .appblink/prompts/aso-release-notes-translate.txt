@@ -1,0 +1,24 @@
+# =========================================================================
+# Prompt Template: aso-release-notes-translate.txt
+# Available Variables: {{targetLocale}}, {{APP_STORE_CONTENT_RULES}}, {{sourceNotes}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Translate the following app release notes to {{targetLocale}}.
+
+{{APP_STORE_CONTENT_RULES}}
+
+RULES:
+- Maintain the same tone and style
+- Keep emojis intact
+- Preserve bullet points and formatting
+- Make it natural for native speakers
+- Keep the same length approximately
+
+SOURCE RELEASE NOTES (English):
+{{sourceNotes}}
+
+Respond with:
+- releaseNotes: the translated release notes (plain text, no markdown code blocks)

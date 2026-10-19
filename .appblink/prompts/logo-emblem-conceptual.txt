@@ -1,0 +1,15 @@
+# =========================================================================
+# Prompt Template: logo-emblem-conceptual.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Create a circular badge-style emblem logo for "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Style:
+bold vector circular seal or stamp design,
+flat fills, clean outlines.
+{{antiHexCodeInstruction}}

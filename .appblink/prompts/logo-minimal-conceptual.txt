@@ -1,0 +1,28 @@
+# =========================================================================
+# Prompt Template: logo-minimal-conceptual.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{features}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Design a brand icon for "{{displayName}}" that communicates its purpose at a glance.
+{{sharedContext}}
+{{userDirection}}
+Brand emotion:
+the symbol should express the essence of: {{features}},
+evoke trust, clarity and forward momentum,
+speak to the audience immediately.
+Visual language:
+one powerful geometric shape,
+bold and confident,
+draw from the primary brand colour as the foundation,
+flat design with solid fills only — no gradients, no shadows.
+Scale requirement:
+fully legible and impactful at 32×32 px — use a strong, recognisable silhouette.
+Canvas:
+symbol fills 85–90% of the frame with equal breathing room on all sides,
+no text, no letters, no typography, no decorative extras.
+Important:
+prefer a shape that has character — avoid anything that looks like a generic stock icon.
+{{antiHexCodeInstruction}}

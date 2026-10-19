@@ -1,0 +1,20 @@
+# =========================================================================
+# Prompt Template: logo-lettermark-descriptive.txt
+# Available Variables: {{displayName}}, {{initials}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Design a minimal lettermark logo icon for the brand "{{displayName}}" using the initials "{{initials}}".
+{{sharedContext}}
+{{userDirection}}
+Style:
+monogram or lettermark (logo composed of the brand's initial letter or abbreviation),
+creative typographic integration of "{{initials}}",
+flat vector graphic,
+simple shapes, clean contours.
+Constraints:
+no full name text, only the initials "{{initials}}",
+no photorealism, no gradients, no shadows.
+{{antiHexCodeInstruction}}

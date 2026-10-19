@@ -1,0 +1,18 @@
+# =========================================================================
+# Prompt Template: logo-combination-descriptive.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Design a combination logo for the brand "{{displayName}}" containing both a symbol mark and the brand name text.
+{{sharedContext}}
+{{userDirection}}
+Composition:
+a distinct geometric icon/symbol placed above or to the left of the clean typographic wordmark "{{displayName}}",
+balanced visual weight between the icon and text,
+flat vector design.
+Rules:
+no shadows, no gradients.
+{{antiHexCodeInstruction}}

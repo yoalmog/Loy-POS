@@ -1,0 +1,41 @@
+# =========================================================================
+# Prompt Template: md3-color-scheme.txt
+# Available Variables: {{appDisplayName}}, {{features}}, {{designSection}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Generate a complete Material Design 3 color scheme JSON for the "{{appDisplayName}}" app.
+App features: {{features}}{{designSection}}
+
+Return ONLY a JSON object matching this exact structure (all values must be hex colors #RRGGBB):
+{
+  "primary": "#...",
+  "onPrimary": "#...",
+  "primaryContainer": "#...",
+  "onPrimaryContainer": "#...",
+  "secondary": "#...",
+  "onSecondary": "#...",
+  "secondaryContainer": "#...",
+  "onSecondaryContainer": "#...",
+  "tertiary": "#...",
+  "onTertiary": "#...",
+  "tertiaryContainer": "#...",
+  "onTertiaryContainer": "#...",
+  "background": "#...",
+  "onBackground": "#...",
+  "surface": "#...",
+  "onSurface": "#...",
+  "surfaceVariant": "#...",
+  "onSurfaceVariant": "#...",
+  "outline": "#...",
+  "outlineVariant": "#...",
+  "scrim": "#...",
+  "error": "#...",
+  "onError": "#...",
+  "errorContainer": "#...",
+  "onErrorContainer": "#..."
+}
+
+No explanation. Return ONLY valid JSON.

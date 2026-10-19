@@ -1,0 +1,21 @@
+# =========================================================================
+# Prompt Template: logo-minimal-inspirational.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{features}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Imagine a minimal logo icon for a brand called "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Picture a single, iconic symbol — bold and geometric — that a user would recognise on a phone screen in under a second.
+The symbol should capture the spirit of: {{features}}.
+Draw from the world's best app icons: clean geometry, strong colour contrast, a distinctive shape with personality.
+Design rules:
+flat vector style,
+one dominant brand colour,
+no text, no letters, no gradients, no shadows,
+symbol fills the canvas boldly with minimal equal padding on all sides.
+The result should feel timeless and ownable — the opposite of a generic stock-vector icon.
+{{antiHexCodeInstruction}}

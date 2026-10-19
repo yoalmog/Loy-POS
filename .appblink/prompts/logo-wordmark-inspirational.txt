@@ -1,0 +1,17 @@
+# =========================================================================
+# Prompt Template: logo-wordmark-inspirational.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+A creative typography-based wordmark for the word "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Vibe:
+playful, geometric or clean modern typography.
+Rules:
+only the characters of the name,
+custom curves or subtle geometric adjustments to the characters themselves.
+{{antiHexCodeInstruction}}

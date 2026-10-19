@@ -1,0 +1,9 @@
+# =========================================================================
+# Prompt Template: veo-video-promo.txt
+# Available Variables: {{displayName}}, {{featuresSection}}, {{primaryColor}}, {{logoSection}}, {{screenshotSection}}, {{antiHexCodeInstruction}}, {{uxGuidelines}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Create a short mobile-app preview video for "{{displayName}}". {{featuresSection}} Primary color: {{primaryColor}}. {{logoSection}} Show smooth, elegant on-screen transitions and key app features. {{screenshotSection}} Clean UI, modern design language, portrait orientation (9:16 aspect ratio), no voiceover. {{antiHexCodeInstruction}} Make the video natural, realistic and professional. {{uxGuidelines}}

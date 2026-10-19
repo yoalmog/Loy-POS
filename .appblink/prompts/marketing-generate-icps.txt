@@ -1,0 +1,23 @@
+# =========================================================================
+# Prompt Template: marketing-generate-icps.txt
+# Available Variables: {{appName}}, {{featureSummary}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+{{appName}} — ICP Generation
+
+Feature Summary:
+{{featureSummary}}
+
+You are an expert customer researcher and growth marketer. Identify exactly 2-3 distinct Ideal Customer Profile (ICP) segments that would benefit most from this app.
+For each segment, apply Jobs-to-be-Done (JTBD) framing and extract real pain points and buying triggers.
+
+Rules:
+- Make segments genuinely distinct (different demographics, use cases, or buying contexts)
+- Use short kebab-case identifiers for "id" (e.g. "freelance-developer", "small-business-owner")
+- Pain points must be specific and emotional, not generic platitudes
+- Triggers are the events or moments that make someone start looking for a solution
+
+Return a JSON array of 2-3 segments only. No explanation.

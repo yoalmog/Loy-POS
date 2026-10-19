@@ -1,0 +1,13 @@
+# =========================================================================
+# Prompt Template: doc-feature-summary-small.txt
+# Available Variables: {{displayName}}, {{features}}, {{infraInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Write an ultra-concise 1 to 2 line feature summary for the app "{{displayName}}".
+App context: {{features}}.
+The summary should be highly relevant for lead qualification and search querying.
+IMPORTANT: Focus only on what the user gets or can do — describe user value and capabilities. Do NOT mention specific widgets, UI components, screens, buttons, or any technical/implementation details.{{infraInstruction}}
+Return ONLY the 1-2 lines of text, no markdown formatting.

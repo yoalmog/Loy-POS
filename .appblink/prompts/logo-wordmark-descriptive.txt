@@ -1,0 +1,22 @@
+# =========================================================================
+# Prompt Template: logo-wordmark-descriptive.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Design a minimal wordmark logo for the brand "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Style:
+clean modern typography,
+wordmark (logo composed entirely of the brand name text),
+flat vector design,
+single-colour fill or simple high-contrast layout.
+Requirements:
+no complex symbols,
+no icon marks,
+must be legible at normal sizes,
+focus on font shape and spacing.
+{{antiHexCodeInstruction}}

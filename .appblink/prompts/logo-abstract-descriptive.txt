@@ -1,0 +1,18 @@
+# =========================================================================
+# Prompt Template: logo-abstract-descriptive.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Design a modern abstract logo mark for the brand "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Style:
+non-representational geometric form,
+symbolizes the brand's key concept indirectly (e.g. connection, expansion, security),
+flat vector art.
+Composition:
+clean abstract lines, solid shapes, no text.
+{{antiHexCodeInstruction}}

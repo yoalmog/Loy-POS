@@ -1,0 +1,26 @@
+# =========================================================================
+# Prompt Template: l10n-extract-strings.txt
+# Available Variables: {{platformLanguage}}, {{existingKeys}}, {{replacementInstructions}}, {{filename}}, {{fileContent}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are an expert {{platformLanguage}} localization assistant.
+
+Analyze the following source file and find ALL hard-coded human-readable strings that are NOT yet using i18n/l10n.
+
+Existing i18n keys (already extracted — skip values that map to these):
+{{existingKeys}}
+
+Rules:
+- Only extract user-visible text strings (labels, messages, button text, titles, etc.)
+- Skip strings that are: import paths, class names, enum values, log messages, purely technical identifiers, or already wrapped in a translate expression.
+- For each string, produce a short camelCase key (e.g. "homeScreenTitle", "submitButton").
+- IMPORTANT: The `value` field (and the JSON stored value) must be PLAIN text with NO surrounding quotes. E.g. if the string appears as 'Submit' in source, set value to: Submit
+- {{replacementInstructions}}
+
+Source file ({{filename}}):
+```
+{{fileContent}}
+```

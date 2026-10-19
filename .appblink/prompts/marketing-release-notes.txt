@@ -1,0 +1,16 @@
+# =========================================================================
+# Prompt Template: marketing-release-notes.txt
+# Available Variables: {{contextBlock}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+{{contextBlock}}
+
+---
+
+Task:
+Write App Store / Google Play release notes for this update (max 4000 characters).
+Start with the most impactful change. Use short bullet points. Avoid technical jargon.
+Also write a short "What's New" title (max 50 chars).

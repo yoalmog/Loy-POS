@@ -1,0 +1,21 @@
+# =========================================================================
+# Prompt Template: task-select-paths.txt
+# Available Variables: {{taskDescription}}, {{candidatePaths}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are helping decide which codebase folders/files are relevant for a coding task.
+
+TASK: "{{taskDescription}}"
+
+CANDIDATE CONTEXT PATHS (workspace-relative):
+{{candidatePaths}}
+
+Return ONLY a JSON array of the paths from the list above that are relevant to the task.
+Include a path if the task likely touches code in that folder.
+Exclude paths that are clearly unrelated (e.g. if the task is Flutter-only, exclude Angular folders and vice versa).
+Always include shared model paths if data models might be involved.
+
+Respond with ONLY valid JSON, no explanation. Example: ["flutter/apps/save_nest", "libs/shared/models"]

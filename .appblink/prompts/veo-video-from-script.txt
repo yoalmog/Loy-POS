@@ -1,0 +1,9 @@
+# =========================================================================
+# Prompt Template: veo-video-from-script.txt
+# Available Variables: {{parsedVisualScript}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+{{parsedVisualScript}}

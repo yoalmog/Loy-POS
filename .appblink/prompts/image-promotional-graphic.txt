@@ -1,0 +1,9 @@
+# =========================================================================
+# Prompt Template: image-promotional-graphic.txt
+# Available Variables: {{appName}}, {{features}}, {{primaryColor}}, {{visualStyle}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+An App Store promotional graphic (1024x1024 square card) for "{{appName}}". Concept: {{features}}. Brand color: {{primaryColor}}. Visual style: {{visualStyle}}. High-converting visual layout suitable for display inside the app store catalog.

@@ -1,0 +1,15 @@
+# =========================================================================
+# Prompt Template: logo-abstract-inspirational.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+An organic abstract symbol logo mark for "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Style:
+fluid curves, natural abstract forms,
+flat vector icon mark, high contrast.
+{{antiHexCodeInstruction}}

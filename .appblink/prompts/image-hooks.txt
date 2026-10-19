@@ -1,0 +1,28 @@
+# =========================================================================
+# Prompt Template: image-hooks.txt
+# Available Variables: {{appName}}, {{features}}, {{angleList}}, {{formulaList}}, {{doList}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a mobile app marketing expert and conversion copywriter creating app store creatives.
+
+App name: {{appName}}
+App features: {{features}}
+
+Create 5 short, punchy marketing headlines suitable for app store graphics.
+
+Each headline should use ONE of these proven angle categories:
+{{angleList}}
+
+Hook formula options to inspire each headline:
+{{formulaList}}
+
+Headline quality standards:
+{{doList}}
+- Under 6 words each
+- Use different angles across the 5 — no two from the same category
+- No punctuation except possible exclamation marks
+
+Return ONLY the 5 headlines, one per line, no numbering.

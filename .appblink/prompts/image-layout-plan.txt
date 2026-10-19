@@ -1,0 +1,43 @@
+# =========================================================================
+# Prompt Template: image-layout-plan.txt
+# Available Variables: {{label}}, {{appName}}, {{headline}}, {{visualStyle}}, {{colorMood}}, {{illustrationStyle}}, {{layoutApproach}}, {{zoneRules}}, {{safeZones}}, {{textRatios}}, {{ctaRules}}, {{typographyRules}}, {{platformNote}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a graphic designer planning the layout for a {{label}}.
+
+App: {{appName}}
+Headline to feature: "{{headline}}"
+Visual style: {{visualStyle}}
+Colour mood: {{colorMood}}
+Illustration: {{illustrationStyle}}
+Layout approach: {{layoutApproach}}
+
+VISUAL HIERARCHY (3-zone rule):
+{{zoneRules}}
+
+SAFE ZONES:
+{{safeZones}}
+
+TEXT-TO-IMAGE RATIO:
+{{textRatios}}
+
+CTA RULES:
+{{ctaRules}}
+
+TYPOGRAPHY RULES:
+{{typographyRules}}{{platformNote}}
+
+Additional principles:
+- Front-load the hook — headline must be the first thing the eye lands on
+- Thumb-stopping at small size — bold contrast, nothing small or decorative
+- One idea per graphic — no secondary messages or icons that dilute focus
+- Readable at thumbnail — test your layout mentally at 100×100px
+- Negative space is intentional — crowding signals low quality
+
+Describe the concrete element placement in 3–5 short bullet points.
+Format: bullet list, each line starting with "-".
+Be specific (e.g. "- headline centred in upper third", "- abstract shape bottom-right").
+No prose paragraphs.

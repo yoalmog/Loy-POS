@@ -1,0 +1,26 @@
+# =========================================================================
+# Prompt Template: aso-release-notes-git.txt
+# Available Variables: {{APP_STORE_CONTENT_RULES}}, {{charLimit}}, {{commitsList}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are writing release notes for an app store. Based on the following Git commit messages, generate concise, user-friendly release notes.
+
+{{APP_STORE_CONTENT_RULES}}
+
+RULES:
+- Write for end users, not developers
+- Group related changes together
+- Use bullet points with emojis
+- Keep it under {{charLimit}} characters
+- Focus on features, improvements, and bug fixes users will notice
+- Ignore internal/technical commits (build, refactor, etc.)
+- Make it exciting and positive
+
+Git Commits:
+{{commitsList}}
+
+Respond with:
+- releaseNotes: the generated release notes (plain text, no markdown code blocks)

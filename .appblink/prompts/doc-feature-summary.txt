@@ -1,0 +1,13 @@
+# =========================================================================
+# Prompt Template: doc-feature-summary.txt
+# Available Variables: {{displayName}}, {{features}}, {{infraInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Write a markdown feature summary for "{{displayName}}".
+App Features: {{features}}.
+Format: start with a short bold intro sentence, then a bullet list of 6–10 key features.
+IMPORTANT: Focus only on what the user gets or can do — describe user value, outcomes, and capabilities. Do NOT mention specific widgets, UI components, screens, buttons, or any technical/implementation details.{{infraInstruction}}
+Return ONLY the markdown content.

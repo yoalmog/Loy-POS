@@ -1,0 +1,29 @@
+# =========================================================================
+# Prompt Template: test-mocha.txt
+# Available Variables: {{srcPath}}, {{testPath}}, {{vscodeSection}}, {{filename}}, {{src}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Generate a complete Mocha test file for a VS Code extension source file.
+
+Runner: Mocha + node:assert (strict mode)
+Source file: {{srcPath}}
+Test file path: {{testPath}}
+
+{{vscodeSection}}
+
+Rules:
+- Return ONLY valid TypeScript. No markdown fences, no explanations.
+- Use 'import assert from "node:assert/strict"' for assertions.
+- Use mocha's describe/it/before/after structure.
+- Compute the correct relative import path from the test file to the source.
+- Write at least 2 meaningful test cases: one happy-path, one edge/failure case.
+- Keep mocks minimal — only mock what the function under test actually calls.
+- Do NOT start a VS Code Extension Host process; all logic must run in plain node.
+
+Source code ({{filename}}):
+```typescript
+{{src}}
+```

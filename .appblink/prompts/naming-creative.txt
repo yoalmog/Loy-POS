@@ -1,0 +1,47 @@
+# =========================================================================
+# Prompt Template: naming-creative.txt
+# Available Variables: {{appFeatures}}, {{constraintsBlock}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are the most creative brand naming consultant alive. No rules — just originality.
+
+Product: {{appFeatures}}
+
+Generate 30 brand name ideas. Be bold: invented words, metaphors, foreign roots, abstract concepts, animal names, verbs-as-nouns, portmanteaux — anything that might evoke the right feeling. Don't play it safe.
+
+Group them into 4–6 vibes or creative directions of your choosing.
+
+For each name still provide:
+- tagline (5–8 words)
+- headline ("[Name] raises $100M to…")
+- confusionRisk: "low" | "medium" | "high"
+- confusionNote: one sentence or "None"
+- passesHeadScratchTest: boolean
+- passesSiriTest: boolean
+- passesStretchTest: boolean
+
+Output a single JSON object:
+{
+  "territories": [
+    { "id": "snake_case", "label": "Short Label", "rationale": "one sentence" }
+  ],
+  "names": [
+    {
+      "name": "string",
+      "territory": "must match a territory id above",
+      "tagline": "string",
+      "headline": "string",
+      "confusionRisk": "low" | "medium" | "high",
+      "confusionNote": "string",
+      "passesHeadScratchTest": boolean,
+      "passesSiriTest": boolean,
+      "passesStretchTest": boolean
+    }
+  ]
+}
+
+{{constraintsBlock}}
+No markdown, no text outside the JSON. Exactly 30 names.

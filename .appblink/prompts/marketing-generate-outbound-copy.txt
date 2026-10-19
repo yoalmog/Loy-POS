@@ -1,0 +1,42 @@
+# =========================================================================
+# Prompt Template: marketing-generate-outbound-copy.txt
+# Available Variables: {{appName}}, {{icpLabel}}, {{icpDescription}}, {{icpJtbd}}, {{icpPainPoints}}, {{icpTriggers}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+App: {{appName}}
+Target ICP Segment: {{icpLabel}}
+Description: {{icpDescription}}
+Job-to-be-Done: {{icpJtbd}}
+Key Pain Points: {{icpPainPoints}}
+Buying Triggers: {{icpTriggers}}
+
+You are an expert cold email writer. Write cold outreach templates for this specific ICP.
+
+Rules:
+- Lead with their world, not yours. "You/your" must dominate over "I/we"
+- Every sentence must earn its place — ruthlessly short
+- Interest-based CTAs only ("Worth exploring?" / "Would this be useful?") — never hard meeting requests
+- Sound like a smart colleague who noticed something, not a salesperson
+- LinkedIn DM must be under 300 characters including line breaks
+
+Write three templates:
+
+## 1. Cold Email
+Subject: [subject line]
+
+[body — under 150 words]
+
+---
+
+## 2. LinkedIn DM
+[under 300 characters]
+
+---
+
+## 3. Follow-up Email (3-5 days after cold email)
+Subject: [subject line]
+
+[body — under 80 words, add a new angle or piece of value]

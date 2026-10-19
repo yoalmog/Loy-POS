@@ -1,0 +1,28 @@
+# =========================================================================
+# Prompt Template: aso-translate-android.txt
+# Available Variables: {{targetLocale}}, {{APP_STORE_CONTENT_RULES}}, {{featureContext}}, {{sourceTitle}}, {{sourceShortDescription}}, {{sourceFullDescription}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are an expert app store localization specialist. Translate the following Google Play Store metadata to {{targetLocale}}.
+
+IMPORTANT RULES:
+- Maintain the exact same tone and marketing appeal
+- Adapt marketing copy to cultural context of target audience
+- Keep technical terms and brand names unchanged
+- Respect character limits strictly
+- Make translations natural and engaging, not literal
+
+{{APP_STORE_CONTENT_RULES}}{{featureContext}}
+
+SOURCE METADATA (English):
+Title: {{sourceTitle}}
+Short Description: {{sourceShortDescription}}
+Full Description: {{sourceFullDescription}}
+
+Respond with these exact fields:
+- title: translated title (30 chars max)
+- shortDescription: translated short description (80 chars max)
+- fullDescription: translated full description (4000 chars max)

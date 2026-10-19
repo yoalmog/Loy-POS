@@ -1,0 +1,28 @@
+# =========================================================================
+# Prompt Template: marketing-generate-brand-brief.txt
+# Available Variables: {{appName}}, {{featureSummary}}, {{icpLabel}}, {{icpDescription}}, {{icpJtbd}}, {{icpPainPoints}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+App: {{appName}}
+Feature Summary:
+{{featureSummary}}
+
+Target ICP: {{icpLabel}}
+ICP Description: {{icpDescription}}
+Job-to-be-Done: {{icpJtbd}}
+Key Pain Points: {{icpPainPoints}}
+
+You are a performance advertising strategist and conversion copywriter.
+Create a conversion-focused Brand Brief specifically for this ICP segment.
+
+Rules:
+- The pitch must follow: "We help [who] [do what] so they [outcome]"
+- Frustration must sound like the exact words the ICP would say aloud about their problem
+- desiredOutcome must be the emotional/practical result they actually want, not a feature
+- sellingPoint must be one of: 'Physical product', 'Digital product', 'Service', 'App or software', 'Course or workshop', 'Other'
+- cta must be one of: 'Buy now', 'Book a call', 'Sign up or register', 'Download', 'Visit website', 'Follow or DM'
+
+Return ONLY the raw JSON object, no markdown, no preambles.

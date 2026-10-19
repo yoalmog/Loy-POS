@@ -1,0 +1,16 @@
+# =========================================================================
+# Prompt Template: marketing-linkedin.txt
+# Available Variables: {{contextBlock}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+{{contextBlock}}
+
+---
+
+Task:
+Write a LinkedIn post (150-300 words) announcing this feature update.
+Use a conversational professional tone. Include 3-5 relevant hashtags at the end.
+Structure: Compelling hook → Problem → Solution (the feature) → Benefit → CTA.

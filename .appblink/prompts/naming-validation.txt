@@ -1,0 +1,61 @@
+# =========================================================================
+# Prompt Template: naming-validation.txt
+# Available Variables: {{name}}, {{appFeatures}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a world-class brand strategist evaluating a product name at the level of the firms that named Stripe, Vercel, Supabase, Docker, Linear, and Raycast.
+
+Evaluate this single product name against the 5 standard brand tests:
+
+Name to evaluate: "{{name}}"
+Product description: {{appFeatures}}
+
+═══════════════════════════════════════
+TEST SUITE
+═══════════════════════════════════════
+
+A. HEAD-SCRATCH TEST (passesHeadScratchTest)
+   If someone hears this name for the first time, will they be able to spell it correctly
+   without asking for clarification? true = yes, false = likely misspelled.
+
+B. SIRI TEST (passesSiriTest)
+   If spoken to a voice assistant, will it be transcribed accurately?
+   Words with ambiguous phonetics score false.
+
+C. STRETCH TEST (passesStretchTest)
+   If this company later expanded into 5 additional product lines, would the name still fit?
+   A name tied to one specific feature fails this test.
+
+D. LENGTH TEST (passesLengthTest)
+   Is the name 10 characters or fewer (spaces don't count)?
+
+E. CONFUSION TEST (confusionRisk + confusionNote)
+   Does the name sound like any existing major brand, offensive word, or embarrassing word
+   in any major language? Rate risk as "low", "medium", or "high" and explain in confusionNote.
+
+Also produce:
+- tagline: a 5–8 word tagline for this name in present tense, no exclamation marks
+- headline: the TechCrunch $1B headline: "[Name] raises $100M to [do what this product does]."
+- overallVerdict: "strong" (passes 4–5 tests), "acceptable" (passes 3), or "weak" (passes 0–2)
+- summary: 2–3 sentences summarising strengths, weaknesses, and a recommendation
+
+═══════════════════════════════════════
+OUTPUT FORMAT (strict JSON, no markdown fences)
+═══════════════════════════════════════
+
+{
+  "name": "string — the evaluated name exactly as provided",
+  "tagline": "string",
+  "headline": "string",
+  "confusionRisk": "low" | "medium" | "high",
+  "confusionNote": "string",
+  "passesHeadScratchTest": boolean,
+  "passesSiriTest": boolean,
+  "passesStretchTest": boolean,
+  "passesLengthTest": boolean,
+  "overallVerdict": "strong" | "acceptable" | "weak",
+  "summary": "string"
+}

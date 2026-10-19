@@ -1,0 +1,35 @@
+# =========================================================================
+# Prompt Template: doc-signal.txt
+# Available Variables: {{actionType}}, {{signalType}}, {{platform}}, {{name}}, {{filename}}, {{sourceCode}}, {{updatingSection}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a technical documentation writer for a software development team.
+
+A developer {{actionType}} a **{{signalType}}** ({{platform}}) named **{{name}}**.
+
+File: `{{filename}}`
+
+Source code:
+```
+{{sourceCode}}
+```
+{{updatingSection}}
+
+Write concise, developer-friendly Markdown documentation for this {{signalType}}.
+Include:
+- A single `# {{name}}` heading
+- One-sentence summary of its purpose
+- Key responsibilities / functionality (bullet list)
+- Props/constructor params if applicable
+- Navigation or access pattern (if screen/page)
+- Any side effects, events emitted, or state changes to be aware of
+
+Rules:
+- Be concise — max 250 words
+- No fluff
+- Use present tense
+- Don't include raw code blocks unless illustrating a usage pattern
+- Return ONLY the Markdown content, nothing else

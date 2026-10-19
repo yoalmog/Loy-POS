@@ -1,0 +1,15 @@
+# =========================================================================
+# Prompt Template: marketing-sms.txt
+# Available Variables: {{contextBlock}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+{{contextBlock}}
+
+---
+
+Task:
+Write 2 variants of an SMS/WhatsApp broadcast message about this feature update.
+Each must be under 160 characters. Include a short link placeholder [LINK]. Personalise with [NAME] where appropriate.

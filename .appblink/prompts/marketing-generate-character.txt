@@ -1,0 +1,44 @@
+# =========================================================================
+# Prompt Template: marketing-generate-character.txt
+# Available Variables: {{appName}}, {{icpLabel}}, {{icpJtbd}}, {{icpPainPoints}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+App: {{appName}}
+Target ICP Segment: {{icpLabel}}
+Job-to-be-Done: {{icpJtbd}}
+Key Pain Points: {{icpPainPoints}}
+
+You are a character designer. Create an ideal character profile (acting as the user persona / protagonist) that represents this ICP segment.
+
+CRITICAL DEMOGRAPHIC & GEOGRAPHIC ALIGNMENT RULES:
+1. Target Region & Ethnicity Alignment:
+   - Analyze the target ICP segment, job-to-be-done, and pain points to determine the target geography and ethnicity.
+   - If the target audience or app context specifies or implies India (or South Asia / Indian market / Indian professionals), the character MUST be generated with an authentic Indian identity:
+     * Name: Authentic Indian name (e.g. Aarav, Priya, Rohan, Ananya, Vikram, Neha).
+     * Ethnicity & Skin Tone: Natural Indian skin tone and complexion (e.g. warm brown, wheatish, olive brown).
+     * Face & Hair: Authentic Indian facial features, dark hair/hairstyles.
+     * City: Authentic Indian city (e.g. Bangalore, Mumbai, Delhi NCR, Pune, Hyderabad, Gurgaon).
+     * Apparel: Contemporary, stylish Indian casual or smart-casual clothing suitable for the scene.
+   - If a different target region/demographic is specified, strictly align all character attributes (name, ethnicity, city, attire, features) to that target market.
+2. Background & Setting Realism:
+   - The character's environment, office, apartment, living room, or street setting MUST match the target region's architectural style, decor, and ambient lighting (e.g., modern Bangalore tech office, contemporary Indian home living room). Avoid generic Western stock photo cliché backgrounds unless explicitly requested.
+
+Return ONLY the raw JSON matching this schema:
+{
+  "name": "Full Name matching target demographic",
+  "age": 30,
+  "city": "City name matching target demographic",
+  "occupation": "Job title matching the ICP",
+  "visualDescription": "Detailed visual description including ethnicity, style, and features",
+  "faceDetails": "Facial features matching target demographic",
+  "skin": "Skin tone and complexion matching target demographic",
+  "hair": "Hair style and color",
+  "outfit": "Typical authentic clothing",
+  "vibe": "General mood and energy",
+  "environment": "Typical setting matching target region's environment and architecture",
+  "realismRules": "Rules for image generation",
+  "faceLockBlock": "Prompt fragment for facial consistency"
+}

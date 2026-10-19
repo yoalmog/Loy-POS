@@ -1,0 +1,28 @@
+# =========================================================================
+# Prompt Template: test-flutter.txt
+# Available Variables: {{widgetTestSection}}, {{role}}, {{srcPath}}, {{testPath}}, {{testerInstruction}}, {{filename}}, {{src}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Generate a complete Flutter test file in Dart.
+
+Framework: flutter_test{{widgetTestSection}}
+File role: {{role}}
+Source file: {{srcPath}}
+Test file to produce: {{testPath}}
+
+Rules:
+- Return ONLY valid Dart code. No markdown fences, no explanations.
+- Import 'package:flutter_test/flutter_test.dart' and the source file via its package path.
+- Write at least 3 meaningful test cases: one happy path, one edge case, one failure case.
+- Use 'group' blocks for organisation.
+{{testerInstruction}}
+- Use setUp / tearDown where appropriate.
+- Keep mocking minimal; prefer manual fakes over code-gen mocks.
+
+Source code ({{filename}}):
+```dart
+{{src}}
+```

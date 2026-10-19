@@ -1,0 +1,30 @@
+# =========================================================================
+# Prompt Template: image-creative-direction.txt
+# Available Variables: {{persona}}, {{appName}}, {{features}}, {{primaryColor}}, {{secondaryColorSection}}, {{moodHintSection}}, {{principlesList}}, {{styleList}}, {{scope}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+{{persona}}
+
+App: {{appName}}
+Features: {{features}}
+Primary brand colour: {{primaryColor}}
+{{secondaryColorSection}}
+{{moodHintSection}}
+
+Apply these psychology principles when defining the creative direction:
+
+{{principlesList}}
+
+Choose a visual style from this list that best matches the app's brand and audience. Pick the name exactly as written:
+{{styleList}}
+
+{{scope}}
+
+Respond with exactly these four labelled lines:
+Visual style: <name from the list above>
+Colour mood: <one-line description>
+Illustration style: <one-line description>
+Layout approach: <one-line description>

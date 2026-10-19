@@ -1,0 +1,28 @@
+# =========================================================================
+# Prompt Template: test-angular.txt
+# Available Variables: {{role}}, {{srcPath}}, {{testPath}}, {{testBedInstruction}}, {{filename}}, {{src}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Generate a complete Angular test file using Jasmine.
+
+Framework: Jasmine / Angular TestBed
+File role: {{role}}
+Source file: {{srcPath}}
+Test file to produce: {{testPath}}
+
+Rules:
+- Return ONLY valid TypeScript code. No markdown fences, no explanations.
+- Compute the correct relative import path from the test file to the source.
+{{testBedInstruction}}
+- Write at least 3 assertions. Include one negative / edge-case test.
+- Use HttpClientTestingModule when the source uses HttpClient.
+- Use NO_ERRORS_SCHEMA only if the component has complex child dependencies.
+- Do not import Angular modules that are not required.
+
+Source code ({{filename}}):
+```typescript
+{{src}}
+```

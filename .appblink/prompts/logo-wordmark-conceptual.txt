@@ -1,0 +1,18 @@
+# =========================================================================
+# Prompt Template: logo-wordmark-conceptual.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Create a sophisticated text-only wordmark logo for "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Vibe:
+premium, sleek and authoritative,
+reminiscent of modern tech brand wordmarks.
+Rules:
+only print the brand name characters,
+no standalone symbols or badges.
+{{antiHexCodeInstruction}}

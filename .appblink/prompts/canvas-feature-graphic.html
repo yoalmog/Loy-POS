@@ -1,0 +1,163 @@
+<!--
+=========================================================================
+Template: canvas-feature-graphic.html
+Available Variables: {{nonce}}, {{primaryColor}}, {{appNameJson}}, {{taglineJson}}, {{iconSrcJson}}, {{screenshotSrcJson}}
+
+Instructions: Feel free to customize this HTML template.
+=========================================================================
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Renderer</title>
+</head>
+<body style="margin: 0; padding: 0; background: transparent;">
+  <canvas id="canvas" width="1024" height="500" style="display: block;"></canvas>
+  <script nonce="{{nonce}}">
+    const vscode = acquireVsCodeApi();
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const bgColor = "{{primaryColor}}";
+    const appName = {{appNameJson}};
+    const tagline = {{taglineJson}};
+    const iconSrc = {{iconSrcJson}};
+    const screenshotSrc = {{screenshotSrcJson}};
+
+    async function draw() {
+      try {
+        // 1. Draw Background
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, 1024, 500);
+
+        // 2. Draw Phone Mockup
+        let phoneXEnd = 80;
+        if (screenshotSrc) {
+          const phoneImg = new Image();
+          phoneImg.src = screenshotSrc;
+          await new Promise((res, rej) => {
+            phoneImg.onload = res;
+            phoneImg.onerror = rej;
+          });
+
+          const phoneH = 440;
+          const phoneW = 215;
+          const phoneX = 120;
+          const phoneY = (500 - phoneH) / 2;
+          const cornerRadius = 32;
+
+          // Draw Phone Shadow
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+          ctx.shadowBlur = 30;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 15;
+          
+          // Draw Phone Body Outer Frame
+          ctx.fillStyle = '#0d1117';
+          ctx.beginPath();
+          ctx.roundRect(phoneX, phoneY, phoneW, phoneH, cornerRadius);
+          ctx.fill();
+          
+          // Reset shadow
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+
+          // Bezel outline
+          ctx.strokeStyle = '#444c56';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+
+          // Screenshot inside bezel
+          const bezel = 8;
+          const screenX = phoneX + bezel;
+          const screenY = phoneY + bezel;
+          const screenW = phoneW - (bezel * 2);
+          const screenH = phoneH - (bezel * 2);
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(screenX, screenY, screenW, screenH, cornerRadius - bezel);
+          ctx.clip();
+          ctx.drawImage(phoneImg, screenX, screenY, screenW, screenH);
+          ctx.restore();
+
+          phoneXEnd = phoneX + phoneW;
+        }
+
+        // 3. Draw App Icon
+        let iconYEnd = 50;
+        if (iconSrc) {
+          const iconImg = new Image();
+          iconImg.src = iconSrc;
+          await new Promise((res, rej) => {
+            iconImg.onload = res;
+            iconImg.onerror = rej;
+          });
+
+          const iconSize = 96;
+          const iconX = phoneXEnd + 60;
+          const iconY = 100;
+          const iconRadius = 20;
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(iconX, iconY, iconSize, iconSize, iconRadius);
+          ctx.clip();
+          ctx.drawImage(iconImg, iconX, iconY, iconSize, iconSize);
+          ctx.restore();
+
+          iconYEnd = iconY + iconSize;
+        }
+
+        // 4. Draw Typography (App Name & Tagline)
+        const textX = phoneXEnd + 60;
+        const textY = iconYEnd + 50;
+
+        // Draw App Name
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 44px Poppins, -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+        ctx.fillText(appName, textX, textY);
+
+        // Draw Tagline (with simple line-wrap support)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.font = '22px Inter, -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+        
+        const words = tagline.split(' ');
+        let line = '';
+        let currentY = textY + 45;
+        const maxWidth = 1024 - textX - 60;
+        const lineHeight = 32;
+
+        for (let n = 0; n < words.length; n++) {
+          const testLine = line + words[n] + ' ';
+          const metrics = ctx.measureText(testLine);
+          const testWidth = metrics.width;
+          if (testWidth > maxWidth && n > 0) {
+            ctx.fillText(line, textX, currentY);
+            line = words[n] + ' ';
+            currentY += lineHeight;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, textX, currentY);
+
+        // 5. Send Base64 data back to extension host
+        setTimeout(() => {
+          const imgData = canvas.toDataURL('image/png');
+          vscode.postMessage({ command: 'save', data: imgData });
+        }, 800);
+
+      } catch (err) {
+        vscode.postMessage({ command: 'error', error: err.message });
+      }
+    }
+
+    draw();
+  </script>
+</body>
+</html>

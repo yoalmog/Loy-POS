@@ -1,0 +1,17 @@
+# =========================================================================
+# Prompt Template: image-compose-prompt.txt
+# Available Variables: {{subjectAndAction}}, {{context}}, {{compositionNotes}}, {{styleAndLighting}}, {{globalConstraints}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+{{subjectAndAction}}
+
+{{context}}
+
+{{compositionNotes}}
+
+{{styleAndLighting}}
+
+{{globalConstraints}}

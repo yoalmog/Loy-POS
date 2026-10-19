@@ -1,0 +1,39 @@
+# =========================================================================
+# Prompt Template: global-design-tokens.txt
+# Available Variables: {{description}}, {{designSection}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Generate global design system tokens JSON for this ANTAR ecosystem app.
+
+Description: {{description}}
+{{designSection}}
+
+Return ONLY a single JSON object with exactly these 4 keys — adjust all values to match the description:
+{
+  "typography": {
+    "fontFamily": "Poppins",
+    "displayLarge":   { "size": 57, "weight": 400, "lineHeight": 64 },
+    "displayMedium":  { "size": 45, "weight": 400, "lineHeight": 52 },
+    "displaySmall":   { "size": 36, "weight": 400, "lineHeight": 44 },
+    "headlineLarge":  { "size": 32, "weight": 400, "lineHeight": 40 },
+    "headlineMedium": { "size": 28, "weight": 400, "lineHeight": 36 },
+    "headlineSmall":  { "size": 24, "weight": 400, "lineHeight": 32 },
+    "titleLarge":     { "size": 22, "weight": 400, "lineHeight": 28 },
+    "titleMedium":    { "size": 16, "weight": 500, "lineHeight": 24 },
+    "titleSmall":     { "size": 14, "weight": 500, "lineHeight": 20 },
+    "bodyLarge":      { "size": 16, "weight": 400, "lineHeight": 24 },
+    "bodyMedium":     { "size": 14, "weight": 400, "lineHeight": 20 },
+    "bodySmall":      { "size": 12, "weight": 400, "lineHeight": 16 },
+    "labelLarge":     { "size": 14, "weight": 500, "lineHeight": 20 },
+    "labelMedium":    { "size": 12, "weight": 500, "lineHeight": 16 },
+    "labelSmall":     { "size": 11, "weight": 500, "lineHeight": 16 }
+  },
+  "spacing": { "xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 32, "2xl": 48, "3xl": 64, "4xl": 96 },
+  "radius": { "xs": 4, "sm": 8, "md": 12, "lg": 16, "xl": 24, "2xl": 32, "full": 9999 },
+  "motion": { "fast": 120, "normal": 250, "slow": 400, "emphasized": 500 }
+}
+
+Return ONLY valid JSON, no explanation.

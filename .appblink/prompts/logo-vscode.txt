@@ -1,0 +1,30 @@
+# =========================================================================
+# Prompt Template: logo-vscode.txt
+# Available Variables: {{displayName}}, {{featuresSection}}, {{primaryColor}}, {{fontHintSection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Design an icon specifically for a Visual Studio Code extension: "{{displayName}}". {{featuresSection}} Primary brand colour: {{primaryColor}}. {{fontHintSection}}
+
+Requirements:
+- Square canvas (1:1 aspect ratio)
+- Must work clearly at very small sizes (16px–48px)
+- Use a single central symbol that represents the extension's purpose
+- Use a maximum of 2–3 colors with strong contrast
+- Avoid text, small details, and complex illustrations
+- Use a simple geometric style similar to modern developer tool icons
+- Just the icon symbol
+- Ensure the icon remains recognizable when scaled down
+- Maintain generous padding so the icon does not touch edges
+- Style should feel modern, developer-focused, and consistent with the Visual Studio Code ecosystem
+
+Output requirements:
+- Vector-style graphic suitable for export as SVG
+- Also suitable for raster export at 128×128 px for marketplace listing
+- No shadows that blur at small sizes
+- No photorealistic elements
+- No text, no letters, no typography
+
+{{antiHexCodeInstruction}}

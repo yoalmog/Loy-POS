@@ -1,0 +1,15 @@
+# =========================================================================
+# Prompt Template: logo-emblem-inspirational.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+A vintage or modern crest-style emblem logo for "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Style:
+shield, diamond or geometric badge shape containing the brand's core visual concept,
+flat solid vector vector elements.
+{{antiHexCodeInstruction}}

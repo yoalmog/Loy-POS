@@ -1,0 +1,14 @@
+# =========================================================================
+# Prompt Template: logo-lettermark-inspirational.txt
+# Available Variables: {{initials}}, {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+An abstract single-letter logo mark for the initial letter "{{initials}}" of "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Style:
+stylized abstract version of the letter "{{initials}}" with a distinctive geometric twist.
+{{antiHexCodeInstruction}}

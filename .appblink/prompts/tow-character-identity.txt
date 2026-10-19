@@ -1,0 +1,44 @@
+# =========================================================================
+# Prompt Template: tow-character-identity.txt
+# Available Variables: {{script}}, {{brandContext}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a master character designer for high-converting video and visual ads. Using the provided script, brand context, and target audience details, create a complete character identity.
+
+Script: {{script}}
+Brand & Audience Context: {{brandContext}}
+
+CRITICAL DEMOGRAPHIC & GEOGRAPHIC ALIGNMENT RULES:
+1. Target Region & Ethnicity Alignment:
+   - Carefully analyze the target audience, region, and brand context.
+   - If the target audience or brand context mentions or implies an Indian demographic / South Asian market (or Indian working professionals, students, families, creators, etc.), the character MUST be generated with an authentic Indian identity:
+     * Name: Authentic Indian name (e.g. Aarav, Priya, Rohan, Ananya, Vikram, Neha).
+     * Ethnicity & Skin Tone: Natural Indian skin tone and complexion (e.g. warm brown, wheatish, olive brown).
+     * Face & Hair: Authentic Indian facial features, dark hair/hairstyles.
+     * City: Authentic Indian city (e.g. Bangalore, Mumbai, Delhi NCR, Pune, Hyderabad, Gurgaon).
+     * Apparel: Contemporary, stylish Indian casual or smart-casual clothing suitable for the scene.
+   - If a different target region/demographic is specified, strictly align all character attributes (name, ethnicity, city, attire, features) to that target market.
+2. Background & Setting Realism:
+   - The character's typical environment, office, apartment, living room, or street setting MUST match the target region's architectural style, decor, and ambient lighting (e.g., modern Bangalore tech office, contemporary Indian home living room). Avoid Western stock photo cliché backgrounds unless explicitly requested.
+3. Photorealistic & Consistent:
+   - Provide detailed, high-clarity descriptions for visualDescription, faceDetails, skin, hair, outfit, vibe, environment, and faceLockBlock to lock down visual continuity across image and video generation.
+
+Return ONLY raw JSON matching this schema:
+{
+  "name": "Full Name matching target demographic",
+  "age": 28,
+  "city": "City matching target demographic",
+  "occupation": "Occupation matching target audience",
+  "visualDescription": "Detailed photorealistic visual description incorporating regional ethnicity and style",
+  "faceDetails": "Facial features matching target demographic",
+  "skin": "Natural skin tone and complexion for target demographic",
+  "hair": "Hair style and color",
+  "outfit": "Typical authentic attire",
+  "vibe": "General mood and energy",
+  "environment": "Setting matching target region (interior decor, architecture, ambient atmosphere)",
+  "realismRules": "Rules for image generation keeping natural skin texture and real lighting",
+  "faceLockBlock": "Prompt fragment for locking facial consistency in image/video generation"
+}

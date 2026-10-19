@@ -1,0 +1,17 @@
+# =========================================================================
+# Prompt Template: logo-lettermark-conceptual.txt
+# Available Variables: {{initials}}, {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Create a bold geometric monogram logo mark of the characters "{{initials}}" for the brand "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Vibe:
+modern tech style,
+the letters "{{initials}}" are stylized and merged into a single cohesive symbol.
+Constraints:
+monogram only, no other text.
+{{antiHexCodeInstruction}}

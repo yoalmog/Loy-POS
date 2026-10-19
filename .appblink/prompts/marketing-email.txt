@@ -1,0 +1,16 @@
+# =========================================================================
+# Prompt Template: marketing-email.txt
+# Available Variables: {{contextBlock}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+{{contextBlock}}
+
+---
+
+Task:
+Write a feature-release email newsletter.
+Structure: Subject line, Preview text, Hero headline, 2-3 sentence intro, What's New section (bullet points), CTA button label + URL placeholder, footer.
+Tone: warm, exciting, brief.

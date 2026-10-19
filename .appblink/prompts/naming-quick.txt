@@ -1,0 +1,52 @@
+# =========================================================================
+# Prompt Template: naming-quick.txt
+# Available Variables: {{appFeatures}}, {{constraintsBlock}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a world-class brand strategist. Generate 30 completely fresh, creative brand names for the product described below.
+
+Product description: {{appFeatures}}
+
+Hard constraints (every name MUST pass):
+✓ 10 characters or fewer
+✓ No "App", "AI", "Hub", "HQ", "Launch", or "Sync" prefix/suffix
+✓ No missing-vowel tech spellings (not Flckr, Tmbr, etc.)
+✓ Normal English orthography — spellable on first hearing
+✓ Not already a major tech brand
+
+For each name evaluate:
+- passesHeadScratchTest: can someone spell it correctly on first hearing?
+- passesSiriTest: will a voice assistant transcribe it accurately?
+- passesStretchTest: does it still fit if the product expands to 5 new areas?
+- headline: "[Name] raises $100M to [one sentence about what this product does]"
+- confusionRisk: "low" | "medium" | "high"
+- confusionNote: one sentence, or "None"
+- tagline: 5–8 words, present tense
+
+Group the 30 names into 4–6 loose creative directions of your own choosing.
+
+Output a single JSON object:
+{
+  "territories": [
+    { "id": "snake_case", "label": "Short Label", "rationale": "one sentence" }
+  ],
+  "names": [
+    {
+      "name": "string",
+      "territory": "must match a territory id above",
+      "tagline": "string",
+      "headline": "string",
+      "confusionRisk": "low" | "medium" | "high",
+      "confusionNote": "string",
+      "passesHeadScratchTest": boolean,
+      "passesSiriTest": boolean,
+      "passesStretchTest": boolean
+    }
+  ]
+}
+
+{{constraintsBlock}}
+Do not wrap in markdown. No text outside the JSON. Exactly 30 names.

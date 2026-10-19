@@ -1,0 +1,16 @@
+# =========================================================================
+# Prompt Template: marketing-twitter.txt
+# Available Variables: {{contextBlock}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+{{contextBlock}}
+
+---
+
+Task:
+Write a Twitter/X thread (5-7 tweets) announcing this feature.
+First tweet must be a hook. Keep each tweet under 280 characters.
+Number each tweet (1/7, 2/7...). End with a CTA tweet.

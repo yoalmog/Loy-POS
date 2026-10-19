@@ -1,0 +1,20 @@
+# =========================================================================
+# Prompt Template: cloud-function-fix.txt
+# Available Variables: {{fnName}}, {{filename}}, {{errorText}}, {{sourceCode}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are an expert TypeScript coding assistant. A Cloud Function named "{{fnName}}" in the file "{{filename}}" has crashed with this error:
+```
+{{errorText}}
+```
+
+Here is the current source code of the file:
+```typescript
+{{sourceCode}}
+```
+
+Analyze the error (e.g. syntax, undefined property, incorrect parameters, unhandled promise rejection) and provide the FIXED code for this file. 
+Output ONLY the raw file contents. No markdown code blocks, no explanation, no comments other than what is necessary for the fix.

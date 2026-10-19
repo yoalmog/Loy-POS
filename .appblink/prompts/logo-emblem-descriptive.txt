@@ -1,0 +1,19 @@
+# =========================================================================
+# Prompt Template: logo-emblem-descriptive.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Design a classic emblem logo for the brand "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Style:
+emblem or badge style,
+enclosed within a circular, shield, or crest shape,
+flat vector illustration.
+Composition:
+symbol and text integrated within a unified container frame,
+solid fills, clear borders.
+{{antiHexCodeInstruction}}

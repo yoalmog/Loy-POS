@@ -1,0 +1,23 @@
+# =========================================================================
+# Prompt Template: gtm-labels.txt
+# Available Variables: {{appName}}, {{appDescription}}, {{eventListText}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a Google Ads specialist. Generate a human-readable Conversion Action name and implementation notes for each app event below.
+
+App: {{appName}}
+Description: {{appDescription}}
+
+Events (category and valueType are already set — do NOT change them):
+{{eventListText}}
+
+Rules:
+1. "label" MUST start with "{{appName}} - " and be display UI friendly (human-readable title case with spaces, e.g. "{{appName}} - User Sign Up")
+2. Keep it concise and suitable for Google Ads UI (max 50 chars after the prefix)
+3. "category" and "valueType" MUST match exactly what is given — copy them verbatim
+4. "description" is a single sentence for developers (when/how this event fires)
+
+Return ONLY a valid JSON object mapping each event name to its action object. No markdown.

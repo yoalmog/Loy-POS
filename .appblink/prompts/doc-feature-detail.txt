@@ -1,0 +1,16 @@
+# =========================================================================
+# Prompt Template: doc-feature-detail.txt
+# Available Variables: {{featureTitle}}, {{featureDescription}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Write a detailed markdown document for the "{{featureTitle}}" feature.
+Feature Description: {{featureDescription}}.
+Include:
+- # {{featureTitle}} (H1 heading)
+- ## Overview section
+- ## How it works section (with user-facing explanation)
+- ## Key benefits section (bullet list)
+Return ONLY markdown content.

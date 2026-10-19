@@ -1,0 +1,20 @@
+# =========================================================================
+# Prompt Template: firestore-index-fix.txt
+# Available Variables: {{errorText}}, {{currentIndexes}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a Firebase helper. We encountered a Firestore query index error:
+```
+{{errorText}}
+```
+
+Here is the current firestore.indexes.json:
+```json
+{{currentIndexes}}
+```
+
+Please parse the error message, identify what composite index is missing, and output the UPDATED firestore.indexes.json containing the new index appended to the "indexes" list. Keep all existing indexes exactly as they are.
+Output ONLY the raw JSON content of the new firestore.indexes.json file. Do not wrap in markdown code blocks or add any comments.

@@ -1,0 +1,9 @@
+# =========================================================================
+# Prompt Template: image-feature-graphic.txt
+# Available Variables: {{appName}}, {{features}}, {{primaryColor}}, {{visualStyle}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+A custom Play Store feature graphic (1024x500 landscape banner) for "{{appName}}" mobile app. Concept: {{features}}. Brand color: {{primaryColor}}. Style: {{visualStyle}}. Clean design layout with prominent app name and core value proposition text.

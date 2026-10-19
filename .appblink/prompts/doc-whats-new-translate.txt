@@ -1,0 +1,12 @@
+# =========================================================================
+# Prompt Template: doc-whats-new-translate.txt
+# Available Variables: {{language}}, {{englishText}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Translate the following app "What's New" text into {{language}}.
+Keep it natural and user-friendly. Max 150 words. Return ONLY the translated text.
+
+{{englishText}}

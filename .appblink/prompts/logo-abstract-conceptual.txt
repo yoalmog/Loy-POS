@@ -1,0 +1,16 @@
+# =========================================================================
+# Prompt Template: logo-abstract-conceptual.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Create a minimal abstract glyph logo icon for "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Style:
+simple geometric primitive composition,
+dynamic abstract forms expressing movement or flow,
+flat design.
+{{antiHexCodeInstruction}}

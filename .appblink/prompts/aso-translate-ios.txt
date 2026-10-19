@@ -1,0 +1,32 @@
+# =========================================================================
+# Prompt Template: aso-translate-ios.txt
+# Available Variables: {{targetLocale}}, {{APP_STORE_CONTENT_RULES}}, {{featureContext}}, {{sourceTitle}}, {{sourceSubtitle}}, {{sourceDescription}}, {{sourceKeywords}}, {{sourcePromotionalText}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are an expert app store localization specialist. Translate the following iOS App Store metadata to {{targetLocale}}.
+
+IMPORTANT RULES:
+- Maintain the exact same tone and marketing appeal
+- Adapt marketing copy to cultural context of target audience
+- Keep technical terms and brand names unchanged
+- Respect character limits strictly
+- Make translations natural and engaging, not literal
+
+{{APP_STORE_CONTENT_RULES}}{{featureContext}}
+
+SOURCE METADATA (English):
+Title: {{sourceTitle}}
+Subtitle: {{sourceSubtitle}}
+Description: {{sourceDescription}}
+Keywords: {{sourceKeywords}}
+Promotional Text: {{sourcePromotionalText}}
+
+Respond with these exact fields:
+- title: translated title (30 chars max)
+- subtitle: translated subtitle (30 chars max)
+- description: translated description (4000 chars max)
+- keywords: translated keywords (100 chars max, comma-separated)
+- promotionalText: translated promotional text (170 chars max)

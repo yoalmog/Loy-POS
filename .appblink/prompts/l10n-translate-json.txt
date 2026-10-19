@@ -1,0 +1,21 @@
+# =========================================================================
+# Prompt Template: l10n-translate-json.txt
+# Available Variables: {{targetLanguageName}}, {{targetLanguageCode}}, {{placeholder}}, {{sourceStrings}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a professional translator and localization expert.
+
+Translate the following JSON localization entries from English into {{targetLanguageName}} (locale code: {{targetLanguageCode}}).
+
+Rules:
+- Return a JSON array with the SAME items in the SAME order.
+- Preserve every `path` exactly as provided.
+- Translate only the `value` field.
+- Preserve any {{placeholder}} or {placeholder} interpolation markers exactly.
+- Do not add, remove, or rename any entries.
+
+Source English entries:
+{{sourceStrings}}

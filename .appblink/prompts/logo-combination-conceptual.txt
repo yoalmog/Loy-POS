@@ -1,0 +1,16 @@
+# =========================================================================
+# Prompt Template: logo-combination-conceptual.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Create a clean combination mark for "{{displayName}}" featuring a modern brand icon alongside the name text.
+{{sharedContext}}
+{{userDirection}}
+Layout:
+stacked composition (icon centered on top, wordmark below).
+Rules:
+flat vector style, solid brand color accents.
+{{antiHexCodeInstruction}}

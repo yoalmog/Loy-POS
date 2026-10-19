@@ -1,0 +1,38 @@
+# =========================================================================
+# Prompt Template: aso-improve-android.txt
+# Available Variables: {{marketingContext}}, {{currentTitle}}, {{currentShortDescription}}, {{currentFullDescription}}, {{APP_STORE_CONTENT_RULES}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are an expert Google Play Store Optimization (ASO) specialist. Improve the following Android app metadata using the context and rules below.
+
+{{marketingContext}}
+
+CURRENT METADATA (if any):
+Title: {{currentTitle}}
+Short Description: {{currentShortDescription}}
+Full Description: {{currentFullDescription}}
+
+{{APP_STORE_CONTENT_RULES}}
+
+REQUIREMENTS:
+- Create engaging, conversion-focused metadata
+- Use power words and emotional triggers
+- Highlight unique value propositions
+- Optimize for Play Store search (ASO best practices)
+- Keep within character limits strictly
+- Use bullet points and emojis in full description for readability
+- Match the tone and style to the target audience
+- Include clear call-to-action
+
+CHARACTER LIMITS (CRITICAL):
+- title: 50 characters max
+- shortDescription: 80 characters max
+- fullDescription: 4000 characters max
+
+Respond with improved metadata in these exact fields:
+- title (max 50 chars): compelling app name
+- shortDescription (max 80 chars): one-line value proposition
+- fullDescription (max 4000 chars): detailed feature list with benefits and CTA

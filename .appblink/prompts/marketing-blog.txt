@@ -1,0 +1,16 @@
+# =========================================================================
+# Prompt Template: marketing-blog.txt
+# Available Variables: {{contextBlock}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+{{contextBlock}}
+
+---
+
+Task:
+Write a 400-600 word blog post about this new feature, optimised for AI search (GEO).
+Include: H2/H3 headings, a direct-answer first paragraph, one comparison or feature table, and an FAQ section with 2-3 questions.
+Tone: authoritative but accessible. Include meta description at the top in a blockquote.

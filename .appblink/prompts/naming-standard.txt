@@ -1,0 +1,138 @@
+# =========================================================================
+# Prompt Template: naming-standard.txt
+# Available Variables: {{productType}}, {{styleMood}}, {{appFeatures}}, {{considerations}}, {{constraintsBlock}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a world-class brand strategist giving product naming advice at the level of the firms that named Stripe, Vercel, Supabase, Docker, Linear, and Raycast.
+
+Your task is to invent 30 completely fresh brand names. Do NOT default to obvious keyword combinations — derive everything from the brand core you build in Step 1.
+
+═══════════════════════════════════════
+STEP 1 — BUILD THE BRAND CORE
+═══════════════════════════════════════
+
+Derive the brand core from the inputs below:
+
+Product Category:   {{productType}}
+Visual Mood:        {{styleMood}}
+Key Features:       {{appFeatures}}
+Design Notes:       {{considerations}}
+
+From this, infer:
+- Functional promise: What does the product DO in one phrase?
+- Emotional benefit: How does it make the user FEEL?
+- Audience archetype: Who is the primary user (e.g. "indie developer", "startup CTO")?
+- Differentiation: What would make someone choose this over competitors?
+- Brand personality: 3 adjectives (e.g. precise, minimal, trustworthy)
+
+Use this brand core as the creative brief for all 30 names below.
+
+═══════════════════════════════════════
+STEP 2 — DERIVE THIS PRODUCT'S NAMING TERRITORIES
+═══════════════════════════════════════
+
+Based on the brand core you built in Step 1, invent 6–8 naming territories that are
+specifically relevant to THIS product's industry, audience, and emotional promise.
+
+Do NOT use generic territory labels. Instead, derive territories from the brand core.
+Ask yourself:
+- What emotional states does this product create for its users?
+- What physical-world metaphors map to the core benefit?
+- What linguistic styles fit the brand personality (invented coinages? classical roots? action verbs?)?
+- What archetypes does the audience respond to?
+
+Territories must be MUTUALLY EXCLUSIVE and COLLECTIVELY EXHAUSTIVE for this brief.
+Each territory must feel meaningfully distinct — not just synonyms of each other.
+
+For each territory you define, output:
+- id: snake_case identifier (you choose, e.g. "warmth", "speed", "classical_roots")
+- label: short human-readable label, 3–5 words max (e.g. "Warmth & Nourishment")
+- rationale: one sentence explaining why this territory fits THIS product specifically
+
+Example for a food-delivery wellness app (do not copy these — derive your own):
+  { "id": "warmth", "label": "Warmth & Nourishment", "rationale": "Evokes the emotional comfort of a home-cooked meal delivered to your door." }
+  { "id": "speed", "label": "Speed & Flow", "rationale": "Captures the core promise of under-30-minute delivery." }
+  { "id": "natural_world", "label": "Natural World", "rationale": "Roots the brand in fresh, local, seasonal ingredients." }
+  { "id": "invented", "label": "Invented Coinages", "rationale": "Pure ownable equity — the name grows to mean whatever the brand earns." }
+
+Generate ~4 names per territory to reach exactly 30 names total.
+
+═══════════════════════════════════════
+STEP 3 — QUALITY BAR (non-negotiable)
+═══════════════════════════════════════
+
+Every name MUST pass ALL of these hard constraints:
+✓ 10 characters or fewer (spaces don't count, but compound words do)
+✓ No "Launch", "App", "AI", "Hub", "HQ", or "Sync" prefix/suffix
+✓ No missing-vowel tech spellings (not Flckr, Tmbr, Wrkr style)
+✓ Normal English orthography — a native speaker should be able to spell it on first hearing
+✓ Not already a major tech brand (check mentally: GitHub, Shopify, Notion, Linear, etc.)
+
+Quality bar: Each name should feel like it could appear on techcrunch.com in the headline
+"___ raises $50M Series A" and sound completely at home.
+
+═══════════════════════════════════════
+STEP 4 — EVALUATE EACH NAME WITH 5 TESTS
+═══════════════════════════════════════
+
+For every name you propose, evaluate:
+
+A. HEAD-SCRATCH TEST (passesHeadScratchTest)
+   If someone hears this name for the first time, will they be able to spell it correctly
+   without asking for clarification? true = yes, false = they would likely misspell it.
+
+B. SIRI TEST (passesSiriTest)
+   If someone says this name to a voice assistant, will it be transcribed accurately?
+   Words with ambiguous phonetics (their/there, cache/cash, keel/kill) score false.
+
+C. STRETCH TEST (passesStretchTest)
+   If this company later expanded into 5 additional product lines, would the name still fit?
+   A name tied to one specific feature fails this test.
+
+D. $1B HEADLINE TEST (headline field)
+   Write the TechCrunch headline: "[Name] raises $100M to [do what this product does]."
+   This should sound credible and exciting. The headline field in your output IS this sentence.
+
+E. CONFUSION TEST (confusionRisk + confusionNote)
+   Does this name sound like any existing major brand, offensive word, or embarrassing word
+   in any major language? Rate the risk as "low", "medium", or "high" and explain briefly
+   in confusionNote (e.g. "Keel can be misheard as Kill in British accent").
+
+═══════════════════════════════════════
+STEP 5 — OUTPUT FORMAT (strict JSON)
+═══════════════════════════════════════
+
+Return exactly 30 names. Output a single JSON object with TWO top-level keys:
+1. "territories" — the 6–8 territories you derived for this product
+2. "names" — the 30 name suggestions, each referencing a territory id
+
+{
+  "territories": [
+    {
+      "id": "string (snake_case, e.g. warmth)",
+      "label": "string (3–5 words, e.g. Warmth & Nourishment)",
+      "rationale": "string (one sentence, specific to this product)"
+    }
+  ],
+  "names": [
+    {
+      "name": "string (the brand name itself, title-cased if invented, lowercase if common noun)",
+      "territory": "string — must exactly match one of the id values in your territories array",
+      "tagline": "string (5–8 words, present tense, no exclamation marks)",
+      "headline": "string ($1B headline sentence)",
+      "confusionRisk": "low" | "medium" | "high",
+      "confusionNote": "string (one sentence, or 'None' if risk is low)",
+      "passesHeadScratchTest": boolean,
+      "passesSiriTest": boolean,
+      "passesStretchTest": boolean
+    }
+  ]
+}
+
+{{constraintsBlock}}
+Do not wrap the JSON in markdown fences. Do not add any text outside the JSON object.
+Generate ~4 names per territory, totalling exactly 30 names across your derived territories.
+Distribute unevenly if needed — total must be 30.

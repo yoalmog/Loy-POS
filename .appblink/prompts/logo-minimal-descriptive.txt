@@ -1,0 +1,53 @@
+# =========================================================================
+# Prompt Template: logo-minimal-descriptive.txt
+# Available Variables: {{displayName}}, {{sharedContext}}, {{userDirection}}, {{antiHexCodeInstruction}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+Logo mark for the brand "{{displayName}}".
+{{sharedContext}}
+{{userDirection}}
+Design requirements:
+distinctive,
+simple,
+memorable,
+timeless,
+scalable.
+Style:
+minimal geometric logo mark,
+modern SaaS brand icon,
+flat vector design,
+balanced symmetry,
+simple shapes,
+solid colours only,
+no gradients,
+no shadows,
+SVG style.
+Composition:
+single centered symbol,
+high contrast,
+symbol should occupy about 85–90% of the canvas,
+minimal whitespace around the symbol,
+equal padding on all sides,
+optimized for app icons.
+Icon optimization:
+the symbol must remain clear and recognizable at 32x32 size,
+strong silhouette,
+bold shapes,
+avoid thin details.
+Strict constraints:
+symbol only,
+no text,
+no letters,
+no typography,
+no words,
+no caption,
+no watermark,
+no mockups.
+Important:
+do not leave large empty space,
+do not place a small symbol in the center,
+the logo should visually fill the canvas.
+{{antiHexCodeInstruction}}

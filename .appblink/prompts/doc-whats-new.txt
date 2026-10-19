@@ -1,0 +1,14 @@
+# =========================================================================
+# Prompt Template: doc-whats-new.txt
+# Available Variables: {{displayName}}, {{version}}, {{changelogBullets}}
+# 
+# Instructions: You can modify this template. The variables listed above
+# will be replaced dynamically at runtime. Preserve placeholders like {{var}}.
+# =========================================================================
+
+You are a product writer. Convert the following CHANGELOG bullets into a user-facing "What's New" note for {{displayName}} version {{version}}.
+Rules: max 150 words, plain language, focus on user value, no technical jargon.
+Return ONLY the "What's New" text — no headings, no markdown code blocks.
+
+CHANGELOG bullets:
+{{changelogBullets}}
