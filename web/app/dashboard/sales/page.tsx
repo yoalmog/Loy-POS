@@ -16,12 +16,12 @@ import {
 } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
 import { useTheme } from '@/lib/context/ThemeContext'
-import { Receipt } from '@/lib/types'
+import { Receipt, getLocalizedName } from '@/lib/types'
 import ReceiptPreviewModal from '@/components/pos-dialogs/ReceiptPreviewModal'
 
 export default function SalesHistoryPage() {
   const { receipts, settings, processRefund } = usePos()
-  const { t, isRtl } = useTheme()
+  const { t, isRtl, language } = useTheme()
 
   const [search, setSearch] = useState('')
   const [filterPayment, setFilterPayment] = useState<string>('ALL')
@@ -270,7 +270,7 @@ export default function SalesHistoryPage() {
                           {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                         <span>
-                          {item.name} ({item.quantity}x)
+                          {getLocalizedName(item, language)} ({item.quantity}x)
                         </span>
                       </div>
                       <span className="font-mono">

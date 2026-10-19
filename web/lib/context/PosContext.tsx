@@ -359,6 +359,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         cart_id: `cart_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         item_id: item.id,
         name: item.name,
+        name_translations: item.name_translations,
         unit_price: unitPrice,
         cost,
         quantity,

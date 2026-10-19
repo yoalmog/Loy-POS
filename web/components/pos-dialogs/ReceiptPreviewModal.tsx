@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { X, Printer, CheckCircle2, QrCode, Download, Share2 } from 'lucide-react'
-import { Receipt } from '@/lib/types'
+import { Receipt, getLocalizedName } from '@/lib/types'
 import { usePos } from '@/lib/context/PosContext'
 import { useTheme } from '@/lib/context/ThemeContext'
 import { getTranslation } from '@/lib/i18n'
@@ -124,24 +124,24 @@ export default function ReceiptPreviewModal({
                 <div key={idx} className="space-y-0.5">
                   <div className="flex justify-between">
                     <span>
-                      {item.name}{' '}
-                      <span className="text-[10px] text-slate-500">
+                      {getLocalizedName(item, language)}{' '}
+                      <span className="text-[10px] text-slate-500 numeric-preserve">
                         ({item.quantity}x {settings.currency_symbol}{item.unit_price.toFixed(2)})
                       </span>
                     </span>
-                    <span className="font-bold">
+                    <span className="font-bold numeric-preserve price-display">
                       {settings.currency_symbol}
                       {item.line_total.toFixed(2)}
                     </span>
                   </div>
                   {item.selected_variant && (
                     <div className="text-[10px] text-slate-500 rtl:pr-2 ltr:pl-2">
-                      • {item.selected_variant.name}
+                      • {getLocalizedName(item.selected_variant, language)}
                     </div>
                   )}
                   {item.selected_modifiers && item.selected_modifiers.length > 0 && (
                     <div className="text-[10px] text-slate-500 rtl:pr-2 ltr:pl-2">
-                      {item.selected_modifiers.map((m) => `+ ${m.name}`).join(', ')}
+                      {item.selected_modifiers.map((m) => `+ ${getLocalizedName(m, language)}`).join(', ')}
                     </div>
                   )}
                   {item.comment && (

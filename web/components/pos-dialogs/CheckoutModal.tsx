@@ -139,14 +139,14 @@ export default function CheckoutModal({
               <span className="text-xs font-bold text-sky-200 uppercase tracking-wider">
                 {t.total}
               </span>
-              <div className="text-3xl font-black mt-0.5">
+              <div className="text-3xl font-black mt-0.5 numeric-preserve price-display">
                 {settings.currency_symbol}
                 {grandTotal.toFixed(2)}
               </div>
               <div className="text-xs text-sky-100 flex items-center gap-3 mt-1 font-medium">
-                <span>{t.subtotal}: {settings.currency_symbol}{subtotal.toFixed(2)}</span>
-                {totalDiscount > 0 && <span>• {t.discount}: -{settings.currency_symbol}{totalDiscount.toFixed(2)}</span>}
-                <span>• {t.tax} ({settings.tax_rate}%): {settings.currency_symbol}{taxAmount.toFixed(2)}</span>
+                <span className="numeric-preserve">{t.subtotal}: {settings.currency_symbol}{subtotal.toFixed(2)}</span>
+                {totalDiscount > 0 && <span className="numeric-preserve">• {t.discount}: -{settings.currency_symbol}{totalDiscount.toFixed(2)}</span>}
+                <span className="numeric-preserve">• {t.tax} ({settings.tax_rate}%): {settings.currency_symbol}{taxAmount.toFixed(2)}</span>
               </div>
             </div>
 

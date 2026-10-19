@@ -14,6 +14,7 @@ import {
 import { usePos } from '@/lib/context/PosContext'
 import { useTheme } from '@/lib/context/ThemeContext'
 import { getTranslation } from '@/lib/i18n'
+import { getLocalizedName } from '@/lib/types'
 import SalesChart from '@/components/SalesChart'
 
 export default function ReportsAndAnalyticsPage() {
@@ -45,15 +46,16 @@ export default function ReportsAndAnalyticsPage() {
     return acc
   }, {} as Record<string, number>)
 
-  // Top products calculation
+  // Top products calculation with localized names
   const productSalesMap: Record<string, { name: string; quantity: number; revenue: number }> = {}
   validReceipts.forEach((r) => {
     r.items.forEach((item) => {
-      if (!productSalesMap[item.name]) {
-        productSalesMap[item.name] = { name: item.name, quantity: 0, revenue: 0 }
+      const localizedName = getLocalizedName(item, language)
+      if (!productSalesMap[localizedName]) {
+        productSalesMap[localizedName] = { name: localizedName, quantity: 0, revenue: 0 }
       }
-      productSalesMap[item.name].quantity += item.quantity
-      productSalesMap[item.name].revenue += item.line_total
+      productSalesMap[localizedName].quantity += item.quantity
+      productSalesMap[localizedName].revenue += item.line_total
     })
   })
 

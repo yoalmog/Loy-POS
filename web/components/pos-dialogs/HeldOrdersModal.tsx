@@ -130,7 +130,7 @@ export default function HeldOrdersModal({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-slate-900 mx-2">
+                    <span className="text-sm font-black text-slate-900 mx-2 numeric-preserve price-display">
                       {settings.currency_symbol}
                       {order.subtotal.toFixed(2)}
                     </span>

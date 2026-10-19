@@ -18,48 +18,137 @@ const DB_VERSION = 1
 export const DEFAULT_SETTINGS: StoreSettings = {
   id: 'main',
   store_name: 'AuraPOS Bistro & Bar',
-  address: 'Herzl St 42, Tel Aviv-Yafo, Israel',
-  phone: '+972 3-555-1234',
-  email: 'contact@aurapos.co.il',
-  currency: 'ILS',
-  currency_symbol: '₪',
-  tax_rate: 17.0, // 17% VAT in Israel
+  address: 'Av. Larco 450, Miraflores, Lima, Perú',
+  phone: '+51 1 555-1234',
+  email: 'contacto@aurapos.pe',
+  currency: 'PEN',
+  currency_symbol: 'S/',
+  tax_rate: 18.0, // 18% IGV Peru
   tax_included: true,
-  receipt_header: 'ברוכים הבאים ל-AuraPOS Bistro!',
-  receipt_footer: 'תודה שקניתם אצלנו! נשמח לראותכם שוב.',
-  return_policy: 'החזרות והחלפות בהצגת קבלה תוך 14 יום בהתאם לחוק הגנת הצרכן.',
+  receipt_header: '¡Bienvenidos a AuraPOS Bistro!',
+  receipt_footer: '¡Gracias por su compra! Esperamos verle pronto.',
+  return_policy: 'Cambios y devoluciones con boleta/factura dentro de los 7 días calendario.',
   qr_payment_yape_name: 'AuraPOS Bistro',
-  qr_payment_yape_phone: '054-987-6543',
-  qr_payment_plin_name: 'AuraPOS Payments',
-  qr_payment_plin_phone: '054-987-6543',
-  loyalty_earn_rate: 1.0, // 1 point per ₪1
-  loyalty_redemption_rate: 5.0, // ₪5 discount per 100 points
+  qr_payment_yape_phone: '987-654-321',
+  qr_payment_plin_name: 'AuraPOS Pagos',
+  qr_payment_plin_phone: '987-654-321',
+  loyalty_earn_rate: 1.0, // 1 punto por S/ 1
+  loyalty_redemption_rate: 5.0, // S/ 5 descuento por 100 puntos
   allow_negative_stock: true,
   owner_pin: '1234'
 }
 
 export const DEFAULT_STAFF: StaffMember[] = [
-  { id: '1', name: 'אלכס כהן (קופאי)', pin: '1111', role: 'CASHIER', avatarColor: '#0288D1' },
-  { id: '2', name: 'שרה לוי (מנהלת)', pin: '2222', role: 'MANAGER', avatarColor: '#7C3AED' },
-  { id: '3', name: 'דוד ישראלי (בעלים)', pin: '1234', role: 'OWNER', avatarColor: '#10B981' }
+  { id: '1', name: 'Carlos Ramos (Cajero)', pin: '1111', role: 'CASHIER', avatarColor: '#0288D1' },
+  { id: '2', name: 'María Flores (Gerente)', pin: '2222', role: 'MANAGER', avatarColor: '#7C3AED' },
+  { id: '3', name: 'David Israel (Propietario)', pin: '1234', role: 'OWNER', avatarColor: '#10B981' }
 ]
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: 1, name: 'המבורגרים ובשרים', color_hex: '#EF4444', icon: 'Beef', target_printer: 'KITCHEN', sort_order: 1 },
-  { id: 2, name: 'פיצות ומאפים', color_hex: '#F59E0B', icon: 'Pizza', target_printer: 'KITCHEN', sort_order: 2 },
-  { id: 3, name: 'סלטים ותוספות', color_hex: '#10B981', icon: 'Salad', target_printer: 'KITCHEN', sort_order: 3 },
-  { id: 4, name: 'משקאות קלים', color_hex: '#06B6D4', icon: 'CupSoda', target_printer: 'BAR', sort_order: 4 },
-  { id: 5, name: 'קפה ומשקאות חמים', color_hex: '#8B5CF6', icon: 'Coffee', target_printer: 'BAR', sort_order: 5 },
-  { id: 6, name: 'בירות ומשקאות אלכוהוליים', color_hex: '#F97316', icon: 'Beer', target_printer: 'BAR', sort_order: 6 },
-  { id: 7, name: 'קינוחים וגלידות', color_hex: '#EC4899', icon: 'Cake', target_printer: 'KITCHEN', sort_order: 7 },
+  {
+    id: 1,
+    name: 'Hamburguesas y Carnes',
+    name_translations: {
+      es: 'Hamburguesas y Carnes',
+      en: 'Burgers & Meats',
+      he: 'המבורגרים ובשרים'
+    },
+    color_hex: '#EF4444',
+    icon: 'Beef',
+    target_printer: 'KITCHEN',
+    sort_order: 1
+  },
+  {
+    id: 2,
+    name: 'Pizzas y Hornadas',
+    name_translations: {
+      es: 'Pizzas y Hornadas',
+      en: 'Pizzas & Baked',
+      he: 'פיצות ומאפים'
+    },
+    color_hex: '#F59E0B',
+    icon: 'Pizza',
+    target_printer: 'KITCHEN',
+    sort_order: 2
+  },
+  {
+    id: 3,
+    name: 'Ensaladas y Guarniciones',
+    name_translations: {
+      es: 'Ensaladas y Guarniciones',
+      en: 'Salads & Sides',
+      he: 'סלטים ותוספות'
+    },
+    color_hex: '#10B981',
+    icon: 'Salad',
+    target_printer: 'KITCHEN',
+    sort_order: 3
+  },
+  {
+    id: 4,
+    name: 'Bebidas Frías',
+    name_translations: {
+      es: 'Bebidas Frías',
+      en: 'Cold Drinks',
+      he: 'משקאות קלים'
+    },
+    color_hex: '#06B6D4',
+    icon: 'CupSoda',
+    target_printer: 'BAR',
+    sort_order: 4
+  },
+  {
+    id: 5,
+    name: 'Café y Bebidas Calientes',
+    name_translations: {
+      es: 'Café y Bebidas Calientes',
+      en: 'Coffee & Hot Drinks',
+      he: 'קפה ומשקאות חמים'
+    },
+    color_hex: '#8B5CF6',
+    icon: 'Coffee',
+    target_printer: 'BAR',
+    sort_order: 5
+  },
+  {
+    id: 6,
+    name: 'Cervezas y Licores',
+    name_translations: {
+      es: 'Cervezas y Licores',
+      en: 'Beers & Alcoholic Drinks',
+      he: 'בירות ומשקאות אלכוהוליים'
+    },
+    color_hex: '#F97316',
+    icon: 'Beer',
+    target_printer: 'BAR',
+    sort_order: 6
+  },
+  {
+    id: 7,
+    name: 'Postres y Helados',
+    name_translations: {
+      es: 'Postres y Helados',
+      en: 'Desserts & Ice Cream',
+      he: 'קינוחים וגלידות'
+    },
+    color_hex: '#EC4899',
+    icon: 'Cake',
+    target_printer: 'KITCHEN',
+    sort_order: 7
+  },
 ]
 
 export const DEFAULT_ITEMS: Item[] = [
   {
     id: 101,
-    name: 'קלאסיק בורגר אנגוס',
+    name: 'Hamburguesa Clásica Angus',
+    name_translations: {
+      es: 'Hamburguesa Clásica Angus',
+      en: 'Classic Angus Burger',
+      he: 'קלאסיק בורגר אנגוס'
+    },
     category_id: 1,
-    category_name: 'המבורגרים ובשרים',
+    category_name: 'Hamburguesas y Carnes',
     price: 58.0,
     cost: 18.0,
     sku: 'BGR-ANG-01',
@@ -73,38 +162,111 @@ export const DEFAULT_ITEMS: Item[] = [
     color_hex: '#EF4444',
     image_url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
     unit_of_measure: 'item',
-    tax_rate_percent: 17,
+    tax_rate_percent: 18,
     variants: [
-      { id: 'v1', name: '200 גרם', price: 58.0, cost: 18.0, in_stock: 30 },
-      { id: 'v2', name: '300 גרם', price: 72.0, cost: 24.0, in_stock: 15 },
+      {
+        id: 'v1',
+        name: '200g',
+        name_translations: {
+          es: '200 gramos',
+          en: '200g',
+          he: '200 גרם'
+        },
+        price: 58.0,
+        cost: 18.0,
+        in_stock: 30
+      },
+      {
+        id: 'v2',
+        name: '300g',
+        name_translations: {
+          es: '300 gramos',
+          en: '300g',
+          he: '300 גרם'
+        },
+        price: 72.0,
+        cost: 24.0,
+        in_stock: 15
+      },
     ],
     modifier_groups: [
       {
         id: 1,
-        name: 'תוספות מעל',
+        name: 'Ingredientes Adicionales',
+        name_translations: {
+          es: 'Ingredientes Adicionales',
+          en: 'Extra Toppings',
+          he: 'תוספות מעל'
+        },
         options: [
-          { id: 'm1', name: 'גבינת צ׳דר מותכת', price: 8.0 },
-          { id: 'm2', name: 'בצל מקורמל', price: 6.0 },
-          { id: 'm3', name: 'ביצת עין', price: 7.0 },
-          { id: 'm4', name: 'רצועות אסאדו', price: 16.0 },
+          {
+            id: 'm1',
+            name: 'Queso Cheddar Fundido',
+            name_translations: {
+              es: 'Queso Cheddar Fundido',
+              en: 'Melted Cheddar Cheese',
+              he: 'גבינת צ׳דר מותכת'
+            },
+            price: 8.0
+          },
+          {
+            id: 'm2',
+            name: 'Cebolla Caramelizada',
+            name_translations: {
+              es: 'Cebolla Caramelizada',
+              en: 'Caramelized Onions',
+              he: 'בצל מקורמל'
+            },
+            price: 6.0
+          },
+          {
+            id: 'm3',
+            name: 'Huevo Frito',
+            name_translations: {
+              es: 'Huevo Frito',
+              en: 'Fried Egg',
+              he: 'ביצת עין'
+            },
+            price: 7.0
+          },
+          {
+            id: 'm4',
+            name: 'Tiras de Asado Ahumado',
+            name_translations: {
+              es: 'Tiras de Asado Ahumado',
+              en: 'Smoked Bacon / Asado Strips',
+              he: 'רצועות אסאדו'
+            },
+            price: 16.0
+          },
         ]
       },
       {
         id: 2,
-        name: 'מידת עשייה',
+        name: 'Término de la Carne',
+        name_translations: {
+          es: 'Término de la Carne',
+          en: 'Meat Doneness',
+          he: 'מידת עשייה'
+        },
         options: [
-          { id: 'd1', name: 'Medium (M)', price: 0.0 },
-          { id: 'd2', name: 'Medium-Well (MW)', price: 0.0 },
-          { id: 'd3', name: 'Well-Done (WD)', price: 0.0 },
+          { id: 'd1', name: 'Término Medio (Medium)', name_translations: { es: 'Término Medio (Medium)', en: 'Medium (M)', he: 'Medium (M)' }, price: 0.0 },
+          { id: 'd2', name: 'Tres Cuartos (Medium-Well)', name_translations: { es: 'Tres Cuartos (Medium-Well)', en: 'Medium-Well (MW)', he: 'Medium-Well (MW)' }, price: 0.0 },
+          { id: 'd3', name: 'Bien Cocido (Well-Done)', name_translations: { es: 'Bien Cocido (Well-Done)', en: 'Well-Done (WD)', he: 'Well-Done (WD)' }, price: 0.0 },
         ]
       }
     ]
   },
   {
     id: 102,
-    name: 'סמאש בורגר כפול',
+    name: 'Smash Burger Doble',
+    name_translations: {
+      es: 'Smash Burger Doble',
+      en: 'Double Smash Burger',
+      he: 'סמאש בורגר כפול'
+    },
     category_id: 1,
-    category_name: 'המבורגרים ובשרים',
+    category_name: 'Hamburguesas y Carnes',
     price: 64.0,
     cost: 21.0,
     sku: 'BGR-SMASH-02',
@@ -118,24 +280,34 @@ export const DEFAULT_ITEMS: Item[] = [
     color_hex: '#DC2626',
     image_url: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=80',
     unit_of_measure: 'item',
-    tax_rate_percent: 17,
+    tax_rate_percent: 18,
     modifier_groups: [
       {
         id: 1,
-        name: 'תוספות',
+        name: 'Extras',
+        name_translations: {
+          es: 'Extras',
+          en: 'Extras',
+          he: 'תוספות'
+        },
         options: [
-          { id: 'sm1', name: 'אקסטרה צ׳דר', price: 8.0 },
-          { id: 'sm2', name: 'חלפיניו חריף', price: 5.0 },
-          { id: 'sm3', name: 'רוטב צ׳ימיצ׳ורי ביתי', price: 4.0 },
+          { id: 'sm1', name: 'Extra Cheddar', name_translations: { es: 'Extra Cheddar', en: 'Extra Cheddar', he: 'אקסטרה צ׳דר' }, price: 8.0 },
+          { id: 'sm2', name: 'Jalapeño Picante', name_translations: { es: 'Jalapeño Picante', en: 'Spicy Jalapeno', he: 'חלפיניו חריף' }, price: 5.0 },
+          { id: 'sm3', name: 'Salsa Chimichurri Casera', name_translations: { es: 'Salsa Chimichurri Casera', en: 'House Chimichurri Sauce', he: 'רוטב צ׳ימיצ׳ורי ביתי' }, price: 4.0 },
         ]
       }
     ]
   },
   {
     id: 103,
-    name: 'פיצה מרגריטה נאפוליטנית',
+    name: 'Pizza Margherita Napolitana',
+    name_translations: {
+      es: 'Pizza Margherita Napolitana',
+      en: 'Neapolitan Margherita Pizza',
+      he: 'פיצה מרגריטה נאפוליטנית'
+    },
     category_id: 2,
-    category_name: 'פיצות ומאפים',
+    category_name: 'Pizzas y Hornadas',
     price: 52.0,
     cost: 12.0,
     sku: 'PIZ-MARG-01',
@@ -149,29 +321,39 @@ export const DEFAULT_ITEMS: Item[] = [
     color_hex: '#F59E0B',
     image_url: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=600&auto=format&fit=crop&q=80',
     unit_of_measure: 'item',
-    tax_rate_percent: 17,
+    tax_rate_percent: 18,
     variants: [
-      { id: 'pv1', name: 'אישית (28 ס״מ)', price: 42.0, cost: 9.0, in_stock: 35 },
-      { id: 'pv2', name: 'משפחתית (36 ס״מ)', price: 62.0, cost: 15.0, in_stock: 25 },
+      { id: 'pv1', name: 'Personal (28 cm)', name_translations: { es: 'Personal (28 cm)', en: 'Personal (28 cm)', he: 'אישית (28 ס״מ)' }, price: 42.0, cost: 9.0, in_stock: 35 },
+      { id: 'pv2', name: 'Familiar (36 cm)', name_translations: { es: 'Familiar (36 cm)', en: 'Family Size (36 cm)', he: 'משפחתית (36 ס״מ)' }, price: 62.0, cost: 15.0, in_stock: 25 },
     ],
     modifier_groups: [
       {
         id: 3,
-        name: 'תוספות לפיצה',
+        name: 'Ingredientes para Pizza',
+        name_translations: {
+          es: 'Ingredientes para Pizza',
+          en: 'Pizza Toppings',
+          he: 'תוספות לפיצה'
+        },
         options: [
-          { id: 'pt1', name: 'פטריות טריות', price: 6.0 },
-          { id: 'pt2', name: 'זיתי קלמטה', price: 6.0 },
-          { id: 'pt3', name: 'בצל סגול ועגבניות שרי', price: 5.0 },
-          { id: 'pt4', name: 'מוצרלה כפולה', price: 8.0 }
+          { id: 'pt1', name: 'Champiñones Frescos', name_translations: { es: 'Champiñones Frescos', en: 'Fresh Mushrooms', he: 'פטריות טריות' }, price: 6.0 },
+          { id: 'pt2', name: 'Aceitunas Kalamata', name_translations: { es: 'Aceitunas Kalamata', en: 'Kalamata Olives', he: 'זיתי קלמטה' }, price: 6.0 },
+          { id: 'pt3', name: 'Cebolla Morada y Tomates Cherry', name_translations: { es: 'Cebolla Morada y Tomates Cherry', en: 'Red Onions & Cherry Tomatoes', he: 'בצל סגול ועגבניות שרי' }, price: 5.0 },
+          { id: 'pt4', name: 'Doble Mozzarella', name_translations: { es: 'Doble Mozzarella', en: 'Double Mozzarella', he: 'מוצרלה כפולה' }, price: 8.0 }
         ]
       }
     ]
   },
   {
     id: 104,
-    name: 'סלט קיסר קראנץ׳',
+    name: 'Ensalada César Crujiente',
+    name_translations: {
+      es: 'Ensalada César Crujiente',
+      en: 'Crispy Caesar Salad',
+      he: 'סלט קיסר קראנץ׳'
+    },
     category_id: 3,
-    category_name: 'סלטים ותוספות',
+    category_name: 'Ensaladas y Guarniciones',
     price: 46.0,
     cost: 11.0,
     sku: 'SLD-CES-01',
@@ -185,24 +367,34 @@ export const DEFAULT_ITEMS: Item[] = [
     color_hex: '#10B981',
     image_url: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=600&auto=format&fit=crop&q=80',
     unit_of_measure: 'item',
-    tax_rate_percent: 17,
+    tax_rate_percent: 18,
     modifier_groups: [
       {
         id: 4,
-        name: 'שדרוג סלט',
+        name: 'Opciones de Ensalada',
+        name_translations: {
+          es: 'Opciones de Ensalada',
+          en: 'Salad Upgrades',
+          he: 'שדרוג סלט'
+        },
         options: [
-          { id: 'sl1', name: 'תוספת רצועות עוף צלויות', price: 14.0 },
-          { id: 'sl2', name: 'רוטב בצד', price: 0.0 },
-          { id: 'sl3', name: 'ללא קרוטונים', price: 0.0 }
+          { id: 'sl1', name: 'Pechuga de Pollo a la Parrilla', name_translations: { es: 'Pechuga de Pollo a la Parrilla', en: 'Grilled Chicken Breast', he: 'תוספת רצועות עוף צלויות' }, price: 14.0 },
+          { id: 'sl2', name: 'Aderezo Aparte', name_translations: { es: 'Aderezo Aparte', en: 'Dressing on the Side', he: 'רוטב בצד' }, price: 0.0 },
+          { id: 'sl3', name: 'Sin Crutones', name_translations: { es: 'Sin Crutones', en: 'No Croutons', he: 'ללא קרוטונים' }, price: 0.0 }
         ]
       }
     ]
   },
   {
     id: 105,
-    name: 'צ׳יפס הולנדי פריך',
+    name: 'Papas Fritas Rústicas',
+    name_translations: {
+      es: 'Papas Fritas Rústicas',
+      en: 'Crispy Dutch Fries',
+      he: 'צ׳יפס הולנדי פריך'
+    },
     category_id: 3,
-    category_name: 'סלטים ותוספות',
+    category_name: 'Ensaladas y Guarniciones',
     price: 24.0,
     cost: 5.0,
     sku: 'SID-FRY-01',
@@ -216,17 +408,22 @@ export const DEFAULT_ITEMS: Item[] = [
     color_hex: '#059669',
     image_url: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80',
     unit_of_measure: 'item',
-    tax_rate_percent: 17,
+    tax_rate_percent: 18,
     variants: [
-      { id: 'fv1', name: 'מנה קטנה', price: 18.0, cost: 3.5, in_stock: 40 },
-      { id: 'fv2', name: 'מנה ענקית לחלוקה', price: 28.0, cost: 6.5, in_stock: 40 },
+      { id: 'fv1', name: 'Porción Personal', name_translations: { es: 'Porción Personal', en: 'Small Portion', he: 'מנה קטנה' }, price: 18.0, cost: 3.5, in_stock: 40 },
+      { id: 'fv2', name: 'Porción Familiar', name_translations: { es: 'Porción Familiar', en: 'Large Sharing Portion', he: 'מנה ענקית לחלוקה' }, price: 28.0, cost: 6.5, in_stock: 40 },
     ]
   },
   {
     id: 106,
-    name: 'קוקה קולה זירו (זכוכית)',
+    name: 'Coca-Cola Zero (Botella)',
+    name_translations: {
+      es: 'Coca-Cola Zero (Botella)',
+      en: 'Coca Cola Zero (Glass Bottle)',
+      he: 'קוקה קולה זירו (זכוכית)'
+    },
     category_id: 4,
-    category_name: 'משקאות קלים',
+    category_name: 'Bebidas Frías',
     price: 14.0,
     cost: 4.0,
     sku: 'DRK-COK-01',
@@ -240,13 +437,18 @@ export const DEFAULT_ITEMS: Item[] = [
     color_hex: '#06B6D4',
     image_url: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80',
     unit_of_measure: 'item',
-    tax_rate_percent: 17
+    tax_rate_percent: 18
   },
   {
     id: 107,
-    name: 'קפוצ׳ינו / קפה הפוך',
+    name: 'Capuchino Artesanal',
+    name_translations: {
+      es: 'Capuchino Artesanal',
+      en: 'Artisan Cappuccino',
+      he: 'קפוצ׳ינו / קפה הפוך'
+    },
     category_id: 5,
-    category_name: 'קפה ומשקאות חמים',
+    category_name: 'Café y Bebidas Calientes',
     price: 15.0,
     cost: 3.0,
     sku: 'HOT-CAP-01',
@@ -260,29 +462,39 @@ export const DEFAULT_ITEMS: Item[] = [
     color_hex: '#8B5CF6',
     image_url: 'https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&auto=format&fit=crop&q=80',
     unit_of_measure: 'cup',
-    tax_rate_percent: 17,
+    tax_rate_percent: 18,
     variants: [
-      { id: 'cv1', name: 'כוס קטנה', price: 14.0, cost: 2.8, in_stock: 100 },
-      { id: 'cv2', name: 'כוס גדולה', price: 17.0, cost: 3.5, in_stock: 100 },
+      { id: 'cv1', name: 'Taza Regular', name_translations: { es: 'Taza Regular', en: 'Regular Cup', he: 'כוס קטנה' }, price: 14.0, cost: 2.8, in_stock: 100 },
+      { id: 'cv2', name: 'Taza Grande', name_translations: { es: 'Taza Grande', en: 'Large Cup', he: 'כוס גדולה' }, price: 17.0, cost: 3.5, in_stock: 100 },
     ],
     modifier_groups: [
       {
         id: 5,
-        name: 'סוג חלב',
+        name: 'Tipo de Leche',
+        name_translations: {
+          es: 'Tipo de Leche',
+          en: 'Milk Option',
+          he: 'סוג חלב'
+        },
         options: [
-          { id: 'm_reg', name: 'חלב רגיל 3%', price: 0.0 },
-          { id: 'm_soy', name: 'חלב שיבולת שועל', price: 3.0 },
-          { id: 'm_almond', name: 'חלב שקדים', price: 3.0 },
-          { id: 'm_skim', name: 'חלב דל שומן 1%', price: 0.0 }
+          { id: 'm_reg', name: 'Leche Entera', name_translations: { es: 'Leche Entera', en: 'Whole Milk', he: 'חלב רגיל 3%' }, price: 0.0 },
+          { id: 'm_soy', name: 'Leche de Avena', name_translations: { es: 'Leche de Avena', en: 'Oat Milk', he: 'חלב שיבולת שועל' }, price: 3.0 },
+          { id: 'm_almond', name: 'Leche de Almendras', name_translations: { es: 'Leche de Almendras', en: 'Almond Milk', he: 'חלב שקדים' }, price: 3.0 },
+          { id: 'm_skim', name: 'Leche Descremada', name_translations: { es: 'Leche Descremada', en: 'Skim Milk', he: 'חלב דל שומן 1%' }, price: 0.0 }
         ]
       }
     ]
   },
   {
     id: 108,
-    name: 'בירה מהחבית - גולדסטאר Unfiltered',
+    name: 'Cerveza de Barril Artesanal',
+    name_translations: {
+      es: 'Cerveza de Barril Artesanal',
+      en: 'Draft Craft Beer',
+      he: 'בירה מהחבית - גולדסטאר Unfiltered'
+    },
     category_id: 6,
-    category_name: 'בירות ומשקאות אלכוהוליים',
+    category_name: 'Cervezas y Licores',
     price: 29.0,
     cost: 8.0,
     sku: 'ALC-BER-01',
@@ -296,17 +508,22 @@ export const DEFAULT_ITEMS: Item[] = [
     color_hex: '#F97316',
     image_url: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=600&auto=format&fit=crop&q=80',
     unit_of_measure: 'item',
-    tax_rate_percent: 17,
+    tax_rate_percent: 18,
     variants: [
-      { id: 'bv1', name: 'חצי ליטר (500 מ״ל)', price: 32.0, cost: 9.0, in_stock: 30 },
-      { id: 'bv2', name: 'שליש ליטר (330 מ״ל)', price: 26.0, cost: 6.5, in_stock: 20 },
+      { id: 'bv1', name: 'Pinta (500 ml)', name_translations: { es: 'Pinta (500 ml)', en: 'Pint (500 ml)', he: 'חצי ליטר (500 מ״ל)' }, price: 32.0, cost: 9.0, in_stock: 30 },
+      { id: 'bv2', name: 'Media Pinta (330 ml)', name_translations: { es: 'Media Pinta (330 ml)', en: 'Half Pint (330 ml)', he: 'שליש ליטר (330 מ״ל)' }, price: 26.0, cost: 6.5, in_stock: 20 },
     ]
   },
   {
     id: 109,
-    name: 'עוגת שוקולד חמה נמסה (וולקנו)',
+    name: 'Volcán de Chocolate Fundido',
+    name_translations: {
+      es: 'Volcán de Chocolate Fundido',
+      en: 'Molten Lava Chocolate Cake',
+      he: 'עוגת שוקולד חמה נמסה (וולקנו)'
+    },
     category_id: 7,
-    category_name: 'קינוחים וגלידות',
+    category_name: 'Postres y Helados',
     price: 38.0,
     cost: 9.5,
     sku: 'DES-CHOC-01',
@@ -320,15 +537,20 @@ export const DEFAULT_ITEMS: Item[] = [
     color_hex: '#EC4899',
     image_url: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80',
     unit_of_measure: 'item',
-    tax_rate_percent: 17,
+    tax_rate_percent: 18,
     modifier_groups: [
       {
         id: 6,
-        name: 'כדור גלידה בצד',
+        name: 'Bola de Helado',
+        name_translations: {
+          es: 'Bola de Helado',
+          en: 'Scoop of Ice Cream',
+          he: 'כדור גלידה בצד'
+        },
         options: [
-          { id: 'ic1', name: 'וניל צרפתי', price: 6.0 },
-          { id: 'ic2', name: 'קרמל מלוח', price: 6.0 },
-          { id: 'ic3', name: 'קצפת עשירה', price: 4.0 }
+          { id: 'ic1', name: 'Vainilla Francesa', name_translations: { es: 'Vainilla Francesa', en: 'French Vanilla', he: 'וניל צרפתי' }, price: 6.0 },
+          { id: 'ic2', name: 'Caramelo Salado', name_translations: { es: 'Caramelo Salado', en: 'Salted Caramel', he: 'קרמל מלוח' }, price: 6.0 },
+          { id: 'ic3', name: 'Crema Chantilly', name_translations: { es: 'Crema Chantilly', en: 'Rich Whipped Cream', he: 'קצפת עשירה' }, price: 4.0 }
         ]
       }
     ]

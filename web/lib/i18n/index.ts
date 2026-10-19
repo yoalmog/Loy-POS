@@ -228,6 +228,7 @@ export interface TranslationDictionary {
   darkMode: string
   systemMode: string
   colorPalettes: string
+  restoreDefaults: string
   syncStatus: string
   online: string
   offline: string
@@ -474,6 +475,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     darkMode: 'מצב כהה',
     systemMode: 'לפי מערכת ההפעלה',
     colorPalettes: 'פלטות צבעים',
+    restoreDefaults: 'שחזר הגדרות מראה ברירת מחדל',
     syncStatus: 'סטטוס סנכרון ענן',
     online: 'מחובר (Online)',
     offline: 'מנותק (Offline)',
@@ -718,6 +720,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     darkMode: 'Dark Mode',
     systemMode: 'Sync with OS',
     colorPalettes: 'Color Palettes',
+    restoreDefaults: 'Restore Default Appearance',
     syncStatus: 'Cloud Sync Status',
     online: 'Online',
     offline: 'Offline',
@@ -962,6 +965,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     darkMode: 'Modo Oscuro',
     systemMode: 'Según el Sistema',
     colorPalettes: 'Paletas de Color',
+    restoreDefaults: 'Restaurar Apariencia por Defecto',
     syncStatus: 'Estado de Sincronización',
     online: 'Conectado (Online)',
     offline: 'Sin Conexión (Offline)',
@@ -1206,6 +1210,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     darkMode: 'Modo Escuro',
     systemMode: 'Acompanhar Sistema',
     colorPalettes: 'Paletas de Cores',
+    restoreDefaults: 'Restaurar Aparência Padrão',
     syncStatus: 'Sincronização em Nuvem',
     online: 'Conectado (Online)',
     offline: 'Desconectado (Offline)',
@@ -1450,6 +1455,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     darkMode: 'Mode Sombre',
     systemMode: 'Selon le Système',
     colorPalettes: 'Palettes de Couleurs',
+    restoreDefaults: 'Restaurer l\'apparence par défaut',
     syncStatus: 'Synchronisation Cloud',
     online: 'En Ligne (Online)',
     offline: 'Hors Ligne (Offline)',
@@ -1694,6 +1700,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     darkMode: 'Dunkel',
     systemMode: 'Wie Betriebssystem',
     colorPalettes: 'Farbpalette',
+    restoreDefaults: 'Standarderscheinung wiederherstellen',
     syncStatus: 'Cloud-Synchronisation',
     online: 'Online',
     offline: 'Offline',
@@ -1938,6 +1945,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     darkMode: '深色暗黑模式',
     systemMode: '跟随操作系统',
     colorPalettes: '主题调色盘',
+    restoreDefaults: '恢复默认外观',
     syncStatus: '云端数据同步状态',
     online: '在线实时同步',
     offline: '本地离线运行',
@@ -2182,6 +2190,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     darkMode: 'ダークモード',
     systemMode: '端末の設定に従う',
     colorPalettes: 'アクセントカラーパレット',
+    restoreDefaults: 'デフォルトの外観を復元',
     syncStatus: 'クラウド同期ステータス',
     online: 'オンライン',
     offline: 'オフライン',
@@ -2426,6 +2435,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
     darkMode: 'النمط الداكن',
     systemMode: 'تلقائي حسب نظام التشغيل',
     colorPalettes: 'لوحات الألوان',
+    restoreDefaults: 'استعادة المظهر الافتراضي',
     syncStatus: 'حالة المزامنة السحابية',
     online: 'متصل بالإنترنت',
     offline: 'العمل بدون إنترنت',
@@ -2458,6 +2468,6 @@ export function isRtlLanguage(lang: SupportedLanguage): boolean {
 }
 
 export function getTranslation(lang: SupportedLanguage): TranslationDictionary {
-  return translations[lang] || translations.he
+  return translations[lang] || translations.es
 }
 

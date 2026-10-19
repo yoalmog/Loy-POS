@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { X, Check, Plus, Minus, Tag, MessageSquare } from 'lucide-react'
-import { Item, ProductVariant, CartModifierSelection } from '@/lib/types'
+import { Item, ProductVariant, CartModifierSelection, getLocalizedName } from '@/lib/types'
 import { usePos } from '@/lib/context/PosContext'
 import { useTheme } from '@/lib/context/ThemeContext'
 
@@ -16,7 +16,7 @@ export default function ItemCustomizationModal({
   onClose: () => void
 }) {
   const { addToCart, settings } = usePos()
-  const { t, isRtl } = useTheme()
+  const { t, isRtl, language } = useTheme()
 
   if (!isOpen || !item) return null
 
@@ -34,14 +34,19 @@ export default function ItemCustomizationModal({
   // Quantity
   const [quantity, setQuantity] = useState<number>(1)
 
-  function toggleModifier(mod: { id: string; name: string; price: number }) {
+  function toggleModifier(mod: { id: string; name: string; price: number; name_translations?: Record<string, string> }) {
     const exists = selectedModifiers.find((m) => m.modifier_id === mod.id)
     if (exists) {
       setSelectedModifiers(selectedModifiers.filter((m) => m.modifier_id !== mod.id))
     } else {
       setSelectedModifiers([
         ...selectedModifiers,
-        { modifier_id: mod.id, name: mod.name, price: mod.price },
+        {
+          modifier_id: mod.id,
+          name: mod.name,
+          name_translations: mod.name_translations,
+          price: mod.price
+        },
       ])
     }
   }
@@ -62,7 +67,7 @@ export default function ItemCustomizationModal({
         <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
           <div>
             <span className="text-xs font-bold text-sky-400">{t.cart}</span>
-            <h3 className="text-lg font-black">{item.name}</h3>
+            <h3 className="text-lg font-black">{getLocalizedName(item, language)}</h3>
           </div>
           <button
             onClick={onClose}
@@ -94,8 +99,8 @@ export default function ItemCustomizationModal({
                           : 'border-slate-200 bg-white hover:bg-slate-100'
                       }`}
                     >
-                      <span className="font-bold text-xs text-slate-800">{variant.name}</span>
-                      <span className="font-extrabold text-xs text-sky-600">
+                      <span className="font-bold text-xs text-slate-800">{getLocalizedName(variant, language)}</span>
+                      <span className="font-extrabold text-xs text-sky-600 numeric-preserve price-display">
                         {settings.currency_symbol}
                         {variant.price.toFixed(2)}
                       </span>
@@ -112,7 +117,7 @@ export default function ItemCustomizationModal({
               {item.modifier_groups.map((group) => (
                 <div key={group.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                   <h4 className="text-xs font-extrabold uppercase text-slate-700 mb-2.5">
-                    {group.name}
+                    {getLocalizedName(group, language)}
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {group.options.map((opt) => {
@@ -138,9 +143,9 @@ export default function ItemCustomizationModal({
                             >
                               {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                             </div>
-                            <span className="text-xs">{opt.name}</span>
+                            <span className="text-xs">{getLocalizedName(opt, language)}</span>
                           </div>
-                          <span className="text-xs font-semibold text-slate-500">
+                          <span className="text-xs font-semibold text-slate-500 numeric-preserve price-display">
                             {opt.price > 0 ? `+${settings.currency_symbol}${opt.price.toFixed(2)}` : `${settings.currency_symbol}0`}
                           </span>
                         </button>

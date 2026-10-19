@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -145,7 +146,7 @@ fun LoyversePosApp() {
                 // Navigation Items
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.PointOfSale, contentDescription = null) },
-                    label = { Text("Sales Register", fontWeight = FontWeight.SemiBold) },
+                    label = { Text(stringResource(R.string.sales_register), fontWeight = FontWeight.SemiBold) },
                     selected = currentScreen == AppDestination.SALES_REGISTER,
                     onClick = {
                         currentScreen = AppDestination.SALES_REGISTER
@@ -156,7 +157,7 @@ fun LoyversePosApp() {
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Receipt, contentDescription = null) },
-                    label = { Text("Receipts Archive") },
+                    label = { Text(stringResource(R.string.receipts_archive)) },
                     selected = false,
                     onClick = {
                         coroutineScope.launch {
@@ -169,7 +170,7 @@ fun LoyversePosApp() {
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Schedule, contentDescription = null) },
-                    label = { Text("Shift Management") },
+                    label = { Text(stringResource(R.string.shift_management)) },
                     selected = false,
                     onClick = {
                         coroutineScope.launch {
@@ -182,7 +183,7 @@ fun LoyversePosApp() {
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.ListAlt, contentDescription = null) },
-                    label = { Text("Open Tickets / Tables") },
+                    label = { Text(stringResource(R.string.open_tickets)) },
                     selected = false,
                     onClick = {
                         coroutineScope.launch {
@@ -197,7 +198,7 @@ fun LoyversePosApp() {
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
-                    label = { Text("Back Office Reports & Stock", fontWeight = FontWeight.Bold) },
+                    label = { Text(stringResource(R.string.back_office), fontWeight = FontWeight.Bold) },
                     selected = currentScreen == AppDestination.BACK_OFFICE,
                     onClick = {
                         currentScreen = AppDestination.BACK_OFFICE
@@ -208,7 +209,7 @@ fun LoyversePosApp() {
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.People, contentDescription = null) },
-                    label = { Text("Customer Loyalty") },
+                    label = { Text(stringResource(R.string.customer_loyalty)) },
                     selected = false,
                     onClick = {
                         currentScreen = AppDestination.BACK_OFFICE
@@ -220,7 +221,7 @@ fun LoyversePosApp() {
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Tune, contentDescription = null) },
-                    label = { Text("Inventory Adjustments") },
+                    label = { Text(stringResource(R.string.inventory_adjustments)) },
                     selected = false,
                     onClick = {
                         currentScreen = AppDestination.BACK_OFFICE
@@ -232,7 +233,7 @@ fun LoyversePosApp() {
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Backup, contentDescription = null) },
-                    label = { Text("Database Backup & Sync (.json)", fontWeight = FontWeight.SemiBold) },
+                    label = { Text(stringResource(R.string.backup_sync), fontWeight = FontWeight.SemiBold) },
                     selected = false,
                     onClick = {
                         coroutineScope.launch {

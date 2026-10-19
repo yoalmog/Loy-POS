@@ -27,3 +27,4 @@ out/
 *.log
 .env.local
 .env.*.local
+*.tsbuildinfo

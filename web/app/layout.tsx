@@ -7,8 +7,8 @@ import { PosProvider } from '@/lib/context/PosContext'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'AuraPOS - קופה רושמת חכמה וניהול עסק מתקדם',
-  description: 'מערכת קופה רושמת (POS) ו-Back Office מלאה עם סורק תפריטים מבוסס AI, הדפסה כפולה וסנכרון אופליין',
+  title: 'AuraPOS - Sistema POS Inteligente y Gestión Empresarial',
+  description: 'Sistema completo de punto de venta (POS) y Back Office con escaneo con IA, soporte multilingüe y sincronización offline',
 }
 
 export default function RootLayout({
@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="he" dir="rtl">
+    <html lang="es" dir="ltr">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

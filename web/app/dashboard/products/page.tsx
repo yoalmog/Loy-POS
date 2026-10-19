@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { usePos } from '@/lib/context/PosContext'
 import { useTheme } from '@/lib/context/ThemeContext'
-import { Item, Category } from '@/lib/types'
+import { Item, Category, getLocalizedName, matchItemSearch } from '@/lib/types'
 import MenuScannerModal from '@/components/menu-scanner/MenuScannerModal'
 
 export default function ProductsManagementPage() {
@@ -31,7 +31,7 @@ export default function ProductsManagementPage() {
     deleteItemFromCatalog,
     addCategory,
   } = usePos()
-  const { t, isRtl } = useTheme()
+  const { t, isRtl, language } = useTheme()
 
   const [activeTab, setActiveTab] = useState<'products' | 'categories'>('products')
   const [search, setSearch] = useState('')
@@ -44,21 +44,22 @@ export default function ProductsManagementPage() {
   // Category Add Modal State
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [newCatName, setNewCatName] = useState('')
+  const [newCatNameEs, setNewCatNameEs] = useState('')
+  const [newCatNameEn, setNewCatNameEn] = useState('')
+  const [newCatNameHe, setNewCatNameHe] = useState('')
   const [newCatColor, setNewCatColor] = useState('#0288D1')
   const [newCatPrinter, setNewCatPrinter] = useState<'CASHIER' | 'KITCHEN' | 'BAR'>('KITCHEN')
 
-  // Filtered Products
-  const filteredItems = items.filter(
-    (i) =>
-      i.name.toLowerCase().includes(search.toLowerCase()) ||
-      (i.sku && i.sku.toLowerCase().includes(search.toLowerCase())) ||
-      (i.barcode && i.barcode.includes(search))
-  )
+  // Filtered Products (Multilingual search across ES, EN, HE, SKU, barcode)
+  const filteredItems = items.filter((i) => matchItemSearch(i, search, language))
 
   function openNewProductModal() {
     setEditingItem({
       id: Date.now(),
       name: '',
+      name_translations: { es: '', en: '', he: '' },
+      description: '',
+      description_translations: { es: '', en: '', he: '' },
       category_id: categories[0]?.id || 1,
       category_name: categories[0]?.name || t.allCategories,
       price: 0,
@@ -73,7 +74,7 @@ export default function ProductsManagementPage() {
       is_favorite: false,
       color_hex: '#0288D1',
       unit_of_measure: 'item',
-      tax_rate_percent: 17,
+      tax_rate_percent: 18,
       variants: [],
       modifier_groups: [],
     })
@@ -85,8 +86,17 @@ export default function ProductsManagementPage() {
     if (!editingItem) return
 
     const categoryObj = categories.find((c) => c.id === editingItem.category_id)
+    const effectiveName =
+      editingItem.name_translations?.es || editingItem.name || 'Nuevo Producto'
+
     const toSave: Item = {
       ...editingItem,
+      name: effectiveName,
+      name_translations: {
+        es: editingItem.name_translations?.es || effectiveName,
+        en: editingItem.name_translations?.en || '',
+        he: editingItem.name_translations?.he || '',
+      },
       category_name: categoryObj ? categoryObj.name : editingItem.category_name,
     }
 
@@ -103,11 +113,17 @@ export default function ProductsManagementPage() {
 
   async function handleSaveCategory(e: React.FormEvent) {
     e.preventDefault()
-    if (!newCatName) return
+    const effectiveName = newCatNameEs || newCatName
+    if (!effectiveName) return
 
     const newCat: Category = {
       id: Date.now(),
-      name: newCatName,
+      name: effectiveName,
+      name_translations: {
+        es: newCatNameEs || effectiveName,
+        en: newCatNameEn || '',
+        he: newCatNameHe || '',
+      },
       color_hex: newCatColor,
       target_printer: newCatPrinter,
       sort_order: categories.length + 1,
@@ -115,6 +131,9 @@ export default function ProductsManagementPage() {
     await addCategory(newCat)
     setIsCategoryModalOpen(false)
     setNewCatName('')
+    setNewCatNameEs('')
+    setNewCatNameEn('')
+    setNewCatNameHe('')
   }
 
   return (
@@ -238,7 +257,7 @@ export default function ProductsManagementPage() {
                             )}
                           </div>
                           <div>
-                            <h4 className="font-extrabold text-slate-900">{item.name}</h4>
+                            <h4 className="font-extrabold text-slate-900">{getLocalizedName(item, language)}</h4>
                             {item.variants && item.variants.length > 0 && (
                               <span className="text-[10px] text-sky-600 font-bold">
                                 {item.variants.length} {t.variants}
@@ -249,7 +268,7 @@ export default function ProductsManagementPage() {
                       </td>
                       <td className="p-4">
                         <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px]">
-                          {item.category_name}
+                          {getLocalizedName(categories.find((c) => c.id === item.category_id), language) || item.category_name}
                         </span>
                       </td>
                       <td className="p-4 font-black text-slate-900">
@@ -391,6 +410,65 @@ export default function ProductsManagementPage() {
                   onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
                   className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-white text-slate-800 font-bold"
                 />
+              </div>
+
+              {/* Multilingual Product Names & Localized Business Data */}
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2.5">
+                <span className="text-[11px] font-black uppercase text-slate-700 block">
+                  Traducciones de Nombre / Localized Display Names (ES / EN / HE)
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      Español (es)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Hamburguesa Clásica"
+                      value={editingItem.name_translations?.es || ''}
+                      onChange={(e) => {
+                        const nt = { ...(editingItem.name_translations || {}), es: e.target.value }
+                        setEditingItem({
+                          ...editingItem,
+                          name: e.target.value || editingItem.name,
+                          name_translations: nt,
+                        })
+                      }}
+                      className="w-full p-2 rounded-xl border border-slate-200 text-xs bg-slate-50 text-slate-800 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      English (en)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Classic Burger"
+                      value={editingItem.name_translations?.en || ''}
+                      onChange={(e) => {
+                        const nt = { ...(editingItem.name_translations || {}), en: e.target.value }
+                        setEditingItem({ ...editingItem, name_translations: nt })
+                      }}
+                      className="w-full p-2 rounded-xl border border-slate-200 text-xs bg-slate-50 text-slate-800 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      עברית (he)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="למשל: המבורגר קלאסי"
+                      value={editingItem.name_translations?.he || ''}
+                      onChange={(e) => {
+                        const nt = { ...(editingItem.name_translations || {}), he: e.target.value }
+                        setEditingItem({ ...editingItem, name_translations: nt })
+                      }}
+                      className="w-full p-2 rounded-xl border border-slate-200 text-xs bg-slate-50 text-slate-800 font-bold text-right"
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -586,16 +664,47 @@ export default function ProductsManagementPage() {
             <form onSubmit={handleSaveCategory} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                  {t.categoryName} *
+                  Nombre de Categoría (Español) *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder={t.categoryName}
-                  value={newCatName}
-                  onChange={(e) => setNewCatName(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-white text-slate-800"
+                  placeholder="Ej. Hamburguesas y Carnes"
+                  value={newCatNameEs || newCatName}
+                  onChange={(e) => {
+                    setNewCatName(e.target.value)
+                    setNewCatNameEs(e.target.value)
+                  }}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-white text-slate-800 font-bold"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                    English (en)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Burgers & Meats"
+                    value={newCatNameEn}
+                    onChange={(e) => setNewCatNameEn(e.target.value)}
+                    className="w-full p-2 rounded-xl border border-slate-200 text-xs bg-white text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                    עברית (he)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="למשל: המבורגרים ובשרים"
+                    value={newCatNameHe}
+                    onChange={(e) => setNewCatNameHe(e.target.value)}
+                    className="w-full p-2 rounded-xl border border-slate-200 text-xs bg-white text-slate-800 text-right"
+                    dir="rtl"
+                  />
+                </div>
               </div>
 
               <div>

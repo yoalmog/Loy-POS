@@ -21,10 +21,12 @@ export interface StaffMember {
   role: StaffRole
   avatarColor: string
 }
+export type TranslationMap = Record<string, string>
 
 export interface Category {
   id: number
   name: string
+  name_translations?: TranslationMap
   color_hex?: string
   icon?: string
   parent_id?: number | null
@@ -36,6 +38,7 @@ export interface Category {
 export interface ProductVariant {
   id: string
   name: string // e.g. "Small", "Regular", "Large"
+  name_translations?: TranslationMap
   price: number
   cost: number
   sku?: string
@@ -46,12 +49,14 @@ export interface ProductVariant {
 export interface ModifierOption {
   id: string
   name: string
+  name_translations?: TranslationMap
   price: number
 }
 
 export interface ModifierGroup {
   id: number
   name: string
+  name_translations?: TranslationMap
   options: ModifierOption[]
   min_selection?: number
   max_selection?: number
@@ -61,6 +66,9 @@ export interface ModifierGroup {
 export interface Item {
   id: number
   name: string
+  name_translations?: TranslationMap
+  description?: string
+  description_translations?: TranslationMap
   category_id?: number
   category_name?: string
   price: number
@@ -86,6 +94,7 @@ export interface Item {
 export interface CartModifierSelection {
   modifier_id: string
   name: string
+  name_translations?: TranslationMap
   price: number
 }
 
@@ -93,6 +102,7 @@ export interface CartItem {
   cart_id: string
   item_id: number
   name: string
+  name_translations?: TranslationMap
   unit_price: number
   cost: number
   quantity: number
@@ -295,3 +305,51 @@ export type TextScale = '1.0' | '1.15' | '1.30' | '1.50'
 export type ContrastMode = 'normal' | 'high' | 'ultra'
 
 export type TouchTargetSize = 'standard' | 'large' | 'jumbo'
+
+export type CatalogBgStyle = 'default' | 'subtle' | 'slate' | 'pure'
+
+export type CardAppearance = 'default' | 'compact' | 'bordered' | 'elevated'
+
+export function getLocalizedName(
+  entity: { name: string; name_translations?: Record<string, string> } | null | undefined,
+  lang: string,
+  fallback = ''
+): string {
+  if (!entity) return fallback
+  if (entity.name_translations && entity.name_translations[lang]) {
+    const val = entity.name_translations[lang].trim()
+    if (val) return val
+  }
+  return entity.name || fallback
+}
+
+export function matchItemSearch(
+  item: Item,
+  query: string,
+  lang: string
+): boolean {
+  if (!query) return true
+  const q = query.toLowerCase().trim()
+  if (item.sku && item.sku.toLowerCase().includes(q)) return true
+  if (item.barcode && item.barcode.toLowerCase().includes(q)) return true
+  if (item.name && item.name.toLowerCase().includes(q)) return true
+  if (item.name_translations) {
+    for (const val of Object.values(item.name_translations)) {
+      if (val && val.toLowerCase().includes(q)) return true
+    }
+  }
+  if (item.variants) {
+    for (const v of item.variants) {
+      if (v.sku && v.sku.toLowerCase().includes(q)) return true
+      if (v.barcode && v.barcode.toLowerCase().includes(q)) return true
+      if (v.name && v.name.toLowerCase().includes(q)) return true
+      if (v.name_translations) {
+        for (const val of Object.values(v.name_translations)) {
+          if (val && val.toLowerCase().includes(q)) return true
+        }
+      }
+    }
+  }
+  return false
+}
+

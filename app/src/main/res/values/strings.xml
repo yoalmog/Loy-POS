@@ -1,3 +1,41 @@
 <resources>
-    <string name="app_name">Loyverse POS</string>
+    <!-- Base default strings in Spanish (Español) as required for new installations -->
+    <string name="app_name">AuraPOS</string>
+    <string name="sales_register">Caja y Registro de Ventas</string>
+    <string name="receipts_archive">Archivo de Recibos</string>
+    <string name="shift_management">Control de Turnos y Caja</string>
+    <string name="open_tickets">Órdenes Abiertas / Mesas</string>
+    <string name="back_office">Back Office y Reportes</string>
+    <string name="sync_cloud">Sincronización en la Nube</string>
+    <string name="hardware_printers">Impresoras y Hardware</string>
+    <string name="settings_appearance">Ajustes y Apariencia</string>
+
+    <string name="search_products">Buscar productos...</string>
+    <string name="all_categories">Todas las Categorías</string>
+    <string name="favorites">Favoritos</string>
+    <string name="cart">Carrito de Ventas</string>
+    <string name="empty_cart">El carrito está vacío</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="discount">Descuento</string>
+    <string name="tax">Impuestos</string>
+    <string name="total">Total</string>
+    <string name="charge">Cobrar</string>
+    <string name="pay">Pagar</string>
+    <string name="cash">Efectivo</string>
+    <string name="card">Tarjeta</string>
+    <string name="digital_wallet">Billetera Digital</string>
+    <string name="refund">Reembolso</string>
+    <string name="cancel">Cancelar</string>
+    <string name="confirm">Confirmar</string>
+    <string name="save">Guardar</string>
+    <string name="delete">Eliminar</string>
+    <string name="language">Idioma</string>
+    <string name="theme">Tema y Apariencia</string>
+    <string name="theme_light">Modo Claro</string>
+    <string name="theme_dark">Modo Oscuro</string>
+    <string name="theme_system">Sistema</string>
+    <string name="restore_defaults">Restaurar Apariencia por Defecto</string>
+    <string name="customer_loyalty">Fidelización de Clientes</string>
+    <string name="inventory_adjustments">Ajustes de Inventario</string>
+    <string name="backup_sync">Copia de Seguridad y Sincronización (.json)</string>
 </resources>

@@ -1,0 +1,40 @@
+<resources>
+    <string name="app_name">AuraPOS</string>
+    <string name="sales_register">Sales Register</string>
+    <string name="receipts_archive">Receipts Archive</string>
+    <string name="shift_management">Shift &amp; Cash Management</string>
+    <string name="open_tickets">Open Tickets / Tables</string>
+    <string name="back_office">Back Office &amp; Reports</string>
+    <string name="sync_cloud">Sync Cloud Data</string>
+    <string name="hardware_printers">Hardware &amp; Printers</string>
+    <string name="settings_appearance">Settings &amp; Appearance</string>
+
+    <string name="search_products">Search products...</string>
+    <string name="all_categories">All Categories</string>
+    <string name="favorites">Favorites</string>
+    <string name="cart">Sales Cart</string>
+    <string name="empty_cart">Cart is empty</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="discount">Discount</string>
+    <string name="tax">Tax</string>
+    <string name="total">Total</string>
+    <string name="charge">Charge</string>
+    <string name="pay">Pay</string>
+    <string name="cash">Cash</string>
+    <string name="card">Card</string>
+    <string name="digital_wallet">Digital Wallet</string>
+    <string name="refund">Refund</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="language">Language</string>
+    <string name="theme">Theme &amp; Appearance</string>
+    <string name="theme_light">Light Mode</string>
+    <string name="theme_dark">Dark Mode</string>
+    <string name="theme_system">System</string>
+    <string name="restore_defaults">Restore Default Appearance</string>
+    <string name="customer_loyalty">Customer Loyalty</string>
+    <string name="inventory_adjustments">Inventory Adjustments</string>
+    <string name="backup_sync">Database Backup &amp; Sync (.json)</string>
+</resources>

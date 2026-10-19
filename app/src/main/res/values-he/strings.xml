@@ -1,0 +1,40 @@
+<resources>
+    <string name="app_name">AuraPOS</string>
+    <string name="sales_register">קופה ומכירה</string>
+    <string name="receipts_archive">ארכיון קבלות ומכירות</string>
+    <string name="shift_management">ניהול משמרות ומזומן</string>
+    <string name="open_tickets">הזמנות פתוחות / שולחנות</string>
+    <string name="back_office">דוחות וניהול מלאי (Back Office)</string>
+    <string name="sync_cloud">סנכרון נתונים בענן</string>
+    <string name="hardware_printers">מדפסות וחומרה</string>
+    <string name="settings_appearance">הגדרות ומראה</string>
+
+    <string name="search_products">חיפוש מוצרים...</string>
+    <string name="all_categories">כל הקטגוריות</string>
+    <string name="favorites">מועדפים</string>
+    <string name="cart">עגלת מכירה</string>
+    <string name="empty_cart">עגלת המכירה ריקה</string>
+    <string name="subtotal">סכום ביניים</string>
+    <string name="discount">הנחה</string>
+    <string name="tax">מע״מ / מס</string>
+    <string name="total">סה״כ לתשלום</string>
+    <string name="charge">חייב</string>
+    <string name="pay">תשלום</string>
+    <string name="cash">מזומן</string>
+    <string name="card">כרטיס אשראי</string>
+    <string name="digital_wallet">ארנק דיגיטלי</string>
+    <string name="refund">זיכוי / החזר</string>
+    <string name="cancel">ביטול</string>
+    <string name="confirm">אישור</string>
+    <string name="save">שמור</string>
+    <string name="delete">מחק</string>
+    <string name="language">שפת ממשק</string>
+    <string name="theme">מראה וערכות נושא</string>
+    <string name="theme_light">מצב בהיר</string>
+    <string name="theme_dark">מצב כהה</string>
+    <string name="theme_system">לפי מערכת</string>
+    <string name="restore_defaults">שחזר הגדרות מראה ברירת מחדל</string>
+    <string name="customer_loyalty">מועדון לקוחות</string>
+    <string name="inventory_adjustments">התאמות מלאי</string>
+    <string name="backup_sync">גיבוי וסנכרון מסד נתונים (.json)</string>
+</resources>

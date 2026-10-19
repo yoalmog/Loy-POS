@@ -43,7 +43,24 @@ export default function StoreSettingsPage() {
     triggerSound,
   } = useAccessibility()
 
-  const { mode, setMode, palette, setPalette, language, setLanguage, t } = useTheme()
+  const {
+    mode,
+    setMode,
+    palette,
+    setPalette,
+    customHex,
+    setCustomHex,
+    useCustomHex,
+    setUseCustomHex,
+    catalogBg,
+    setCatalogBg,
+    cardAppearance,
+    setCardAppearance,
+    language,
+    setLanguage,
+    t,
+    restoreDefaults,
+  } = useTheme()
 
   const [activeTab, setActiveTab] = useState<'store' | 'printers' | 'accessibility' | 'theme' | 'security'>('store')
   const [formData, setFormData] = useState<StoreSettings>(settings)
@@ -597,25 +614,34 @@ export default function StoreSettingsPage() {
       {/* 4. THEMES & LOCALIZATION TAB */}
       {activeTab === 'theme' && (
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-          <div>
-            <h3 className="text-sm font-black text-slate-900">
-              {t.settings} • i18n
-            </h3>
-            <p className="text-xs text-slate-500">
-              RTL / LTR • {language.toUpperCase()}
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-black text-slate-900">
+                {t.settings} • {t.theme}
+              </h3>
+              <p className="text-xs text-slate-500">
+                i18n • RTL / LTR • {language.toUpperCase()}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={restoreDefaults}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 transition-colors"
+            >
+              Restaurar Apariencia por Defecto
+            </button>
           </div>
 
           {/* Supported Languages */}
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-              {t.language} (9 Languages)
+              {t.language} (Español Predeterminado)
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
               {[
-                { code: 'he', name: 'עברית (RTL)' },
+                { code: 'es', name: 'Español (Predeterminado)' },
                 { code: 'en', name: 'English (US)' },
-                { code: 'es', name: 'Español' },
+                { code: 'he', name: 'עברית (RTL)' },
                 { code: 'pt', name: 'Português' },
                 { code: 'fr', name: 'Français' },
                 { code: 'de', name: 'Deutsch' },
@@ -630,7 +656,7 @@ export default function StoreSettingsPage() {
                   className={`p-3 rounded-2xl border font-bold text-xs flex items-center justify-between transition-all ${
                     language === lang.code
                       ? 'border-sky-600 bg-sky-50 text-sky-900 ring-2 ring-sky-600/20'
-                      : 'border-slate-200 bg-white text-slate-700'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   <span>{lang.name}</span>
@@ -640,16 +666,16 @@ export default function StoreSettingsPage() {
             </div>
           </div>
 
-          {/* Display Mode */}
+          {/* Display Mode (Light / Dark / System) */}
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-              {t.status}
+              {t.displayMode}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { mode: 'light', label: 'Light' },
-                { mode: 'dark', label: 'Dark' },
-                { mode: 'system', label: 'System' },
+                { mode: 'light', label: t.lightMode },
+                { mode: 'dark', label: t.darkMode },
+                { mode: 'system', label: t.systemMode },
               ].map((m) => (
                 <button
                   key={m.mode}
@@ -658,7 +684,7 @@ export default function StoreSettingsPage() {
                   className={`p-3 rounded-2xl border font-bold text-xs transition-all ${
                     mode === m.mode
                       ? 'border-sky-600 bg-sky-50 text-sky-900 ring-2 ring-sky-600/20'
-                      : 'border-slate-200 bg-white text-slate-700'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   {m.label}
@@ -670,25 +696,28 @@ export default function StoreSettingsPage() {
           {/* Color Palettes */}
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
-              {t.colorTag}
+              {t.colorPalettes}
             </label>
             <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
               {[
-                { id: 'blue', label: 'Blue', hex: '#0288D1' },
+                { id: 'blue', label: 'Blue POS', hex: '#0288D1' },
                 { id: 'emerald', label: 'Emerald', hex: '#10B981' },
                 { id: 'purple', label: 'Purple', hex: '#8B5CF6' },
                 { id: 'amber', label: 'Amber', hex: '#F59E0B' },
-                { id: 'red', label: 'Red', hex: '#EF4444' },
+                { id: 'red', label: 'Crimson', hex: '#EF4444' },
                 { id: 'midnight', label: 'Midnight', hex: '#0F172A' },
               ].map((pal) => (
                 <button
                   key={pal.id}
                   type="button"
-                  onClick={() => setPalette(pal.id as ColorTheme)}
+                  onClick={() => {
+                    setPalette(pal.id as ColorTheme)
+                    setUseCustomHex(false)
+                  }}
                   className={`p-3 rounded-2xl border font-bold text-xs flex flex-col items-center gap-2 transition-all ${
-                    palette === pal.id
+                    palette === pal.id && !useCustomHex
                       ? 'border-slate-900 bg-slate-50 ring-2 ring-slate-900/20'
-                      : 'border-slate-200 bg-white text-slate-700'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   <div
@@ -698,6 +727,138 @@ export default function StoreSettingsPage() {
                   <span>{pal.label}</span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Custom Accent Color */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-black text-slate-900 block">Color de Énfasis Personalizado (Custom Color)</span>
+                <span className="text-[11px] text-slate-500">Aplica cualquier código HEX como color primario del sistema</span>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-xs font-bold text-slate-700">Activar</span>
+                <input
+                  type="checkbox"
+                  checked={useCustomHex}
+                  onChange={(e) => setUseCustomHex(e.target.checked)}
+                  className="w-4 h-4 accent-sky-600 rounded"
+                />
+              </label>
+            </div>
+            {useCustomHex && (
+              <div className="flex items-center gap-3 pt-2">
+                <input
+                  type="color"
+                  value={customHex}
+                  onChange={(e) => setCustomHex(e.target.value)}
+                  className="w-12 h-10 rounded-xl cursor-pointer border border-slate-300"
+                />
+                <input
+                  type="text"
+                  value={customHex}
+                  onChange={(e) => setCustomHex(e.target.value)}
+                  placeholder="#0288D1"
+                  className="w-32 p-2 rounded-xl border border-slate-300 text-xs font-mono font-bold uppercase"
+                />
+                <div
+                  style={{ backgroundColor: customHex }}
+                  className="px-3 py-1.5 rounded-xl text-white text-xs font-bold shadow-sm"
+                >
+                  Muestra
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Cashier Catalog Background */}
+          <div>
+            <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
+              Fondo del Catálogo de la Caja (Catalog Background)
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {[
+                { id: 'default', label: 'Predeterminado (Slate 100)', desc: 'Gris neutro suave' },
+                { id: 'subtle', label: 'Sutil (Slate 50)', desc: 'Claridad máxima' },
+                { id: 'slate', label: 'Pizarra (Slate 200)', desc: 'Mayor contraste' },
+                { id: 'pure', label: 'Puro (White)', desc: 'Blanco limpio' },
+              ].map((bg) => (
+                <button
+                  key={bg.id}
+                  type="button"
+                  onClick={() => setCatalogBg(bg.id as any)}
+                  className={`p-3 rounded-2xl border font-bold text-xs text-start transition-all ${
+                    catalogBg === bg.id
+                      ? 'border-sky-600 bg-sky-50 text-sky-900 ring-2 ring-sky-600/20'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="block text-xs font-black">{bg.label}</span>
+                  <span className="text-[10px] text-slate-400 font-normal">{bg.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Card Appearance */}
+          <div>
+            <label className="block text-xs font-bold uppercase text-slate-500 mb-2">
+              Apariencia de Tarjetas de Productos (Card Appearance)
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {[
+                { id: 'default', label: 'Clásico (Default)', desc: 'Bordes suaves con sombra ligera' },
+                { id: 'compact', label: 'Compacto (Compact)', desc: 'Espaciado optimizado' },
+                { id: 'bordered', label: 'Borde Sólido (Bordered)', desc: 'Contorno de alto contraste' },
+                { id: 'elevated', label: 'Elevado (Elevated)', desc: 'Esquinas redondeadas y sombra flotante' },
+              ].map((card) => (
+                <button
+                  key={card.id}
+                  type="button"
+                  onClick={() => setCardAppearance(card.id as any)}
+                  className={`p-3 rounded-2xl border font-bold text-xs text-start transition-all ${
+                    cardAppearance === card.id
+                      ? 'border-sky-600 bg-sky-50 text-sky-900 ring-2 ring-sky-600/20'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="block text-xs font-black">{card.label}</span>
+                  <span className="text-[10px] text-slate-400 font-normal">{card.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Live Appearance Preview */}
+          <div className="p-5 rounded-3xl border border-slate-200 bg-slate-50 space-y-3">
+            <span className="text-xs font-extrabold uppercase text-slate-500 block">
+              Vista Previa en Vivo (Live Appearance Preview)
+            </span>
+            <div className={`p-4 rounded-2xl border border-slate-200 flex flex-wrap items-center gap-4 pos-catalog-container`}>
+              <div className="w-48 bg-white p-3 rounded-xl border border-slate-200 shadow-sm pos-product-card space-y-2">
+                <div
+                  style={{ backgroundColor: useCustomHex ? customHex : undefined }}
+                  className="w-full h-16 rounded-lg bg-sky-600 flex items-center justify-center text-white font-black text-sm"
+                >
+                  Hamburguesa
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-900">Hamburguesa Clásica</h4>
+                  <span className="text-xs font-extrabold text-sky-600">S/ 58.00</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <button
+                  style={{ backgroundColor: useCustomHex ? customHex : undefined }}
+                  className="px-4 py-2 rounded-xl bg-sky-600 text-white font-bold text-xs shadow-sm"
+                >
+                  Botón Primario POS
+                </button>
+                <p className="text-[11px] text-slate-500">
+                  Paleta activa: <strong>{useCustomHex ? `Personalizado (${customHex})` : palette}</strong> • Tarjeta: <strong>{cardAppearance}</strong> • Fondo: <strong>{catalogBg}</strong>
+                </p>
+              </div>
             </div>
           </div>
         </div>

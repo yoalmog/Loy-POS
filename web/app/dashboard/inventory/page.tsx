@@ -18,7 +18,7 @@ import {
 import { usePos } from '@/lib/context/PosContext'
 import { useTheme } from '@/lib/context/ThemeContext'
 import { getTranslation } from '@/lib/i18n'
-import { Item, StockMovement, StockMovementReason } from '@/lib/types'
+import { Item, StockMovement, StockMovementReason, getLocalizedName, matchItemSearch } from '@/lib/types'
 import { idbGetAll, idbPut } from '@/lib/db/idb'
 import { syncEngine } from '@/lib/db/sync'
 
@@ -46,11 +46,7 @@ export default function InventoryControlPage() {
     loadMovements()
   }, [])
 
-  const filteredItems = items.filter(
-    (i) =>
-      i.name.toLowerCase().includes(search.toLowerCase()) ||
-      (i.sku && i.sku.toLowerCase().includes(search.toLowerCase()))
-  )
+  const filteredItems = items.filter((i) => matchItemSearch(i, search, language))
 
   async function handleToggleNegativeStock() {
     await updateSettings({
@@ -193,7 +189,7 @@ export default function InventoryControlPage() {
 
                     return (
                       <tr key={item.id} className="hover:bg-slate-50/80">
-                        <td className="p-4 font-black text-slate-900">{item.name}</td>
+                        <td className="p-4 font-black text-slate-900">{getLocalizedName(item, language)}</td>
                         <td className="p-4 font-mono text-slate-500">{item.sku || '-'}</td>
                         <td className="p-4">
                           {item.track_stock ? (

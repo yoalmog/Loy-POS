@@ -31,7 +31,7 @@ import {
   Check,
   ChevronDown,
 } from 'lucide-react'
-import { Item, Category, Receipt } from '@/lib/types'
+import { Item, Category, Receipt, getLocalizedName, matchItemSearch } from '@/lib/types'
 import { usePos } from '@/lib/context/PosContext'
 import { useAccessibility } from '@/lib/context/AccessibilityContext'
 import { useTheme } from '@/lib/context/ThemeContext'
@@ -84,7 +84,7 @@ export default function PosPage() {
     triggerHaptic,
   } = useAccessibility()
 
-  const { t, isRtl } = useTheme()
+  const { t, isRtl, language } = useTheme()
 
   // Local UI State
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | 'ALL' | 'FAVORITES'>('ALL')
@@ -116,18 +116,14 @@ export default function PosPage() {
         return false
       }
 
-      // Search match (name, SKU, barcode)
+      // Multilingual search match (localized names, SKU, barcode)
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase()
-        const matchName = item.name.toLowerCase().includes(q)
-        const matchSku = item.sku?.toLowerCase().includes(q)
-        const matchBarcode = item.barcode?.includes(q)
-        if (!matchName && !matchSku && !matchBarcode) return false
+        if (!matchItemSearch(item, searchQuery, language)) return false
       }
 
       return true
     })
-  }, [items, selectedCategoryId, searchQuery])
+  }, [items, selectedCategoryId, searchQuery, language])
 
   function handleItemClick(item: Item) {
     if (
@@ -338,14 +334,14 @@ export default function PosPage() {
                       : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                   }`}
                 >
-                  {cat.name}
+                  {getLocalizedName(cat, language)}
                 </button>
               )
             })}
           </div>
 
           {/* Interactive Products Grid */}
-          <div className="flex-1 p-4 overflow-y-auto">
+          <div className="flex-1 p-4 overflow-y-auto pos-catalog-container">
             {filteredItems.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2">
                 <Search className="w-12 h-12 opacity-30" />
@@ -372,12 +368,14 @@ export default function PosPage() {
                   const hasVariants = item.variants && item.variants.length > 0
                   const isLowStock =
                     item.track_stock && item.in_stock <= item.low_stock_threshold
+                  const localizedCatName = getLocalizedName(categories.find(c => c.id === item.category_id), language) || item.category_name
+                  const localizedItemName = getLocalizedName(item, language)
 
                   return (
                     <div
                       key={item.id}
                       onClick={() => handleItemClick(item)}
-                      className={`group bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col overflow-hidden relative active:scale-95 ${touchPadding}`}
+                      className={`group bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col overflow-hidden relative active:scale-95 pos-product-card ${touchPadding}`}
                     >
                       {/* Favorite indicator badge */}
                       {item.is_favorite && (
@@ -399,7 +397,7 @@ export default function PosPage() {
                           {item.image_url ? (
                             <img
                               src={item.image_url}
-                              alt={item.name}
+                              alt={localizedItemName}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                           ) : (
@@ -407,7 +405,7 @@ export default function PosPage() {
                               style={{ backgroundColor: item.color_hex || '#0288D1' }}
                               className="w-full h-full opacity-80 flex items-center justify-center text-white font-black text-2xl"
                             >
-                              {item.name.charAt(0)}
+                              {localizedItemName.charAt(0)}
                             </div>
                           )}
                         </div>
@@ -418,7 +416,7 @@ export default function PosPage() {
                         <div>
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider truncate">
-                              {item.category_name}
+                              {localizedCatName}
                             </span>
                             {hasVariants && (
                               <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-1.5 py-0.5 rounded-md">
@@ -427,12 +425,12 @@ export default function PosPage() {
                             )}
                           </div>
                           <h4 className="text-xs font-black text-slate-900 mt-1 line-clamp-2 leading-tight">
-                            {item.name}
+                            {localizedItemName}
                           </h4>
                         </div>
 
                         <div className="mt-2.5 flex items-center justify-between pt-2 border-t border-slate-100">
-                          <span className="text-sm font-black text-slate-900">
+                          <span className="text-sm font-black text-slate-900 numeric-preserve price-display">
                             {settings.currency_symbol}
                             {item.price.toFixed(2)}
                           </span>
@@ -530,15 +528,15 @@ export default function PosPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="text-xs font-black text-slate-900">{line.name}</h4>
+                      <h4 className="text-xs font-black text-slate-900">{getLocalizedName(line, language)}</h4>
                       {line.selected_variant && (
                         <span className="text-[10px] text-slate-500 block">
-                          • {line.selected_variant.name}
+                          • {getLocalizedName(line.selected_variant, language)}
                         </span>
                       )}
                       {line.selected_modifiers && line.selected_modifiers.length > 0 && (
                         <span className="text-[10px] text-slate-500 block">
-                          {line.selected_modifiers.map((m) => `+ ${m.name}`).join(', ')}
+                          {line.selected_modifiers.map((m) => `+ ${getLocalizedName(m, language)}`).join(', ')}
                         </span>
                       )}
                       {line.comment && (
@@ -548,7 +546,7 @@ export default function PosPage() {
                       )}
                     </div>
 
-                    <span className="text-xs font-black text-slate-900">
+                    <span className="text-xs font-black text-slate-900 numeric-preserve price-display">
                       {settings.currency_symbol}
                       {line.line_total.toFixed(2)}
                     </span>
