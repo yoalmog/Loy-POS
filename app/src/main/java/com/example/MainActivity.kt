@@ -36,6 +36,7 @@ import com.example.ui.pos.PosViewModel
 import com.example.ui.pos.PosViewModelFactory
 import com.example.ui.pos.SalesRegisterScreen
 import com.example.ui.theme.LoyverseTheme
+import com.example.ui.theme.PosDesignTokens
 import kotlinx.coroutines.launch
 
 enum class AppDestination {
@@ -86,15 +87,17 @@ fun LoyversePosApp() {
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet(
+                drawerContainerColor = PosDesignTokens.NavDarkBg,
+                drawerContentColor = PosDesignTokens.NavTextSecondary,
                 modifier = Modifier.width(300.dp)
             ) {
-                // Drawer Header
+                // 1. Brand Header (Matching Back Office Dark Navy Sidebar)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.primary)
+                        .background(PosDesignTokens.NavDarkBg)
                         .statusBarsPadding()
-                        .padding(20.dp)
+                        .padding(horizontal = 18.dp, vertical = 16.dp)
                 ) {
                     Column {
                         Row(
@@ -102,147 +105,271 @@ fun LoyversePosApp() {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                modifier = Modifier.size(44.dp),
-                                shape = CircleShape,
-                                color = Color.White.copy(alpha = 0.2f)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Default.Storefront,
-                                        contentDescription = null,
-                                        tint = Color.White
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Surface(
+                                    modifier = Modifier.size(42.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = PosDesignTokens.BrandSky600,
+                                    shadowElevation = 4.dp
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Default.Storefront,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                }
+                                Column {
+                                    Text(
+                                        text = "Bistro & Grill #1",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = "Online Cloud Portal",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = PosDesignTokens.BrandSky500
                                     )
                                 }
                             }
 
-                            // Switch employee lock button (Loyverse 5.4)
-                            IconButton(onClick = { showPinDialog = true }) {
+                            // Switch employee lock button
+                            IconButton(
+                                onClick = { showPinDialog = true },
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(PosDesignTokens.NavDarkCard, RoundedCornerShape(10.dp))
+                            ) {
                                 Icon(
                                     Icons.Default.Lock,
                                     contentDescription = "Switch Employee PIN",
-                                    tint = Color.White
+                                    tint = PosDesignTokens.AccentAmber,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "Bistro & Grill #1",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = currentCashier,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.85f)
-                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                // 2. Active POS Banner (Matching Back Office Sidebar Banner)
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = PosDesignTokens.BrandSky600.copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PosDesignTokens.BrandSky600.copy(alpha = 0.35f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(PosDesignTokens.AccentEmerald)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Sales Register",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(999.dp),
+                            color = PosDesignTokens.BrandSky600
+                        ) {
+                            Text(
+                                "POS",
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Black,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
 
-                // Navigation Items
+                HorizontalDivider(color = PosDesignTokens.NavBorder, modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
+
+                val navColors = NavigationDrawerItemDefaults.colors(
+                    selectedContainerColor = PosDesignTokens.BrandSky600,
+                    unselectedContainerColor = Color.Transparent,
+                    selectedIconColor = Color.White,
+                    unselectedIconColor = PosDesignTokens.NavTextMuted,
+                    selectedTextColor = Color.White,
+                    unselectedTextColor = PosDesignTokens.NavTextSecondary
+                )
+
+                // 3. Navigation Items (Matching Back Office nav)
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.PointOfSale, contentDescription = null) },
-                    label = { Text(stringResource(R.string.sales_register), fontWeight = FontWeight.SemiBold) },
+                    label = { Text(stringResource(R.string.sales_register), fontWeight = FontWeight.Bold) },
                     selected = currentScreen == AppDestination.SALES_REGISTER,
+                    colors = navColors,
+                    shape = RoundedCornerShape(12.dp),
                     onClick = {
                         currentScreen = AppDestination.SALES_REGISTER
                         coroutineScope.launch { drawerState.close() }
                     },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                 )
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Receipt, contentDescription = null) },
-                    label = { Text(stringResource(R.string.receipts_archive)) },
+                    label = { Text(stringResource(R.string.receipts_archive), fontWeight = FontWeight.SemiBold) },
                     selected = false,
+                    colors = navColors,
+                    shape = RoundedCornerShape(12.dp),
                     onClick = {
                         coroutineScope.launch {
                             drawerState.close()
                             posViewModel.setReceiptsDialog(true)
                         }
                     },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                 )
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Schedule, contentDescription = null) },
-                    label = { Text(stringResource(R.string.shift_management)) },
+                    label = { Text(stringResource(R.string.shift_management), fontWeight = FontWeight.SemiBold) },
                     selected = false,
+                    colors = navColors,
+                    shape = RoundedCornerShape(12.dp),
                     onClick = {
                         coroutineScope.launch {
                             drawerState.close()
                             posViewModel.setShiftDialog(true)
                         }
                     },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                 )
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.ListAlt, contentDescription = null) },
-                    label = { Text(stringResource(R.string.open_tickets)) },
+                    label = { Text(stringResource(R.string.open_tickets), fontWeight = FontWeight.SemiBold) },
                     selected = false,
+                    colors = navColors,
+                    shape = RoundedCornerShape(12.dp),
                     onClick = {
                         coroutineScope.launch {
                             drawerState.close()
                             posViewModel.setOpenTicketsDialog(true)
                         }
                     },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                 )
 
-                Divider(modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp))
+                HorizontalDivider(color = PosDesignTokens.NavBorder, modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
                     label = { Text(stringResource(R.string.back_office), fontWeight = FontWeight.Bold) },
                     selected = currentScreen == AppDestination.BACK_OFFICE,
+                    colors = navColors,
+                    shape = RoundedCornerShape(12.dp),
                     onClick = {
                         currentScreen = AppDestination.BACK_OFFICE
                         coroutineScope.launch { drawerState.close() }
                     },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                 )
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.People, contentDescription = null) },
-                    label = { Text(stringResource(R.string.customer_loyalty)) },
+                    label = { Text(stringResource(R.string.customer_loyalty), fontWeight = FontWeight.SemiBold) },
                     selected = false,
+                    colors = navColors,
+                    shape = RoundedCornerShape(12.dp),
                     onClick = {
                         currentScreen = AppDestination.BACK_OFFICE
                         backOfficeViewModel.selectTab(BackOfficeTab.CUSTOMERS)
                         coroutineScope.launch { drawerState.close() }
                     },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                 )
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Tune, contentDescription = null) },
-                    label = { Text(stringResource(R.string.inventory_adjustments)) },
+                    label = { Text(stringResource(R.string.inventory_adjustments), fontWeight = FontWeight.SemiBold) },
                     selected = false,
+                    colors = navColors,
+                    shape = RoundedCornerShape(12.dp),
                     onClick = {
                         currentScreen = AppDestination.BACK_OFFICE
                         backOfficeViewModel.selectTab(BackOfficeTab.ITEMS_INVENTORY)
                         coroutineScope.launch { drawerState.close() }
                     },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                 )
 
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.Backup, contentDescription = null) },
                     label = { Text(stringResource(R.string.backup_sync), fontWeight = FontWeight.SemiBold) },
                     selected = false,
+                    colors = navColors,
+                    shape = RoundedCornerShape(12.dp),
                     onClick = {
                         coroutineScope.launch {
                             drawerState.close()
                             posViewModel.setDatabaseBackupDialog(true)
                         }
                     },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                 )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Footer: Cashier info
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(PosDesignTokens.NavDarkDeep)
+                        .padding(14.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = PosDesignTokens.BrandSky600,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    currentCashier.take(1).uppercase(),
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                        Column {
+                            Text(
+                                currentCashier,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                "Cashier on Duty",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = PosDesignTokens.NavTextMuted,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                }
             }
         }
     ) {
@@ -262,9 +389,8 @@ fun LoyversePosApp() {
         }
     }
 
-    // PIN Switch Dialog (Section 5.4 & 5.6 of Loyverse User Manual)
+    // PIN Switch Dialog
     if (showPinDialog) {
-        var pinInput by remember { mutableStateOf("") }
         val cashiers = listOf("Alex (Cashier)", "Sarah (Manager)", "Marcus (Supervisor)")
 
         AlertDialog(
@@ -275,8 +401,9 @@ fun LoyversePosApp() {
                     Text("Select cashier or enter 4-digit PIN:")
                     cashiers.forEach { c ->
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (currentCashier == c) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (currentCashier == c) PosDesignTokens.BrandSky100 else PosDesignTokens.BackgroundLight,
+                            border = if (currentCashier == c) androidx.compose.foundation.BorderStroke(1.dp, PosDesignTokens.BrandSky600) else null,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
@@ -284,7 +411,12 @@ fun LoyversePosApp() {
                                     showPinDialog = false
                                 }
                         ) {
-                            Text(c, modifier = Modifier.padding(12.dp), fontWeight = FontWeight.Bold)
+                            Text(
+                                c,
+                                modifier = Modifier.padding(14.dp),
+                                fontWeight = FontWeight.Bold,
+                                color = if (currentCashier == c) PosDesignTokens.BrandSky800 else PosDesignTokens.TextPrimary
+                            )
                         }
                     }
                 }
