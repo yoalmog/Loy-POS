@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.*
 import com.example.ui.components.ProductInventoryGrid
+import com.example.ui.theme.PosDesignTokens
 import com.example.util.AppConfig
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -86,14 +87,14 @@ fun BackOfficeScreen(
                                 Surface(
                                     modifier = Modifier.size(8.dp),
                                     shape = CircleShape,
-                                    color = if (isOnline) Color(0xFF2E7D32) else Color(0xFFE65100)
+                                    color = if (isOnline) PosDesignTokens.AccentEmerald else PosDesignTokens.AccentAmber
                                 ) {}
                             }
                         ) {
                             Icon(
                                 imageVector = if (isOnline) Icons.Default.Wifi else Icons.Default.WifiOff,
                                 contentDescription = "Sync Status",
-                                tint = if (isOnline) Color(0xFF2E7D32) else Color(0xFFE65100)
+                                tint = if (isOnline) PosDesignTokens.AccentEmerald else PosDesignTokens.AccentAmber
                             )
                         }
                     }
@@ -307,7 +308,7 @@ fun SalesSummaryTab(receipts: List<ReceiptEntity>, uiState: BackOfficeUiState) {
 
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                KpiCard(title = "Est. Gross Profit", value = "$${String.format(Locale.US, "%.2f", grossProfit)}", modifier = Modifier.weight(1f), color = Color(0xFF2E7D32))
+                KpiCard(title = "Est. Gross Profit", value = "$${String.format(Locale.US, "%.2f", grossProfit)}", modifier = Modifier.weight(1f), color = PosDesignTokens.AccentEmerald)
                 KpiCard(title = "Total Receipts", value = receipts.size.toString(), modifier = Modifier.weight(1f), color = Color(0xFF1976D2))
             }
         }
@@ -752,20 +753,20 @@ fun SettingsTab(
                             Icon(
                                 if (isOnline) Icons.Default.Wifi else Icons.Default.WifiOff,
                                 contentDescription = null,
-                                tint = if (isOnline) Color(0xFF2E7D32) else Color(0xFFE65100)
+                                tint = if (isOnline) PosDesignTokens.AccentEmerald else PosDesignTokens.AccentAmber
                             )
                             Text("Network & Sync Status", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                         }
                         Surface(
                             shape = CircleShape,
-                            color = if (isOnline) Color(0xFF2E7D32).copy(alpha = 0.15f) else Color(0xFFE65100).copy(alpha = 0.15f)
+                            color = if (isOnline) PosDesignTokens.AccentEmerald.copy(alpha = 0.15f) else PosDesignTokens.AccentAmber.copy(alpha = 0.15f)
                         ) {
                             Text(
                                 if (isOnline) "Online ($connectionType)" else "Offline Mode",
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isOnline) Color(0xFF2E7D32) else Color(0xFFE65100)
+                                color = if (isOnline) PosDesignTokens.AccentEmerald else PosDesignTokens.AccentAmber
                             )
                         }
                     }
