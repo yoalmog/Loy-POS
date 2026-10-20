@@ -1409,12 +1409,15 @@ fun ItemListRow(
 // -----------------------------------------------------------------------------------------
 @Composable
 fun LoyverseKeypadView(
-    inputAmountCents: Long,
-    onDigit: (Int) -> Unit,
+    inputAmountCents: String,
+    onDigit: (String) -> Unit,
     onBackspace: () -> Unit,
     onClear: () -> Unit,
     onAddToTicket: () -> Unit
 ) {
+    val cents = inputAmountCents.toLongOrNull() ?: 0L
+    val displayDollars = cents / 100.0
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1422,7 +1425,6 @@ fun LoyverseKeypadView(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val displayDollars = inputAmountCents / 100.0
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -1468,7 +1470,7 @@ fun LoyverseKeypadView(
                                 when (digit) {
                                     -1 -> onClear()
                                     -2 -> onBackspace()
-                                    else -> onDigit(digit)
+                                    else -> onDigit(digit.toString())
                                 }
                             },
                         shape = RoundedCornerShape(14.dp),
@@ -1489,7 +1491,7 @@ fun LoyverseKeypadView(
 
         Button(
             onClick = onAddToTicket,
-            enabled = inputAmountCents > 0L,
+            enabled = cents > 0L,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
