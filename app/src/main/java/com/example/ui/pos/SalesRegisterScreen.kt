@@ -63,6 +63,7 @@ fun SalesRegisterScreen(
 
     var showMobileCartSheet by remember { mutableStateOf(false) }
     var showDiscountDialog by remember { mutableStateOf(false) }
+    var showOcrDialog by remember { mutableStateOf(false) }
 
     // Filter items by category, favorites & search query
     val displayedItems = remember(allItems, uiState.selectedCategoryId, uiState.isFavoritesSelected, uiState.searchQuery) {
@@ -179,6 +180,11 @@ fun SalesRegisterScreen(
                             Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan Barcode", tint = Color.White)
                         }
 
+                        // OCR Scan Menu / Bill Button
+                        IconButton(onClick = { showOcrDialog = true }) {
+                            Icon(Icons.Default.DocumentScanner, contentDescription = "Scan Menu / Bill (OCR)", tint = Color.White)
+                        }
+
                         // On wide screens (tablets), show customer, sync status and view mode directly in TopBar
                         if (isWideScreen) {
                             IconButton(onClick = { viewModel.setCustomerSelectDialog(true) }) {
@@ -278,11 +284,19 @@ fun SalesRegisterScreen(
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Thermal Printer Settings") },
-                                    leadingIcon = { Icon(Icons.Default.Print, contentDescription = null) },
+                                    text = { Text("Printer Settings (Network & BLE)") },
+                                    leadingIcon = { Icon(Icons.Default.Print, contentDescription = null, tint = Color(0xFF2E7D32)) },
                                     onClick = {
                                         showMoreMenu = false
                                         viewModel.setPrinterSettingsDialog(true)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Escanear Menú con OCR (PaddleOCR)") },
+                                    leadingIcon = { Icon(Icons.Default.DocumentScanner, contentDescription = null, tint = Color(0xFF0288D1)) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        showOcrDialog = true
                                     }
                                 )
                                 DropdownMenuItem(
@@ -764,6 +778,33 @@ fun SalesRegisterScreen(
         BarcodeScannerDialog(
             onDismiss = { viewModel.setBarcodeDialog(false) },
             onBarcodeScanned = { code -> viewModel.onBarcodeScanned(code) }
+        )
+    }
+
+    // OCR Scanner Dialog (PaddleOCR)
+    if (showOcrDialog) {
+        com.example.ui.pos.components.OcrScannerDialog(
+            onDismiss = { showOcrDialog = false },
+            onAddItemsToCart = { acceptedItems ->
+                for (scanned in acceptedItems) {
+                    val existing = allItems.find { it.name.equals(scanned.name, ignoreCase = true) }
+                    if (existing != null) {
+                        viewModel.onItemClick(existing)
+                    } else {
+                        val transientItem = com.example.data.model.ItemEntity(
+                            id = System.currentTimeMillis() % 10000000L + (1..999).random(),
+                            name = scanned.name,
+                            categoryId = 1L,
+                            categoryName = scanned.category,
+                            price = scanned.price,
+                            cost = scanned.price * 0.6,
+                            sku = "OCR-${scanned.name.take(3).uppercase()}",
+                            inStock = 50.0
+                        )
+                        viewModel.onItemClick(transientItem)
+                    }
+                }
+            }
         )
     }
 

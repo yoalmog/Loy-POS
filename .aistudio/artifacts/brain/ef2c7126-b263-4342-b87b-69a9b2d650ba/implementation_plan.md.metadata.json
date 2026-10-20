@@ -1,6 +1,6 @@
 {
-  "summary": "Implementation plan for Loyverse POS Production System integrating Native Android POS, Supabase PostgreSQL backend, and Vercel-ready Next.js Back Office website with real-time two-way synchronization, offline queueing, and robust security.",
-  "updatedAt": "2026-10-17T04:12:23.113780019Z",
+  "summary": "Implementation plan for integrating a self-hosted open-source OCR API (PaddleOCR) across both Web POS and Android mobile POS, complete with smart heuristic parsing, bounding box overlays, and manual review fallback.",
+  "updatedAt": "2026-10-20T06:46:53.356333110Z",
   "requestFeedback": true,
   "userFacing": true
 }

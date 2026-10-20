@@ -80,4 +80,41 @@ class ExampleRobolectricTest {
     // 9.50 * 2 + 4.25 = 23.25
     assertEquals(23.25, state.subtotal, 0.001)
   }
+
+  @Test
+  fun `test network printer manager settings persistence and default printer selection`() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    com.example.util.NetworkPrinterManager.initialize(context)
+
+    val customPrinter = com.example.data.model.NetworkPrinter(
+      id = "test-printer-1",
+      name = "Kitchen Star Micronics",
+      ipAddress = "192.168.1.180",
+      port = 9100,
+      paperWidthMm = 80,
+      isDefault = false
+    )
+
+    com.example.util.NetworkPrinterManager.savePrinter(context, customPrinter, makeDefault = true)
+
+    val active = com.example.util.NetworkPrinterManager.activePrinter.value
+    assertEquals("Kitchen Star Micronics", active?.name)
+    assertEquals("192.168.1.180", active?.ipAddress)
+    assertEquals(9100, active?.port)
+    assertEquals(80, active?.paperWidthMm)
+    assertEquals("192.168.1.180:9100", active?.addressLabel)
+
+    // Test settings update
+    val updatedSettings = com.example.util.NetworkPrinterManager.settings.value.copy(
+      autoPrintOnCheckout = true,
+      openDrawerOnPrint = true,
+      cutPaperOnPrint = true
+    )
+    com.example.util.NetworkPrinterManager.updateSettings(context, updatedSettings)
+
+    val currentSettings = com.example.util.NetworkPrinterManager.settings.value
+    assertEquals(true, currentSettings.autoPrintOnCheckout)
+    assertEquals(true, currentSettings.openDrawerOnPrint)
+    assertEquals(true, currentSettings.cutPaperOnPrint)
+  }
 }
