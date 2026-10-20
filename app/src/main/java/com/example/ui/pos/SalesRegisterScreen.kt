@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -136,7 +137,9 @@ fun SalesRegisterScreen(
                                         text = uiState.currentTicketName,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = Color.White,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Icon(
@@ -149,7 +152,9 @@ fun SalesRegisterScreen(
                                 Text(
                                     text = "${uiState.cashierName} • ${if (currentShift?.isOpen == true) "Turno Abierto" else "Turno Cerrado"}",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White.copy(alpha = 0.8f)
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -174,51 +179,51 @@ fun SalesRegisterScreen(
                             Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan Barcode", tint = Color.White)
                         }
 
-                        // Customer Loyalty Button
-                        IconButton(onClick = { viewModel.setCustomerSelectDialog(true) }) {
-                            BadgedBox(
-                                badge = {
-                                    if (uiState.selectedCustomer != null) {
-                                        Badge(containerColor = Color(0xFFFFD54F), contentColor = Color.Black) { Text("★") }
+                        // On wide screens (tablets), show customer, sync status and view mode directly in TopBar
+                        if (isWideScreen) {
+                            IconButton(onClick = { viewModel.setCustomerSelectDialog(true) }) {
+                                BadgedBox(
+                                    badge = {
+                                        if (uiState.selectedCustomer != null) {
+                                            Badge(containerColor = Color(0xFFFFD54F), contentColor = Color.Black) { Text("★") }
+                                        }
                                     }
+                                ) {
+                                    Icon(Icons.Default.Person, contentDescription = "Customer", tint = Color.White)
                                 }
-                            ) {
-                                Icon(Icons.Default.Person, contentDescription = "Customer", tint = Color.White)
                             }
-                        }
 
-                        // Sync Status & Trigger Button
-                        IconButton(
-                            onClick = {
-                                syncManager.triggerSync()
-                                viewModel.setSyncStatusDialog(true)
-                            },
-                            modifier = Modifier.testTag("sync_status_button")
-                        ) {
-                            BadgedBox(
-                                badge = {
-                                    Surface(
-                                        modifier = Modifier.size(8.dp),
-                                        shape = CircleShape,
-                                        color = if (isOnline) Color(0xFF81C784) else Color(0xFFFFB74D)
-                                    ) {}
-                                }
+                            IconButton(
+                                onClick = {
+                                    syncManager.triggerSync()
+                                    viewModel.setSyncStatusDialog(true)
+                                },
+                                modifier = Modifier.testTag("sync_status_button")
                             ) {
+                                BadgedBox(
+                                    badge = {
+                                        Surface(
+                                            modifier = Modifier.size(8.dp),
+                                            shape = CircleShape,
+                                            color = if (isOnline) Color(0xFF81C784) else Color(0xFFFFB74D)
+                                        ) {}
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
+                                        contentDescription = "Sync Status",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+
+                            IconButton(onClick = { viewModel.toggleLayoutMode() }) {
                                 Icon(
-                                    imageVector = if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
-                                    contentDescription = "Sync Status",
+                                    if (uiState.isGridLayout) Icons.Default.ViewList else Icons.Default.GridView,
+                                    contentDescription = "Toggle View",
                                     tint = Color.White
                                 )
                             }
-                        }
-
-                        // Grid / List View Toggle
-                        IconButton(onClick = { viewModel.toggleLayoutMode() }) {
-                            Icon(
-                                if (uiState.isGridLayout) Icons.Default.ViewList else Icons.Default.GridView,
-                                contentDescription = "Toggle View",
-                                tint = Color.White
-                            )
                         }
 
                         // More Options Dropdown Menu
@@ -230,6 +235,40 @@ fun SalesRegisterScreen(
                                 expanded = showMoreMenu,
                                 onDismissRequest = { showMoreMenu = false }
                             ) {
+                                if (!isWideScreen) {
+                                    DropdownMenuItem(
+                                        text = { Text(if (uiState.selectedCustomer != null) "Customer: ${uiState.selectedCustomer?.name}" else "Select Customer") },
+                                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                                        onClick = {
+                                            showMoreMenu = false
+                                            viewModel.setCustomerSelectDialog(true)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(if (isOnline) "Cloud Synced (Online)" else "Offline Mode") },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
+                                                contentDescription = null,
+                                                tint = if (isOnline) Color(0xFF2E7D32) else Color(0xFFE65100)
+                                            )
+                                        },
+                                        onClick = {
+                                            showMoreMenu = false
+                                            syncManager.triggerSync()
+                                            viewModel.setSyncStatusDialog(true)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(if (uiState.isGridLayout) "Switch to List View" else "Switch to Grid View") },
+                                        leadingIcon = { Icon(if (uiState.isGridLayout) Icons.Default.ViewList else Icons.Default.GridView, contentDescription = null) },
+                                        onClick = {
+                                            showMoreMenu = false
+                                            viewModel.toggleLayoutMode()
+                                        }
+                                    )
+                                    HorizontalDivider()
+                                }
                                 DropdownMenuItem(
                                     text = { Text("Shift Management") },
                                     leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null) },
@@ -982,35 +1021,11 @@ fun ItemGridCard(
                             }
                         },
                         error = {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(cardAccentColor),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = item.name.take(2).uppercase(),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            }
+                            ProductPlaceholderTile(name = item.name, color = cardAccentColor)
                         }
                     )
                 } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(cardAccentColor),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = item.name.take(2).uppercase(),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
+                    ProductPlaceholderTile(name = item.name, color = cardAccentColor)
                 }
 
                 // Top Accent Stripe
@@ -1316,7 +1331,9 @@ fun CompactCartBottomBar(
     Surface(
         tonalElevation = 8.dp,
         color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
     ) {
         Row(
             modifier = Modifier
@@ -1647,6 +1664,53 @@ fun TicketCartPanel(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ProductPlaceholderTile(name: String, color: Color) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        color.copy(alpha = 0.85f),
+                        color
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.22f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Restaurant,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = name,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
