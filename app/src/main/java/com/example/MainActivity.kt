@@ -71,6 +71,7 @@ fun LoyversePosApp() {
 
     val posViewModel: PosViewModel = viewModel(factory = PosViewModelFactory(repository))
     val backOfficeViewModel: BackOfficeViewModel = viewModel(factory = BackOfficeViewModelFactory(repository))
+    val posUiState by posViewModel.uiState.collectAsState()
 
     var currentScreen by remember { mutableStateOf(AppDestination.SALES_REGISTER) }
     var currentCashier by remember { mutableStateOf("Alex (Cashier)") }
@@ -88,8 +89,9 @@ fun LoyversePosApp() {
         }
     }
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val isTabletLandscape = maxWidth >= 960.dp
+    com.example.util.LocalizationProvider(language = posUiState.language) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val isTabletLandscape = maxWidth >= 960.dp
 
         if (isTabletLandscape) {
             Row(modifier = Modifier.fillMaxSize()) {
@@ -212,6 +214,7 @@ fun LoyversePosApp() {
             }
         }
     }
+}
 
     // PIN Switch Dialog (Section 5.4 & 5.6 of Loyverse User Manual)
     if (showPinDialog) {

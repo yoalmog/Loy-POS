@@ -48,6 +48,7 @@ import { usePos } from '@/lib/context/PosContext'
 import { useAccessibility } from '@/lib/context/AccessibilityContext'
 import { useTheme } from '@/lib/context/ThemeContext'
 import { supabase } from '@/lib/supabase/client'
+import { PosTokens } from '@/lib/tokens'
 
 // Modals
 import ItemCustomizationModal from '@/components/pos-dialogs/ItemCustomizationModal'
@@ -358,9 +359,16 @@ export default function PosPage() {
       {/* Main Content Area: Top Header + POS Workspace */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* 1. TOP STATUS & NAVIGATION BAR (Back Office Design) */}
-        <header className="h-14 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between shrink-0 shadow-xs z-30">
+        <header
+          style={{
+            height: PosTokens.topBarHeight,
+            paddingLeft: PosTokens.topBarPadding,
+            paddingRight: PosTokens.topBarPadding,
+          }}
+          className="bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-xs z-30"
+        >
           {/* Left / Start: Brand & Cashier */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center" style={{ gap: PosTokens.spacingMedium }}>
             <button
               onClick={() => setMobileMenuOpen(true)}
               className="md:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
@@ -381,14 +389,11 @@ export default function PosPage() {
               )}
             </button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center" style={{ gap: PosTokens.spacingMedium }}>
               <div className="p-1.5 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 hidden sm:flex">
                 <Store className="w-4 h-4" />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm text-slate-800 tracking-tight">
-                  {settings.store_name}
-                </span>
+              <div className="flex items-center" style={{ gap: PosTokens.spacingMedium }}>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100/80 text-sky-800 border border-sky-200">
                   {t.register}
                 </span>
@@ -421,7 +426,7 @@ export default function PosPage() {
           </div>
 
           {/* Right / End: Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center" style={{ gap: PosTokens.spacingSmall }}>
             {/* Barcode Camera Scanner */}
             <button
               onClick={() => setIsCameraScannerOpen(true)}

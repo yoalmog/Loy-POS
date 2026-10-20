@@ -45,11 +45,11 @@ import java.util.Locale
 fun KitchenDisplayComponent(
     modifier: Modifier = Modifier,
     initialStationFilter: KitchenStation? = null,
-    language: String = "es",
     onNavigateBack: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
-    val strings = com.example.util.AppStrings.get(language)
+    val strings = com.example.util.LocalAppStrings.current
+    val language = com.example.util.LocalAppLanguage.current
     LaunchedEffect(Unit) {
         RecipeManager.initialize(context)
     }

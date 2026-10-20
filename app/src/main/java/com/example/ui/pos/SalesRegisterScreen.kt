@@ -106,6 +106,7 @@ fun SalesRegisterScreen(
         Scaffold(
             topBar = {
                 var showMoreMenu by remember { mutableStateOf(false) }
+                val strings = com.example.util.LocalAppStrings.current
 
                 Surface(
                     color = PosWhite,
@@ -118,8 +119,8 @@ fun SalesRegisterScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(58.dp)
-                            .padding(horizontal = 12.dp),
+                            .height(PosTokens.TopBarHeight)
+                            .padding(horizontal = PosTokens.TopBarPaddingHorizontal),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -168,12 +169,7 @@ fun SalesRegisterScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Text(
-                                        text = "AuraPOS Bistro & Bar",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Black,
-                                        color = PosSlate800
-                                    )
+
                                     Surface(
                                         shape = RoundedCornerShape(100.dp),
                                         color = PosSky100,
