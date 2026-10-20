@@ -49,6 +49,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Initialize local network printer manager & settings
+        com.example.util.NetworkPrinterManager.initialize(this)
+
         setContent {
             LoyverseTheme {
                 LoyversePosApp()

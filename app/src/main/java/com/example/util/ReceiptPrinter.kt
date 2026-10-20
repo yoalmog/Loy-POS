@@ -237,10 +237,18 @@ object ReceiptPrinter {
         val escPosBytes = generateEscPosReceipt(receipt, config.paperWidthMm)
         val textLayout = formatReceiptFromEntity(receipt, config.paperWidthMm)
 
-        // 1. Always transmit to BLE GATT Thermal Printer
+        // 1. Transmit to Network Printer via IP socket if configured
+        try {
+            NetworkPrinterManager.initialize(context)
+            NetworkPrinterManager.printReceipt(context, receipt)
+        } catch (e: Exception) {
+            // Ignore error
+        }
+
+        // 2. Always transmit to BLE GATT Thermal Printer
         ThermalPrinterManager.printByteStream(context, escPosBytes, textLayout)
 
-        // 2. Also trigger Android PrintManager for PDF or standard printer dialog
+        // 3. Also trigger Android PrintManager for PDF or standard printer dialog
         val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
         if (printManager != null) {
             try {

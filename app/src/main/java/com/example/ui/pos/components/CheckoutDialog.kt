@@ -447,8 +447,24 @@ fun ReceiptDialog(
     onDismiss: () -> Unit,
     onNewSale: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var emailInput by remember { mutableStateOf("") }
     var emailSentMessage by remember { mutableStateOf(false) }
+
+    // Network Printer Integration
+    LaunchedEffect(receipt.receiptNumber) {
+        com.example.util.NetworkPrinterManager.initialize(context)
+        val printerSettings = com.example.util.NetworkPrinterManager.settings.value
+        if (printerSettings.autoPrintOnCheckout) {
+            com.example.util.ReceiptPrinter.printReceipt(context, receipt)
+        }
+    }
+
+    val activeNetworkPrinter by com.example.util.NetworkPrinterManager.activePrinter.collectAsState()
+    val savedNetworkPrinters by com.example.util.NetworkPrinterManager.savedPrinters.collectAsState()
+    val printJobStatus by com.example.util.NetworkPrinterManager.printJobStatus.collectAsState()
+    var selectedPrinterForReceipt by remember(activeNetworkPrinter) { mutableStateOf(activeNetworkPrinter) }
+    var showPrinterMenu by remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -537,29 +553,136 @@ fun ReceiptDialog(
                         Text("Thank you for dining with us!", fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, fontSize = 13.sp)
                     }
 
-                    // Email & Print Receipt Section
+                    // Network Thermal Printer Section
                     item {
                         Spacer(modifier = Modifier.height(8.dp))
-                        val context = androidx.compose.ui.platform.LocalContext.current
-                        
+
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.Lan,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = Color(0xFF2E7D32)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            "Network Printer",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF2E7D32)
+                                        )
+                                    }
+
+                                    // Switch printer dropdown
+                                    if (savedNetworkPrinters.size > 1) {
+                                        Box {
+                                            TextButton(
+                                                onClick = { showPrinterMenu = true },
+                                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Text("Change", fontSize = 11.sp)
+                                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            }
+                                            DropdownMenu(
+                                                expanded = showPrinterMenu,
+                                                onDismissRequest = { showPrinterMenu = false }
+                                            ) {
+                                                savedNetworkPrinters.forEach { p ->
+                                                    DropdownMenuItem(
+                                                        text = { Text("${p.name} (${p.ipAddress}:${p.port})") },
+                                                        onClick = {
+                                                            selectedPrinterForReceipt = p
+                                                            showPrinterMenu = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                val currentPrinter = selectedPrinterForReceipt ?: activeNetworkPrinter
+                                val printerLabel = if (currentPrinter != null) {
+                                    "${currentPrinter.name} • ${currentPrinter.addressLabel} (${currentPrinter.paperWidthMm}mm)"
+                                } else {
+                                    "No network printer configured (tap Settings to add)"
+                                }
+
+                                Text(
+                                    text = printerLabel,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+
+                                when (printJobStatus) {
+                                    is com.example.data.model.PrintJobStatus.Sending -> {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text("Transmitting ESC/POS byte stream...", color = Color(0xFF0288D1), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    is com.example.data.model.PrintJobStatus.Success -> {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text((printJobStatus as com.example.data.model.PrintJobStatus.Success).message, color = Color(0xFF2E7D32), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    else -> {}
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Print & Drawer Action Buttons
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Button(
-                                onClick = { com.example.util.ReceiptPrinter.printReceipt(context, receipt) },
+                                onClick = {
+                                    val printer = selectedPrinterForReceipt ?: activeNetworkPrinter
+                                    if (printer != null) {
+                                        com.example.util.NetworkPrinterManager.printReceipt(context, receipt, printer)
+                                    }
+                                    com.example.util.ReceiptPrinter.printReceipt(context, receipt)
+                                },
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .weight(1.3f)
                                     .height(48.dp),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                    containerColor = Color(0xFF2E7D32) // Signature Green
                                 )
                             ) {
                                 Icon(Icons.Default.Print, contentDescription = "Print Receipt", modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text("Print Receipt", fontWeight = FontWeight.Bold)
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    val printer = selectedPrinterForReceipt ?: activeNetworkPrinter
+                                    com.example.util.NetworkPrinterManager.openCashDrawer(context, printer)
+                                },
+                                modifier = Modifier
+                                    .weight(0.9f)
+                                    .height(48.dp),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Default.PointOfSale, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Drawer")
                             }
                         }
 
