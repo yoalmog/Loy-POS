@@ -510,9 +510,17 @@ fun ItemsInventoryTab(
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { onAdjustStock(item) }) {
-                                Icon(Icons.Default.Tune, contentDescription = "Adjust Stock", tint = MaterialTheme.colorScheme.primary)
+                            FilledTonalButton(
+                                onClick = { onAdjustStock(item) },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(36.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Supply", style = MaterialTheme.typography.labelMedium)
                             }
+                            Spacer(modifier = Modifier.width(4.dp))
                             IconButton(onClick = { onEditItem(item) }) {
                                 Icon(Icons.Default.Edit, contentDescription = "Edit Item")
                             }
@@ -909,14 +917,61 @@ fun StockAdjustmentDialog(
     var diffText by remember { mutableStateOf("") }
     var selectedReason by remember { mutableStateOf("Receive Items") }
     val reasons = listOf("Receive Items", "Inventory Count", "Damage / Loss")
+    val parsedDiff = diffText.toDoubleOrNull() ?: 0.0
+    val newStock = (item.inStock + parsedDiff).coerceAtLeast(0.0)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Adjust Stock: ${item.name}", fontWeight = FontWeight.Bold) },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    if (selectedReason == "Receive Items") Icons.Default.LocalShipping else Icons.Default.Tune,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    if (selectedReason == "Receive Items") "Receive Supply: ${item.name}" else "Adjust Stock: ${item.name}",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Current Stock: ${item.inStock}")
-                Text("Reason:", style = MaterialTheme.typography.labelSmall)
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Current Stock", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                if (item.soldBy == SoldBy.WEIGHT) String.format(Locale.US, "%.2f kg", item.inStock) else item.inStock.toInt().toString(),
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                        if (diffText.isNotBlank() && diffText.toDoubleOrNull() != null) {
+                            Text("➔", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("New Stock", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    if (item.soldBy == SoldBy.WEIGHT) String.format(Locale.US, "%.2f kg", newStock) else newStock.toInt().toString(),
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Text("Reason:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
                 reasons.forEach { r ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -926,16 +981,40 @@ fun StockAdjustmentDialog(
                     ) {
                         RadioButton(selected = selectedReason == r, onClick = { selectedReason = r })
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(r)
+                        Text(if (r == "Receive Items") "Receive Items / Supply (קבלת אספקה)" else r)
                     }
                 }
+
                 OutlinedTextField(
                     value = diffText,
                     onValueChange = { diffText = it },
-                    label = { Text("Adjustment Quantity (+ or -)") },
-                    placeholder = { Text("e.g. 10 or -2") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text(if (selectedReason == "Receive Items") "Supply Quantity (+)" else "Adjustment Quantity (+ or -)") },
+                    placeholder = { Text("e.g. 10, 50, 100") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
                 )
+
+                if (selectedReason == "Receive Items") {
+                    Text("Quick Presets:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(5, 10, 25, 50, 100).forEach { qty ->
+                            FilledTonalButton(
+                                onClick = {
+                                    val current = diffText.toDoubleOrNull() ?: 0.0
+                                    diffText = (current + qty).toInt().toString()
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Text("+$qty", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -944,9 +1023,9 @@ fun StockAdjustmentDialog(
                     val diff = diffText.toDoubleOrNull() ?: 0.0
                     onConfirm(diff, selectedReason)
                 },
-                enabled = diffText.toDoubleOrNull() != null
+                enabled = diffText.toDoubleOrNull() != null && (diffText.toDoubleOrNull() ?: 0.0) != 0.0
             ) {
-                Text("Apply")
+                Text(if (selectedReason == "Receive Items") "Add Supply" else "Apply")
             }
         },
         dismissButton = {
