@@ -9,6 +9,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,12 +38,12 @@ import com.example.ui.pos.PosViewModel
 import com.example.ui.pos.PosViewModelFactory
 import com.example.ui.pos.SalesRegisterScreen
 import com.example.ui.theme.LoyverseTheme
-import com.example.ui.theme.PosDesignTokens
 import kotlinx.coroutines.launch
 
 enum class AppDestination {
     SALES_REGISTER,
-    BACK_OFFICE
+    BACK_OFFICE,
+    KITCHEN_DISPLAY
 }
 
 class MainActivity : ComponentActivity() {
@@ -86,314 +88,134 @@ fun LoyversePosApp() {
         }
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet(
-                drawerContainerColor = PosDesignTokens.NavDarkBg,
-                drawerContentColor = PosDesignTokens.NavTextSecondary,
-                modifier = Modifier.width(300.dp)
-            ) {
-                // 1. Brand Header (Matching Back Office Dark Navy Sidebar)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(PosDesignTokens.NavDarkBg)
-                        .statusBarsPadding()
-                        .padding(horizontal = 18.dp, vertical = 16.dp)
-                ) {
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Surface(
-                                    modifier = Modifier.size(42.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = PosDesignTokens.BrandSky600,
-                                    shadowElevation = 4.dp
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            Icons.Default.Storefront,
-                                            contentDescription = null,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    }
-                                }
-                                Column {
-                                    Text(
-                                        text = "Bistro & Grill #1",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = Color.White
-                                    )
-                                    Text(
-                                        text = "Online Cloud Portal",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Medium,
-                                        color = PosDesignTokens.BrandSky500
-                                    )
-                                }
-                            }
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isTabletLandscape = maxWidth >= 960.dp
 
-                            // Switch employee lock button
-                            IconButton(
-                                onClick = { showPinDialog = true },
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(PosDesignTokens.NavDarkCard, RoundedCornerShape(10.dp))
-                            ) {
-                                Icon(
-                                    Icons.Default.Lock,
-                                    contentDescription = "Switch Employee PIN",
-                                    tint = PosDesignTokens.AccentAmber,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // 2. Active POS Banner (Matching Back Office Sidebar Banner)
+        if (isTabletLandscape) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                // Persistent Sidebar matching Back Office desktop/tablet view
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = PosDesignTokens.BrandSky600.copy(alpha = 0.15f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, PosDesignTokens.BrandSky600.copy(alpha = 0.35f)),
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .width(260.dp)
+                        .fillMaxHeight(),
+                    color = com.example.ui.theme.PosSlate900
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(PosDesignTokens.AccentEmerald)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Sales Register",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = PosDesignTokens.BrandSky600
-                        ) {
-                            Text(
-                                "POS",
-                                color = Color.White,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Black,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
+                    AppSidebar(
+                        currentScreen = currentScreen,
+                        onNavigate = { currentScreen = it },
+                        currentCashier = currentCashier,
+                        onOpenReceipts = { posViewModel.setReceiptsDialog(true) },
+                        onOpenShifts = { posViewModel.setShiftDialog(true) },
+                        onOpenTickets = { posViewModel.setOpenTicketsDialog(true) },
+                        onOpenBackup = { posViewModel.setDatabaseBackupDialog(true) },
+                        onOpenPinDialog = { showPinDialog = true }
+                    )
                 }
 
-                HorizontalDivider(color = PosDesignTokens.NavBorder, modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
-
-                val navColors = NavigationDrawerItemDefaults.colors(
-                    selectedContainerColor = PosDesignTokens.BrandSky600,
-                    unselectedContainerColor = Color.Transparent,
-                    selectedIconColor = Color.White,
-                    unselectedIconColor = PosDesignTokens.NavTextMuted,
-                    selectedTextColor = Color.White,
-                    unselectedTextColor = PosDesignTokens.NavTextSecondary
-                )
-
-                // 3. Navigation Items (Matching Back Office nav)
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.PointOfSale, contentDescription = null) },
-                    label = { Text(stringResource(R.string.sales_register), fontWeight = FontWeight.Bold) },
-                    selected = currentScreen == AppDestination.SALES_REGISTER,
-                    colors = navColors,
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = {
-                        currentScreen = AppDestination.SALES_REGISTER
-                        coroutineScope.launch { drawerState.close() }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                )
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Receipt, contentDescription = null) },
-                    label = { Text(stringResource(R.string.receipts_archive), fontWeight = FontWeight.SemiBold) },
-                    selected = false,
-                    colors = navColors,
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = {
-                        coroutineScope.launch {
-                            drawerState.close()
-                            posViewModel.setReceiptsDialog(true)
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                )
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Schedule, contentDescription = null) },
-                    label = { Text(stringResource(R.string.shift_management), fontWeight = FontWeight.SemiBold) },
-                    selected = false,
-                    colors = navColors,
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = {
-                        coroutineScope.launch {
-                            drawerState.close()
-                            posViewModel.setShiftDialog(true)
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                )
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.ListAlt, contentDescription = null) },
-                    label = { Text(stringResource(R.string.open_tickets), fontWeight = FontWeight.SemiBold) },
-                    selected = false,
-                    colors = navColors,
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = {
-                        coroutineScope.launch {
-                            drawerState.close()
-                            posViewModel.setOpenTicketsDialog(true)
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                )
-
-                HorizontalDivider(color = PosDesignTokens.NavBorder, modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
-                    label = { Text(stringResource(R.string.back_office), fontWeight = FontWeight.Bold) },
-                    selected = currentScreen == AppDestination.BACK_OFFICE,
-                    colors = navColors,
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = {
-                        currentScreen = AppDestination.BACK_OFFICE
-                        coroutineScope.launch { drawerState.close() }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                )
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.People, contentDescription = null) },
-                    label = { Text(stringResource(R.string.customer_loyalty), fontWeight = FontWeight.SemiBold) },
-                    selected = false,
-                    colors = navColors,
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = {
-                        currentScreen = AppDestination.BACK_OFFICE
-                        backOfficeViewModel.selectTab(BackOfficeTab.CUSTOMERS)
-                        coroutineScope.launch { drawerState.close() }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                )
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Tune, contentDescription = null) },
-                    label = { Text(stringResource(R.string.inventory_adjustments), fontWeight = FontWeight.SemiBold) },
-                    selected = false,
-                    colors = navColors,
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = {
-                        currentScreen = AppDestination.BACK_OFFICE
-                        backOfficeViewModel.selectTab(BackOfficeTab.ITEMS_INVENTORY)
-                        coroutineScope.launch { drawerState.close() }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                )
-
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Backup, contentDescription = null) },
-                    label = { Text(stringResource(R.string.backup_sync), fontWeight = FontWeight.SemiBold) },
-                    selected = false,
-                    colors = navColors,
-                    shape = RoundedCornerShape(12.dp),
-                    onClick = {
-                        coroutineScope.launch {
-                            drawerState.close()
-                            posViewModel.setDatabaseBackupDialog(true)
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Footer: Cashier info
+                // Main screen area
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .background(PosDesignTokens.NavDarkDeep)
-                        .padding(14.dp)
+                        .weight(1f)
+                        .fillMaxHeight()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = PosDesignTokens.BrandSky600,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    currentCashier.take(1).uppercase(),
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    fontSize = 13.sp
-                                )
-                            }
-                        }
-                        Column {
-                            Text(
-                                currentCashier,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
+                    when (currentScreen) {
+                        AppDestination.SALES_REGISTER -> {
+                            SalesRegisterScreen(
+                                viewModel = posViewModel,
+                                onOpenDrawer = { /* Sidebar is permanently pinned on wide screen */ }
                             )
-                            Text(
-                                "Cashier on Duty",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = PosDesignTokens.NavTextMuted,
-                                fontSize = 10.sp
+                        }
+                        AppDestination.BACK_OFFICE -> {
+                            BackOfficeScreen(
+                                viewModel = backOfficeViewModel,
+                                onNavigateToPos = { currentScreen = AppDestination.SALES_REGISTER }
+                            )
+                        }
+                        AppDestination.KITCHEN_DISPLAY -> {
+                            com.example.ui.kitchen.KitchenDisplayScreen(
+                                onNavigateBack = { currentScreen = AppDestination.SALES_REGISTER }
                             )
                         }
                     }
                 }
             }
-        }
-    ) {
-        when (currentScreen) {
-            AppDestination.SALES_REGISTER -> {
-                SalesRegisterScreen(
-                    viewModel = posViewModel,
-                    onOpenDrawer = { coroutineScope.launch { drawerState.open() } }
-                )
-            }
-            AppDestination.BACK_OFFICE -> {
-                BackOfficeScreen(
-                    viewModel = backOfficeViewModel,
-                    onNavigateToPos = { currentScreen = AppDestination.SALES_REGISTER }
-                )
+        } else {
+            // Compact mobile screen uses slide-out ModalNavigationDrawer
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    ModalDrawerSheet(
+                        drawerContainerColor = com.example.ui.theme.PosSlate900,
+                        drawerContentColor = com.example.ui.theme.PosSlate300,
+                        modifier = Modifier.width(310.dp)
+                    ) {
+                        AppSidebar(
+                            currentScreen = currentScreen,
+                            onNavigate = {
+                                currentScreen = it
+                                coroutineScope.launch { drawerState.close() }
+                            },
+                            currentCashier = currentCashier,
+                            onOpenReceipts = {
+                                coroutineScope.launch {
+                                    drawerState.close()
+                                    posViewModel.setReceiptsDialog(true)
+                                }
+                            },
+                            onOpenShifts = {
+                                coroutineScope.launch {
+                                    drawerState.close()
+                                    posViewModel.setShiftDialog(true)
+                                }
+                            },
+                            onOpenTickets = {
+                                coroutineScope.launch {
+                                    drawerState.close()
+                                    posViewModel.setOpenTicketsDialog(true)
+                                }
+                            },
+                            onOpenBackup = {
+                                coroutineScope.launch {
+                                    drawerState.close()
+                                    posViewModel.setDatabaseBackupDialog(true)
+                                }
+                            },
+                            onOpenPinDialog = {
+                                coroutineScope.launch {
+                                    drawerState.close()
+                                    showPinDialog = true
+                                }
+                            }
+                        )
+                    }
+                }
+            ) {
+                when (currentScreen) {
+                    AppDestination.SALES_REGISTER -> {
+                        SalesRegisterScreen(
+                            viewModel = posViewModel,
+                            onOpenDrawer = { coroutineScope.launch { drawerState.open() } }
+                        )
+                    }
+                    AppDestination.BACK_OFFICE -> {
+                        BackOfficeScreen(
+                            viewModel = backOfficeViewModel,
+                            onNavigateToPos = { currentScreen = AppDestination.SALES_REGISTER }
+                        )
+                    }
+                    AppDestination.KITCHEN_DISPLAY -> {
+                        com.example.ui.kitchen.KitchenDisplayScreen(
+                            onNavigateBack = { currentScreen = AppDestination.SALES_REGISTER }
+                        )
+                    }
+                }
             }
         }
     }
 
-    // PIN Switch Dialog
+    // PIN Switch Dialog (Section 5.4 & 5.6 of Loyverse User Manual)
     if (showPinDialog) {
+        var pinInput by remember { mutableStateOf("") }
         val cashiers = listOf("Alex (Cashier)", "Sarah (Manager)", "Marcus (Supervisor)")
 
         AlertDialog(
@@ -404,9 +226,8 @@ fun LoyversePosApp() {
                     Text("Select cashier or enter 4-digit PIN:")
                     cashiers.forEach { c ->
                         Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (currentCashier == c) PosDesignTokens.BrandSky100 else PosDesignTokens.BackgroundLight,
-                            border = if (currentCashier == c) androidx.compose.foundation.BorderStroke(1.dp, PosDesignTokens.BrandSky600) else null,
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (currentCashier == c) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
@@ -414,12 +235,7 @@ fun LoyversePosApp() {
                                     showPinDialog = false
                                 }
                         ) {
-                            Text(
-                                c,
-                                modifier = Modifier.padding(14.dp),
-                                fontWeight = FontWeight.Bold,
-                                color = if (currentCashier == c) PosDesignTokens.BrandSky800 else PosDesignTokens.TextPrimary
-                            )
+                            Text(c, modifier = Modifier.padding(12.dp), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -428,5 +244,359 @@ fun LoyversePosApp() {
                 TextButton(onClick = { showPinDialog = false }) { Text("Cancel") }
             }
         )
+    }
+}
+
+@Composable
+fun AppSidebar(
+    currentScreen: AppDestination,
+    onNavigate: (AppDestination) -> Unit,
+    currentCashier: String,
+    onOpenReceipts: () -> Unit,
+    onOpenShifts: () -> Unit,
+    onOpenTickets: () -> Unit,
+    onOpenBackup: () -> Unit,
+    onOpenPinDialog: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val drawerColors = NavigationDrawerItemDefaults.colors(
+        selectedContainerColor = com.example.ui.theme.PosSky600,
+        unselectedContainerColor = Color.Transparent,
+        selectedTextColor = Color.White,
+        unselectedTextColor = com.example.ui.theme.PosSlate300,
+        selectedIconColor = Color.White,
+        unselectedIconColor = com.example.ui.theme.PosSlate400
+    )
+
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .background(com.example.ui.theme.PosSlate900)
+    ) {
+        // Sidebar Brand Header (Back Office Loy-POS)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(16.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(44.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            color = com.example.ui.theme.PosSky600,
+                            shadowElevation = 4.dp
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Storefront,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+
+                        Column {
+                            Text(
+                                text = "AuraPOS Bistro & Bar",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "Portal de Control y Gestión",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = com.example.ui.theme.PosSky400,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    // Switch employee lock button
+                    IconButton(onClick = onOpenPinDialog) {
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = "Switch Employee PIN",
+                            tint = com.example.ui.theme.PosSlate400
+                        )
+                    }
+                }
+
+                // POS Active Mode Banner
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = com.example.ui.theme.PosSky600.copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, com.example.ui.theme.PosSky500.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(com.example.ui.theme.PosEmerald400)
+                            )
+                            Text(
+                                text = "Punto de Venta (POS)",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(100.dp),
+                            color = com.example.ui.theme.PosSky600
+                        ) {
+                            Text(
+                                text = "POS",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Cloud status bar
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = com.example.ui.theme.PosSlate950.copy(alpha = 0.6f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, com.example.ui.theme.PosSlate800),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Wifi,
+                                contentDescription = null,
+                                tint = com.example.ui.theme.PosEmerald400,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "Nube Conectada",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = com.example.ui.theme.PosSlate300
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(100.dp),
+                            color = com.example.ui.theme.PosEmerald500.copy(alpha = 0.15f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, com.example.ui.theme.PosEmerald500.copy(alpha = 0.3f))
+                        ) {
+                            Text(
+                                text = "Online",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = com.example.ui.theme.PosEmerald400,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Navigation Items List
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+        ) {
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.PointOfSale, contentDescription = null) },
+                label = { Text(stringResource(R.string.sales_register), fontWeight = FontWeight.Bold) },
+                selected = currentScreen == AppDestination.SALES_REGISTER,
+                colors = drawerColors,
+                onClick = { onNavigate(AppDestination.SALES_REGISTER) },
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            )
+
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.Receipt, contentDescription = null) },
+                label = { Text(stringResource(R.string.receipts_archive)) },
+                selected = false,
+                colors = drawerColors,
+                onClick = onOpenReceipts,
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            )
+
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.Schedule, contentDescription = null) },
+                label = { Text(stringResource(R.string.shift_management)) },
+                selected = false,
+                colors = drawerColors,
+                onClick = onOpenShifts,
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            )
+
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.ListAlt, contentDescription = null) },
+                label = { Text(stringResource(R.string.open_tickets)) },
+                selected = false,
+                colors = drawerColors,
+                onClick = onOpenTickets,
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            )
+
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.OutdoorGrill, contentDescription = null, tint = com.example.ui.theme.PosAmber500) },
+                label = { Text("מסך מטבח והכנה (KDS)", fontWeight = FontWeight.Bold) },
+                selected = currentScreen == AppDestination.KITCHEN_DISPLAY,
+                colors = drawerColors,
+                onClick = { onNavigate(AppDestination.KITCHEN_DISPLAY) },
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp), color = com.example.ui.theme.PosSlate800)
+
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
+                label = { Text(stringResource(R.string.back_office), fontWeight = FontWeight.Bold) },
+                selected = currentScreen == AppDestination.BACK_OFFICE,
+                colors = drawerColors,
+                onClick = { onNavigate(AppDestination.BACK_OFFICE) },
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            )
+
+            NavigationDrawerItem(
+                icon = { Icon(Icons.Default.Backup, contentDescription = null) },
+                label = { Text(stringResource(R.string.backup_sync), fontWeight = FontWeight.SemiBold) },
+                selected = false,
+                colors = drawerColors,
+                onClick = onOpenBackup,
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            )
+        }
+
+        // Staff & Lock Footer (Back Office sidebar footer)
+        Surface(
+            color = com.example.ui.theme.PosSlate900,
+            border = androidx.compose.foundation.BorderStroke(1.dp, com.example.ui.theme.PosSlate800),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(com.example.ui.theme.PosSky600),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = currentCashier.firstOrNull()?.toString()?.uppercase() ?: "C",
+                            color = Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = currentCashier,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            maxLines = 1
+                        )
+                        Text(
+                            text = "Cajero (CASHIER)",
+                            fontSize = 10.sp,
+                            color = com.example.ui.theme.PosSlate400
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = com.example.ui.theme.PosSlate800,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(34.dp)
+                            .clickable(onClick = onOpenPinDialog)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = com.example.ui.theme.PosAmber400,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Bloquear",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = com.example.ui.theme.PosSlate300
+                            )
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = com.example.ui.theme.PosRed600.copy(alpha = 0.15f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, com.example.ui.theme.PosRed600.copy(alpha = 0.3f)),
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clickable(onClick = onOpenShifts)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.ExitToApp,
+                                contentDescription = "Cerrar Turno",
+                                tint = com.example.ui.theme.PosRed400,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }

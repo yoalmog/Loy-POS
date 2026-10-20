@@ -41,7 +41,8 @@ data class PosUiState(
     val completedReceipt: ReceiptEntity? = null,
     val cashierName: String = "Alex (Cashier)",
     val storeName: String = "Bistro & Grill #1",
-    val statusMessage: String? = null
+    val statusMessage: String? = null,
+    val language: String = "es"
 ) {
     val subtotal: Double
         get() = cartItems.sumOf { it.lineTotal }
@@ -531,6 +532,7 @@ class PosViewModel(val repository: PosRepository) : ViewModel() {
     fun setSyncStatusDialog(open: Boolean) = _uiState.update { it.copy(showSyncStatusDialog = open) }
     fun setDatabaseBackupDialog(open: Boolean) = _uiState.update { it.copy(showDatabaseBackupDialog = open) }
     fun setCustomizationDialog(open: Boolean) = _uiState.update { it.copy(isItemCustomizationOpen = open) }
+    fun setLanguage(lang: String) = _uiState.update { it.copy(language = lang) }
     fun dismissStatusMessage() = _uiState.update { it.copy(statusMessage = null) }
 }
 

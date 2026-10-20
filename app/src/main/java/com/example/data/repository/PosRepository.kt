@@ -241,7 +241,21 @@ class PosRepository(val database: AppDatabase) {
         for (item in items) {
             database.itemDao().decrementStock(item.itemId, item.quantity)
             database.productDao().decrementProductStock(item.itemId, item.quantity.toInt().coerceAtLeast(1))
+            // Automatically deduct raw recipe ingredients (BOM)
+            try {
+                com.example.util.RecipeManager.deductRecipeStockFromDb(database, item.itemId, item.quantity)
+            } catch (_: Exception) {}
         }
+
+        // 1b. Dispatch order ticket to Kitchen Display System (KDS)
+        try {
+            com.example.util.RecipeManager.addTicketFromTicketItems(
+                orderNumber = System.currentTimeMillis() % 10000L,
+                tableName = ticketName,
+                serverName = cashierName,
+                items = items
+            )
+        } catch (_: Exception) {}
 
         // 2. Generate Receipt
         val receiptNumber = "#${System.currentTimeMillis() % 100000}"

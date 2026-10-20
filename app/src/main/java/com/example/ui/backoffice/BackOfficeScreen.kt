@@ -1,5 +1,8 @@
 package com.example.ui.backoffice
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -7,12 +10,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.example.ui.backoffice.components.ALLERGEN_OPTIONS
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +34,7 @@ import com.example.data.model.*
 import com.example.ui.components.ProductInventoryGrid
 import com.example.ui.theme.PosDesignTokens
 import com.example.util.AppConfig
+import com.example.util.RecipeManager
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -61,6 +69,10 @@ fun BackOfficeScreen(
             snackbarHostState.showSnackbar(it)
             viewModel.dismissStatusMessage()
         }
+    }
+
+    LaunchedEffect(Unit) {
+        RecipeManager.initialize(context)
     }
 
     Scaffold(
@@ -203,8 +215,8 @@ fun BackOfficeScreen(
             item = uiState.editingItem,
             categories = categories,
             onDismiss = { viewModel.closeItemEditor() },
-            onSave = { id, name, catId, catName, price, cost, sku, barcode, soldBy, inStock, lowThreshold, track, color ->
-                viewModel.saveItem(id, name, catId, catName, price, cost, sku, barcode, soldBy, inStock, lowThreshold, track, color)
+            onSave = { id, name, catId, catName, price, cost, sku, barcode, soldBy, inStock, lowThreshold, track, color, recipe ->
+                viewModel.saveItem(id, name, catId, catName, price, cost, sku, barcode, soldBy, inStock, lowThreshold, track, color, recipe, context)
             },
             onDelete = { item -> viewModel.deleteItem(item) }
         )
@@ -391,6 +403,8 @@ fun ItemsInventoryTab(
     onQuickStockAdjust: (Product, Int) -> Unit
 ) {
     var viewMode by remember { mutableStateOf(0) } // 0 = Product Grid (Loyverse UI), 1 = Table List
+    var editingRecipeItem by remember { mutableStateOf<ItemEntity?>(null) }
+    val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Tab selector for view modes
@@ -521,9 +535,22 @@ fun ItemsInventoryTab(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text("Supply", style = MaterialTheme.typography.labelMedium)
                             }
-                            Spacer(modifier = Modifier.width(4.dp))
-                            IconButton(onClick = { onEditItem(item) }) {
-                                Icon(Icons.Default.Edit, contentDescription = "Edit Item")
+                                Spacer(modifier = Modifier.width(4.dp))
+                                FilledTonalButton(
+                                    onClick = { editingRecipeItem = item },
+                                    shape = RoundedCornerShape(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.height(36.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFFFEF3C7), contentColor = Color(0xFFB45309))
+                                ) {
+                                    Icon(Icons.Default.RestaurantMenu, contentDescription = null, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("מתכון והכנה", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(modifier = Modifier.width(4.dp))
+                                IconButton(onClick = { onEditItem(item) }) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit Item")
+                                }
                             }
                         }
                     }
@@ -531,7 +558,20 @@ fun ItemsInventoryTab(
             }
         }
     }
-}
+
+    if (editingRecipeItem != null) {
+        val currentRecipe = remember(editingRecipeItem) {
+            RecipeManager.getRecipeForItem(editingRecipeItem!!.id, editingRecipeItem!!.name, editingRecipeItem!!.categoryName)
+        }
+        com.example.ui.backoffice.components.RecipeEditorDialog(
+            recipe = currentRecipe,
+            onDismiss = { editingRecipeItem = null },
+            onSave = { updated ->
+                RecipeManager.saveRecipe(context, updated)
+                editingRecipeItem = null
+            }
+        )
+    }
 }
 
 @Composable
@@ -809,18 +849,38 @@ fun SettingsTab(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ItemEditorDialog(
     item: ItemEntity?,
     categories: List<CategoryEntity>,
     onDismiss: () -> Unit,
-    onSave: (id: Long, name: String, catId: Long, catName: String, price: Double, cost: Double, sku: String, barcode: String, soldBy: SoldBy, inStock: Double, lowThreshold: Double, track: Boolean, color: String) -> Unit,
+    onSave: (
+        id: Long,
+        name: String,
+        catId: Long,
+        catName: String,
+        price: Double,
+        cost: Double,
+        sku: String,
+        barcode: String,
+        soldBy: SoldBy,
+        inStock: Double,
+        lowThreshold: Double,
+        track: Boolean,
+        color: String,
+        recipe: DishRecipe?
+    ) -> Unit,
     onDelete: (ItemEntity) -> Unit
 ) {
+    val context = LocalContext.current
+    var selectedTab by remember { mutableIntStateOf(0) }
+
+    // 1. General Item info state
     var name by remember { mutableStateOf(item?.name ?: "") }
     var selectedCatId by remember { mutableStateOf(item?.categoryId ?: (categories.firstOrNull()?.id ?: 1L)) }
-    var priceText by remember { mutableStateOf(item?.price?.toString() ?: "5.00") }
-    var costText by remember { mutableStateOf(item?.cost?.toString() ?: "1.50") }
+    var priceText by remember { mutableStateOf(item?.price?.toString() ?: "12.00") }
+    var costText by remember { mutableStateOf(item?.cost?.toString() ?: "3.50") }
     var sku by remember { mutableStateOf(item?.sku ?: "2001") }
     var barcode by remember { mutableStateOf(item?.barcode ?: "200001001000") }
     var soldBy by remember { mutableStateOf(item?.soldBy ?: SoldBy.EACH) }
@@ -828,85 +888,866 @@ fun ItemEditorDialog(
     var lowThresholdText by remember { mutableStateOf(item?.lowStockThreshold?.toString() ?: "5") }
     var trackStock by remember { mutableStateOf(item?.trackStock ?: true) }
 
-    AlertDialog(
+    // 2. Load initial Recipe / BOM data for this dish
+    val initialRecipe = remember(item) {
+        if (item != null) {
+            RecipeManager.getRecipeForItem(item.id, item.name, item.categoryName)
+        } else {
+            DishRecipe(
+                itemId = 0L,
+                itemName = "",
+                categoryName = categories.firstOrNull()?.name ?: "כללי",
+                ingredients = emptyList(),
+                prepGuide = KitchenPrepGuide(
+                    prepTimeMinutes = 10,
+                    station = KitchenStation.GENERAL,
+                    steps = emptyList(),
+                    allergens = emptyList(),
+                    chefNotes = "",
+                    platingGuide = ""
+                )
+            )
+        }
+    }
+
+    // 3. BOM / Recipe Ingredients state
+    var ingredients by remember { mutableStateOf(initialRecipe.ingredients) }
+    var newIngName by remember { mutableStateOf("") }
+    var newIngQty by remember { mutableStateOf("") }
+    var newIngUnit by remember { mutableStateOf("גרם") }
+    var newIngCost by remember { mutableStateOf("") }
+    var newIngDeductStock by remember { mutableStateOf(true) }
+    var showAddIngForm by remember { mutableStateOf(false) }
+
+    // 4. Kitchen Prep & Cooking Instructions state
+    var prepTimeMinutes by remember { mutableStateOf(initialRecipe.prepGuide.prepTimeMinutes.toString()) }
+    var selectedStation by remember { mutableStateOf(initialRecipe.prepGuide.station) }
+    var steps by remember { mutableStateOf(initialRecipe.prepGuide.steps) }
+    var newStepText by remember { mutableStateOf("") }
+    var selectedAllergens by remember { mutableStateOf(initialRecipe.prepGuide.allergens.toSet()) }
+    var chefNotes by remember { mutableStateOf(initialRecipe.prepGuide.chefNotes) }
+    var platingGuide by remember { mutableStateOf(initialRecipe.prepGuide.platingGuide) }
+
+    val totalBomCost = remember(ingredients) {
+        ingredients.sumOf { it.quantity * it.costPerUnit }
+    }
+    val currentPrice = priceText.toDoubleOrNull() ?: 0.0
+    val grossProfit = currentPrice - totalBomCost
+    val marginPercent = if (currentPrice > 0.0) ((grossProfit / currentPrice) * 100).toInt() else 0
+
+    Dialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (item == null) "Create New Item" else "Edit Item", fontWeight = FontWeight.Bold) },
-        text = {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.heightIn(max = 400.dp)) {
-                item {
-                    OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Item Name") }, modifier = Modifier.fillMaxWidth())
-                }
-                item {
-                    Text("Category:", style = MaterialTheme.typography.labelSmall)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(categories) { cat ->
-                            FilterChip(
-                                selected = selectedCatId == cat.id,
-                                onClick = { selectedCatId = cat.id },
-                                label = { Text(cat.name, fontSize = 12.sp) }
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.96f)
+                .fillMaxHeight(0.94f),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.RestaurantMenu,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+
+                        Column {
+                            Text(
+                                text = if (item == null) "הוספת מנה חדשה ועץ מוצר (New Item & BOM)" else "עריכת מנה ועץ מוצר (${name.ifBlank { "מנה" }})",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "ניהול פרטי מוצר, עץ מוצר (BOM) והוראות הכנה למטבח (KDS)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
-                }
-                item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(value = priceText, onValueChange = { priceText = it }, label = { Text("Price ($)") }, modifier = Modifier.weight(1f))
-                        OutlinedTextField(value = costText, onValueChange = { costText = it }, label = { Text("Cost ($)") }, modifier = Modifier.weight(1f))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (item != null) {
+                            IconButton(onClick = { onDelete(item) }) {
+                                Icon(
+                                    imageVector = Icons.Default.DeleteOutline,
+                                    contentDescription = "מחק מנה",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(imageVector = Icons.Default.Close, contentDescription = "סגור")
+                        }
                     }
                 }
-                item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(value = sku, onValueChange = { sku = it }, label = { Text("SKU") }, modifier = Modifier.weight(1f))
-                        OutlinedTextField(value = barcode, onValueChange = { barcode = it }, label = { Text("Barcode") }, modifier = Modifier.weight(1f))
-                    }
-                }
-                item {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Sold By: ", style = MaterialTheme.typography.bodySmall)
-                        RadioButton(selected = soldBy == SoldBy.EACH, onClick = { soldBy = SoldBy.EACH })
-                        Text("Each", fontSize = 12.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        RadioButton(selected = soldBy == SoldBy.WEIGHT, onClick = { soldBy = SoldBy.WEIGHT })
-                        Text("Weight", fontSize = 12.sp)
-                    }
-                }
-                item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(value = inStockText, onValueChange = { inStockText = it }, label = { Text("In Stock") }, modifier = Modifier.weight(1f))
-                        OutlinedTextField(value = lowThresholdText, onValueChange = { lowThresholdText = it }, label = { Text("Low Alert") }, modifier = Modifier.weight(1f))
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val catName = categories.firstOrNull { it.id == selectedCatId }?.name ?: "General"
-                    onSave(
-                        item?.id ?: 0L,
-                        name,
-                        selectedCatId,
-                        catName,
-                        priceText.toDoubleOrNull() ?: 0.0,
-                        costText.toDoubleOrNull() ?: 0.0,
-                        sku,
-                        barcode,
-                        soldBy,
-                        inStockText.toDoubleOrNull() ?: 0.0,
-                        lowThresholdText.toDoubleOrNull() ?: 5.0,
-                        trackStock,
-                        item?.colorHex ?: "#2E7D32"
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Three-tab navigation inside product editor
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    modifier = Modifier.clip(RoundedCornerShape(14.dp)),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    indicator = {},
+                    divider = {}
+                ) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Inventory2, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Text("פרטי פריט", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal)
+                            }
+                        }
                     )
-                },
-                enabled = name.isNotBlank()
-            ) {
-                Text("Save")
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        text = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Kitchen, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Text("עץ מוצר ומצרכים (BOM)", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal)
+                                if (ingredients.isNotEmpty()) {
+                                    Badge(containerColor = MaterialTheme.colorScheme.primary) {
+                                        Text("${ingredients.size}", fontSize = 10.sp)
+                                    }
+                                }
+                            }
+                        }
+                    )
+                    Tab(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
+                        text = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.OutdoorGrill, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Text("הוראות הכנה למטבח (KDS)", fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal)
+                            }
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Viewport Content based on selected tab
+                Box(modifier = Modifier.weight(1f)) {
+                    when (selectedTab) {
+                        0 -> {
+                            // TAB 0: General Item Details
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                item {
+                                    OutlinedTextField(
+                                        value = name,
+                                        onValueChange = { name = it },
+                                        label = { Text("שם המנה / מוצר *") },
+                                        placeholder = { Text("למשל: המבורגר אנטרקוט כפול") },
+                                        singleLine = true,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                item {
+                                    Text("קטגוריה:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        items(categories) { cat ->
+                                            FilterChip(
+                                                selected = selectedCatId == cat.id,
+                                                onClick = { selectedCatId = cat.id },
+                                                label = { Text(cat.name, fontSize = 12.sp) }
+                                            )
+                                        }
+                                    }
+                                }
+
+                                item {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                                        OutlinedTextField(
+                                            value = priceText,
+                                            onValueChange = { priceText = it },
+                                            label = { Text("מחיר מכירה ($ / ₪)") },
+                                            singleLine = true,
+                                            modifier = Modifier.weight(1f)
+                                        )
+
+                                        OutlinedTextField(
+                                            value = costText,
+                                            onValueChange = { costText = it },
+                                            label = { Text("עלות ($ / ₪)") },
+                                            singleLine = true,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+
+                                    // Quick BOM Cost sync helper
+                                    if (ingredients.isNotEmpty()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        TextButton(
+                                            onClick = {
+                                                costText = String.format(Locale.US, "%.2f", totalBomCost)
+                                            },
+                                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                                        ) {
+                                            Icon(Icons.Default.Calculate, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                "השתמש בעלות חומרי הגלם המחושבת מעץ המוצר: $${String.format(Locale.US, "%.2f", totalBomCost)}",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                }
+
+                                item {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                                        OutlinedTextField(
+                                            value = sku,
+                                            onValueChange = { sku = it },
+                                            label = { Text("מק\"ט (SKU)") },
+                                            singleLine = true,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        OutlinedTextField(
+                                            value = barcode,
+                                            onValueChange = { barcode = it },
+                                            label = { Text("ברקוד (Barcode)") },
+                                            singleLine = true,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+
+                                item {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text("אופן מכירה: ", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            RadioButton(selected = soldBy == SoldBy.EACH, onClick = { soldBy = SoldBy.EACH })
+                                            Text("לפי יחידה (Each)", fontSize = 12.sp)
+                                            Spacer(modifier = Modifier.width(16.dp))
+                                            RadioButton(selected = soldBy == SoldBy.WEIGHT, onClick = { soldBy = SoldBy.WEIGHT })
+                                            Text("לפי משקל (Weight / kg)", fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+
+                                item {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column {
+                                                    Text("מעקב מלאי פריט", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                    Text("מעקב יחידות מוכנות במלאי (בנוסף לגריעת חומרי גלם ממתכון)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                                Switch(checked = trackStock, onCheckedChange = { trackStock = it })
+                                            }
+
+                                            if (trackStock) {
+                                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                                                    OutlinedTextField(
+                                                        value = inStockText,
+                                                        onValueChange = { inStockText = it },
+                                                        label = { Text("כמות במלאי") },
+                                                        singleLine = true,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                    OutlinedTextField(
+                                                        value = lowThresholdText,
+                                                        onValueChange = { lowThresholdText = it },
+                                                        label = { Text("התראת מלאי נמוך") },
+                                                        singleLine = true,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        1 -> {
+                            // TAB 1: BOM (Bill of Materials) & Ingredients Section
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                // Live Cost & Margin Analysis Header
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Text("עלות חומרי גלם (Food Cost):", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(
+                                                "$${String.format(Locale.US, "%.2f", totalBomCost)}",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+
+                                        Column {
+                                            Text("מחיר מכירה:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(
+                                                "$${String.format(Locale.US, "%.2f", currentPrice)}",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+
+                                        Column {
+                                            Text("רווח גולמי:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(
+                                                "$${String.format(Locale.US, "%.2f", grossProfit)} ($marginPercent%)",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = if (grossProfit >= 0) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "רשימת חומרי גלם וכמויות למנה (${ingredients.size}):",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+
+                                    Button(
+                                        onClick = { showAddIngForm = !showAddIngForm },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (showAddIngForm) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+                                        ),
+                                        shape = RoundedCornerShape(10.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (showAddIngForm) Icons.Default.Close else Icons.Default.Add,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(if (showAddIngForm) "סגור" else "הוסף חומר גלם")
+                                    }
+                                }
+
+                                // Add Ingredient Form
+                                AnimatedVisibility(visible = showAddIngForm) {
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 8.dp)
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text("הגדרת חומר גלם חדש למנה (BOM):", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+
+                                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                OutlinedTextField(
+                                                    value = newIngName,
+                                                    onValueChange = { newIngName = it },
+                                                    label = { Text("שם חומר הגלם") },
+                                                    placeholder = { Text("למשל: קציצת בקר, גבינה") },
+                                                    singleLine = true,
+                                                    modifier = Modifier.weight(1.5f)
+                                                )
+                                                OutlinedTextField(
+                                                    value = newIngQty,
+                                                    onValueChange = { newIngQty = it },
+                                                    label = { Text("כמות") },
+                                                    placeholder = { Text("150") },
+                                                    singleLine = true,
+                                                    modifier = Modifier.weight(0.7f)
+                                                )
+                                                OutlinedTextField(
+                                                    value = newIngUnit,
+                                                    onValueChange = { newIngUnit = it },
+                                                    label = { Text("יחידה") },
+                                                    placeholder = { Text("גרם") },
+                                                    singleLine = true,
+                                                    modifier = Modifier.weight(0.8f)
+                                                )
+                                            }
+
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                OutlinedTextField(
+                                                    value = newIngCost,
+                                                    onValueChange = { newIngCost = it },
+                                                    label = { Text("עלות ליחידה ($ / ₪)") },
+                                                    placeholder = { Text("0.05") },
+                                                    singleLine = true,
+                                                    modifier = Modifier.width(160.dp)
+                                                )
+
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Checkbox(checked = newIngDeductStock, onCheckedChange = { newIngDeductStock = it })
+                                                    Text("גרע מלאי אוטומטית", fontSize = 11.sp)
+                                                }
+
+                                                Button(
+                                                    onClick = {
+                                                        val qty = newIngQty.toDoubleOrNull() ?: 0.0
+                                                        val cost = newIngCost.toDoubleOrNull() ?: 0.0
+                                                        if (newIngName.isNotBlank() && qty > 0) {
+                                                            ingredients = ingredients + RecipeIngredient(
+                                                                name = newIngName.trim(),
+                                                                quantity = qty,
+                                                                unit = newIngUnit.trim(),
+                                                                costPerUnit = cost,
+                                                                deductStock = newIngDeductStock
+                                                            )
+                                                            newIngName = ""
+                                                            newIngQty = ""
+                                                            newIngCost = ""
+                                                            showAddIngForm = false
+                                                        }
+                                                    },
+                                                    shape = RoundedCornerShape(10.dp)
+                                                ) {
+                                                    Icon(imageVector = Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Text("הוסף")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                // List of Ingredients
+                                if (ingredients.isEmpty()) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Icon(imageVector = Icons.Default.Inbox, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+                                            Text("אין חומרי גלם מוגדרים עדיין למנה זו", color = MaterialTheme.colorScheme.outline)
+                                            Text("לחץ על 'הוסף חומר גלם' להגדרת עץ המוצר (BOM)", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
+                                        }
+                                    }
+                                } else {
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize(),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        itemsIndexed(ingredients) { index, ing ->
+                                            Surface(
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                        modifier = Modifier.weight(1f)
+                                                    ) {
+                                                        Surface(
+                                                            shape = CircleShape,
+                                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                                            modifier = Modifier.size(28.dp)
+                                                        ) {
+                                                            Box(contentAlignment = Alignment.Center) {
+                                                                Text("${index + 1}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                            }
+                                                        }
+
+                                                        Column {
+                                                            Text(ing.name, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                                Text("${ing.quantity} ${ing.unit}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                                if (ing.costPerUnit > 0) {
+                                                                    Text("• עלות: $${String.format(Locale.US, "%.2f", ing.quantity * ing.costPerUnit)}", fontSize = 11.sp, color = Color(0xFF2E7D32))
+                                                                }
+                                                                if (ing.deductStock) {
+                                                                    Text("• גריעה אוטומטית", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    IconButton(
+                                                        onClick = {
+                                                            ingredients = ingredients.filterIndexed { i, _ -> i != index }
+                                                        }
+                                                    ) {
+                                                        Icon(Icons.Default.DeleteOutline, contentDescription = "מחק", tint = MaterialTheme.colorScheme.error)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        2 -> {
+                            // TAB 2: Kitchen Prep Instructions & Station (KDS) Section
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                // Workstation selector
+                                item {
+                                    Text("תחנת עבודה ייעודית במטבח (KDS Workstation):", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        items(KitchenStation.values()) { station ->
+                                            FilterChip(
+                                                selected = selectedStation == station,
+                                                onClick = { selectedStation = station },
+                                                label = { Text(station.labelHebrew, fontSize = 12.sp) },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        imageVector = when (station) {
+                                                            KitchenStation.GRILL -> Icons.Default.OutdoorGrill
+                                                            KitchenStation.WOK -> Icons.Default.SoupKitchen
+                                                            KitchenStation.OVEN -> Icons.Default.LocalPizza
+                                                            KitchenStation.SALAD -> Icons.Default.EggAlt
+                                                            KitchenStation.BAR -> Icons.Default.LocalBar
+                                                            KitchenStation.PASTRY -> Icons.Default.Cake
+                                                            KitchenStation.GENERAL -> Icons.Default.Kitchen
+                                                        },
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Prep time
+                                item {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(12.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column {
+                                                Text("זמן הכנה משוער במטבח:", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                Text("לשימוש במדדי שעון עצר במסך המטבח (KDS)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                IconButton(
+                                                    onClick = {
+                                                        val cur = prepTimeMinutes.toIntOrNull() ?: 10
+                                                        prepTimeMinutes = (cur - 1).coerceAtLeast(1).toString()
+                                                    }
+                                                ) {
+                                                    Icon(Icons.Default.RemoveCircleOutline, contentDescription = "הפחת")
+                                                }
+                                                Text(
+                                                    text = "$prepTimeMinutes דק'",
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                                IconButton(
+                                                    onClick = {
+                                                        val cur = prepTimeMinutes.toIntOrNull() ?: 10
+                                                        prepTimeMinutes = (cur + 1).toString()
+                                                    }
+                                                ) {
+                                                    Icon(Icons.Default.AddCircleOutline, contentDescription = "הוסף")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Step-by-Step Cooking Instructions for KDS
+                                item {
+                                    Text("שלבי ביצוע והכנה למטבח (Step-by-Step Directions):", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        OutlinedTextField(
+                                            value = newStepText,
+                                            onValueChange = { newStepText = it },
+                                            label = { Text("שלב ביצוע חדש...") },
+                                            placeholder = { Text("למשל: לצרוב את הבקר בווק 90 שניות...") },
+                                            singleLine = true,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Button(
+                                            onClick = {
+                                                if (newStepText.isNotBlank()) {
+                                                    steps = steps + newStepText.trim()
+                                                    newStepText = ""
+                                                }
+                                            },
+                                            shape = RoundedCornerShape(10.dp)
+                                        ) {
+                                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("הוסף")
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    if (steps.isEmpty()) {
+                                        Text("טרם הוגדרו שלבי הכנה למנה זו", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
+                                    } else {
+                                        steps.forEachIndexed { sIdx, step ->
+                                            Surface(
+                                                shape = RoundedCornerShape(10.dp),
+                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 3.dp)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.weight(1f),
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Surface(
+                                                            shape = CircleShape,
+                                                            color = Color(0xFFF59E0B),
+                                                            modifier = Modifier.size(22.dp)
+                                                        ) {
+                                                            Box(contentAlignment = Alignment.Center) {
+                                                                Text("${sIdx + 1}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                                            }
+                                                        }
+                                                        Text(step, fontSize = 12.sp)
+                                                    }
+                                                    IconButton(
+                                                        onClick = { steps = steps.filterIndexed { i, _ -> i != sIdx } },
+                                                        modifier = Modifier.size(28.dp)
+                                                    ) {
+                                                        Icon(Icons.Default.DeleteOutline, contentDescription = "מחק", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Allergens chips
+                                item {
+                                    Text("סימון אלרגנים למנה:", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        ALLERGEN_OPTIONS.forEach { allergen ->
+                                            val isSelected = selectedAllergens.contains(allergen)
+                                            FilterChip(
+                                                selected = isSelected,
+                                                onClick = {
+                                                    selectedAllergens = if (isSelected) selectedAllergens - allergen else selectedAllergens + allergen
+                                                },
+                                                label = { Text(allergen, fontSize = 11.sp) },
+                                                colors = FilterChipDefaults.filterChipColors(
+                                                    selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                                    selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Chef Notes & Plating guide
+                                item {
+                                    OutlinedTextField(
+                                        value = chefNotes,
+                                        onValueChange = { chefNotes = it },
+                                        label = { Text("הערות שף ודגשי בישול למטבח") },
+                                        placeholder = { Text("למשל: לשמור על חום גבוה, לא לייבש את הבשר") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        minLines = 2
+                                    )
+                                }
+
+                                item {
+                                    OutlinedTextField(
+                                        value = platingGuide,
+                                        onValueChange = { platingGuide = it },
+                                        label = { Text("הנחיות צלחות והגשה (Plating)") },
+                                        placeholder = { Text("למשל: צלחת חרס מלבנית, קישוט כוסברה מעל") },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Bottom Dialog Action Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("ביטול")
+                    }
+
+                    Button(
+                        onClick = {
+                            val catName = categories.firstOrNull { it.id == selectedCatId }?.name ?: "כללי"
+                            val parsedCost = costText.toDoubleOrNull() ?: totalBomCost
+
+                            val recipeToSave = DishRecipe(
+                                itemId = item?.id ?: 0L,
+                                itemName = name,
+                                categoryName = catName,
+                                ingredients = ingredients,
+                                prepGuide = KitchenPrepGuide(
+                                    prepTimeMinutes = prepTimeMinutes.toIntOrNull() ?: 10,
+                                    station = selectedStation,
+                                    steps = steps,
+                                    allergens = selectedAllergens.toList(),
+                                    chefNotes = chefNotes,
+                                    platingGuide = platingGuide
+                                )
+                            )
+
+                            onSave(
+                                item?.id ?: 0L,
+                                name,
+                                selectedCatId,
+                                catName,
+                                priceText.toDoubleOrNull() ?: 0.0,
+                                parsedCost,
+                                sku,
+                                barcode,
+                                soldBy,
+                                inStockText.toDoubleOrNull() ?: 0.0,
+                                lowThresholdText.toDoubleOrNull() ?: 5.0,
+                                trackStock,
+                                item?.colorHex ?: "#2E7D32",
+                                recipeToSave
+                            )
+                        },
+                        enabled = name.isNotBlank(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(if (item == null) "צור מנה ועץ מוצר" else "שמור מנה ועץ מוצר (Save Item & BOM)")
+                    }
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
-    )
+    }
 }
 
 @Composable

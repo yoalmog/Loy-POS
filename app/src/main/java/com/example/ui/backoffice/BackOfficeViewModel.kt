@@ -1,5 +1,6 @@
 package com.example.ui.backoffice
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -105,7 +106,9 @@ class BackOfficeViewModel(val repository: PosRepository) : ViewModel() {
         inStock: Double,
         lowStockThreshold: Double,
         trackStock: Boolean,
-        colorHex: String
+        colorHex: String,
+        recipe: DishRecipe? = null,
+        context: Context? = null
     ) {
         viewModelScope.launch {
             val item = ItemEntity(
@@ -123,12 +126,23 @@ class BackOfficeViewModel(val repository: PosRepository) : ViewModel() {
                 trackStock = trackStock,
                 colorHex = colorHex
             )
-            repository.saveItem(item)
+            val savedItemId = repository.saveItem(item)
+
+            // If recipe / BOM is assigned, save it in RecipeManager
+            if (recipe != null && context != null) {
+                val assignedRecipe = recipe.copy(
+                    itemId = if (id == 0L) savedItemId else id,
+                    itemName = name,
+                    categoryName = categoryName
+                )
+                com.example.util.RecipeManager.saveRecipe(context, assignedRecipe)
+            }
+
             _uiState.update {
                 it.copy(
                     showItemEditorDialog = false,
                     editingItem = null,
-                    statusMessage = "Item '$name' saved"
+                    statusMessage = "Item '$name' & recipe saved"
                 )
             }
         }

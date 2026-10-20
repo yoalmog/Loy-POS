@@ -27,6 +27,9 @@ interface ProductDao {
     @Query("SELECT * FROM products ORDER BY name ASC")
     fun getAllProducts(): Flow<List<Product>>
 
+    @Query("SELECT * FROM products")
+    suspend fun getAllProductsSync(): List<Product>
+
     @Query("SELECT * FROM products WHERE category = :category ORDER BY name ASC")
     fun getProductsByCategory(category: String): Flow<List<Product>>
 
@@ -68,6 +71,9 @@ interface ItemDao {
 
     @Query("SELECT * FROM items ORDER BY name ASC")
     fun getAllItems(): Flow<List<ItemEntity>>
+
+    @Query("SELECT * FROM items")
+    suspend fun getAllItemsSync(): List<ItemEntity>
 
     @Query("SELECT * FROM items WHERE categoryId = :categoryId ORDER BY name ASC")
     fun getItemsByCategory(categoryId: Long): Flow<List<ItemEntity>>

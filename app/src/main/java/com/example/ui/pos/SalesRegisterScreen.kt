@@ -1,7 +1,6 @@
 package com.example.ui.pos
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,10 +31,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.text.TextStyle
+import com.example.ui.theme.*
 import coil.compose.SubcomposeAsyncImage
 import com.example.data.model.*
 import com.example.ui.pos.components.*
-import com.example.ui.theme.PosDesignTokens
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,6 +67,13 @@ fun SalesRegisterScreen(
 
     var showMobileCartSheet by remember { mutableStateOf(false) }
     var showDiscountDialog by remember { mutableStateOf(false) }
+    var showOcrDialog by remember { mutableStateOf(false) }
+    var showKitchenScreen by remember { mutableStateOf(false) }
+    var selectedDishForRecipeSheet by remember { mutableStateOf<ItemEntity?>(null) }
+
+    LaunchedEffect(Unit) {
+        com.example.util.RecipeManager.initialize(context)
+    }
 
     // Filter items by category, favorites & search query
     val displayedItems = remember(allItems, uiState.selectedCategoryId, uiState.isFavoritesSelected, uiState.searchQuery) {
@@ -98,357 +107,354 @@ fun SalesRegisterScreen(
             topBar = {
                 var showMoreMenu by remember { mutableStateOf(false) }
 
-                Column(modifier = Modifier.fillMaxWidth().background(PosDesignTokens.SurfaceLight)) {
-                    TopAppBar(
-                        title = {
-                            if (uiState.isSearchActive && !isWideScreen) {
-                                TextField(
-                                    value = uiState.searchQuery,
-                                    onValueChange = { viewModel.setSearchQuery(it) },
-                                    placeholder = {
-                                        Text(
-                                            "Search menu, barcode or SKU...",
-                                            color = PosDesignTokens.TextMuted,
-                                            fontSize = 13.sp
-                                        )
-                                    },
-                                    singleLine = true,
-                                    trailingIcon = {
-                                        if (uiState.searchQuery.isNotEmpty()) {
-                                            IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                                                Icon(Icons.Default.Close, contentDescription = "Clear", tint = PosDesignTokens.TextSecondary)
-                                            }
-                                        }
-                                    },
-                                    colors = TextFieldDefaults.colors(
-                                        focusedContainerColor = PosDesignTokens.BackgroundLight,
-                                        unfocusedContainerColor = PosDesignTokens.BackgroundLight,
-                                        focusedTextColor = PosDesignTokens.TextPrimary,
-                                        unfocusedTextColor = PosDesignTokens.TextPrimary,
-                                        cursorColor = PosDesignTokens.BrandSky600,
-                                        focusedIndicatorColor = Color.Transparent,
-                                        unfocusedIndicatorColor = Color.Transparent
-                                    ),
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(44.dp)
-                                        .testTag("appbar_search_input")
-                                )
-                            } else {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    // Store Brand Icon (Matching Back Office)
-                                    Surface(
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = PosDesignTokens.BrandSky50,
-                                        border = BorderStroke(1.dp, PosDesignTokens.BrandSky100),
-                                        modifier = Modifier.size(36.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                Icons.Default.Storefront,
-                                                contentDescription = null,
-                                                tint = PosDesignTokens.BrandSky600,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-
-                                    // Ticket & Cashier Information
-                                    Column(
-                                        modifier = Modifier.clickable { viewModel.setOpenTicketsDialog(true) }
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = uiState.currentTicketName,
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Black,
-                                                color = PosDesignTokens.TextPrimary,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Surface(
-                                                color = PosDesignTokens.BrandSky100,
-                                                shape = RoundedCornerShape(999.dp)
-                                            ) {
-                                                Text(
-                                                    text = "POS",
-                                                    color = PosDesignTokens.BrandSky800,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = FontWeight.Black,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                    fontSize = 9.sp
-                                                )
-                                            }
-                                            Icon(
-                                                Icons.Default.ArrowDropDown,
-                                                contentDescription = "Switch Ticket",
-                                                tint = PosDesignTokens.TextSecondary,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                        Text(
-                                            text = "${uiState.cashierName} • ${if (currentShift?.isOpen == true) "Turno Abierto" else "Turno Cerrado"}",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = PosDesignTokens.TextMuted,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            fontSize = 10.sp
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                        navigationIcon = {
-                            IconButton(
-                                onClick = onOpenDrawer,
+                Surface(
+                    color = PosWhite,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding(),
+                    shadowElevation = 1.dp,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(58.dp)
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Left: Drawer button + Store identity
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = PosSlate100,
                                 modifier = Modifier
-                                    .padding(start = 8.dp)
                                     .size(38.dp)
-                                    .background(PosDesignTokens.BackgroundLight, RoundedCornerShape(10.dp))
+                                    .clickable(onClick = onOpenDrawer)
                                     .testTag("drawer_menu_button")
                             ) {
-                                Icon(Icons.Default.Menu, contentDescription = "Menu", tint = PosDesignTokens.TextPrimary)
-                            }
-                        },
-                        actions = {
-                            // Integrated Wide Screen Search Input (Back Office Style)
-                            if (isWideScreen) {
-                                OutlinedTextField(
-                                    value = uiState.searchQuery,
-                                    onValueChange = { viewModel.setSearchQuery(it) },
-                                    placeholder = { Text("Search menu, barcode or SKU...", fontSize = 12.sp, color = PosDesignTokens.TextMuted) },
-                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = PosDesignTokens.TextMuted, modifier = Modifier.size(16.dp)) },
-                                    trailingIcon = {
-                                        if (uiState.searchQuery.isNotEmpty()) {
-                                            IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                                                Icon(Icons.Default.Close, contentDescription = "Clear", tint = PosDesignTokens.TextSecondary, modifier = Modifier.size(14.dp))
-                                            }
-                                        }
-                                    },
-                                    singleLine = true,
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = PosDesignTokens.BackgroundLight,
-                                        unfocusedContainerColor = PosDesignTokens.BackgroundLight,
-                                        focusedBorderColor = PosDesignTokens.BrandSky600,
-                                        unfocusedBorderColor = PosDesignTokens.BorderLight,
-                                        focusedTextColor = PosDesignTokens.TextPrimary,
-                                        unfocusedTextColor = PosDesignTokens.TextPrimary
-                                    ),
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier
-                                        .width(220.dp)
-                                        .height(40.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                            } else {
-                                // Search Toggle on Compact Screens
-                                IconButton(
-                                    onClick = { viewModel.setSearchActive(!uiState.isSearchActive) },
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(PosDesignTokens.BackgroundLight, RoundedCornerShape(10.dp))
-                                ) {
+                                Box(contentAlignment = Alignment.Center) {
                                     Icon(
-                                        if (uiState.isSearchActive) Icons.Default.Close else Icons.Default.Search,
-                                        contentDescription = "Search",
-                                        tint = PosDesignTokens.TextPrimary
+                                        Icons.Default.Menu,
+                                        contentDescription = "Menu",
+                                        tint = PosSlate700,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
-                                Spacer(modifier = Modifier.width(4.dp))
                             }
 
-                            // Barcode Scanner Action Button (Back Office Treatment)
+                            // Store brand box
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = PosDesignTokens.BackgroundLight,
-                                border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
-                                modifier = Modifier
-                                    .clickable { viewModel.setBarcodeDialog(true) }
-                                    .height(38.dp)
+                                color = PosSky50,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PosSky100),
+                                modifier = Modifier.size(36.dp)
                             ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.Storefront,
+                                        contentDescription = null,
+                                        tint = PosSky600,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+
+                            Column(modifier = Modifier.clickable { viewModel.setOpenTicketsDialog(true) }) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Icon(Icons.Default.QrCodeScanner, contentDescription = "Barcode", tint = PosDesignTokens.BrandSky600, modifier = Modifier.size(18.dp))
-                                    if (isWideScreen) {
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Barcode", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = PosDesignTokens.TextPrimary)
+                                    Text(
+                                        text = "AuraPOS Bistro & Bar",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Black,
+                                        color = PosSlate800
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(100.dp),
+                                        color = PosSky100,
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, PosSky200)
+                                    ) {
+                                        Text(
+                                            text = "Punto de Venta (POS)",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = PosSky700,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "• ${uiState.cashierName} (Cajero) (CASHIER)",
+                                    fontSize = 10.sp,
+                                    color = PosSlate400,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                        // Center: Search input
+                        if (isWideScreen) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = PosSlate100,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
+                                modifier = Modifier
+                                    .widthIn(min = 220.dp, max = 340.dp)
+                                    .height(36.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = null,
+                                        tint = PosSlate400,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    BasicTextField(
+                                        value = uiState.searchQuery,
+                                        onValueChange = { viewModel.setSearchQuery(it) },
+                                        singleLine = true,
+                                        textStyle = TextStyle(
+                                            fontSize = 12.sp,
+                                            color = PosSlate800,
+                                            fontWeight = FontWeight.Medium
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .testTag("appbar_search_input"),
+                                        decorationBox = { innerTextField ->
+                                            if (uiState.searchQuery.isEmpty()) {
+                                                Text(
+                                                    "Buscar por nombre, SKU o código...",
+                                                    fontSize = 11.sp,
+                                                    color = PosSlate400
+                                                )
+                                            }
+                                            innerTextField()
+                                        }
+                                    )
+                                    if (uiState.searchQuery.isNotEmpty()) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "Clear",
+                                            tint = PosSlate400,
+                                            modifier = Modifier
+                                                .size(14.dp)
+                                                .clickable { viewModel.setSearchQuery("") }
+                                        )
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.width(4.dp))
+                        }
 
-                            // AI Menu Scanner Action Button (Gradient Sparkles treatment)
+                        // Right: Action buttons
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            // Camera Scanner
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = PosDesignTokens.BrandSky600,
-                                shadowElevation = 2.dp,
+                                color = PosSlate100,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
                                 modifier = Modifier
+                                    .height(36.dp)
                                     .clickable { viewModel.setBarcodeDialog(true) }
-                                    .height(38.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(Icons.Default.QrCodeScanner, contentDescription = "Escáner", tint = PosSky600, modifier = Modifier.size(16.dp))
+                                    if (isWideScreen) {
+                                        Text("Escáner", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PosSlate700)
+                                    }
+                                }
+                            }
+
+                            // AI Menu Scanner Button
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier
+                                    .height(36.dp)
+                                    .clickable { showOcrDialog = true },
+                                shadowElevation = 2.dp
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .background(PosDesignTokens.BrandGradient)
+                                        .background(Brush.horizontalGradient(listOf(PosSky600, PosIndigo600)))
                                         .padding(horizontal = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.AutoAwesome, contentDescription = "AI Scanner", tint = Color(0xFFFFD54F), modifier = Modifier.size(16.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = PosAmber200, modifier = Modifier.size(16.dp))
                                         if (isWideScreen) {
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("AI Scan", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White)
+                                            Text("Escáner IA", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                         }
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.width(4.dp))
 
-                            // Held Orders Badge (Amber)
+                            // Paused Orders (Open Tickets)
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = PosDesignTokens.BackgroundLight,
-                                border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
+                                color = PosSlate100,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
                                 modifier = Modifier
+                                    .height(36.dp)
                                     .clickable { viewModel.setOpenTicketsDialog(true) }
-                                    .height(38.dp)
                             ) {
                                 Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    BadgedBox(
-                                        badge = {
-                                            if (activeTickets.size > 0) {
-                                                Badge(containerColor = PosDesignTokens.AccentAmber, contentColor = Color.Black) {
-                                                    Text(activeTickets.size.toString(), fontWeight = FontWeight.Bold)
-                                                }
-                                            }
-                                        }
-                                    ) {
-                                        Icon(Icons.Default.Schedule, contentDescription = "Held Orders", tint = PosDesignTokens.AccentAmberText, modifier = Modifier.size(18.dp))
-                                    }
+                                    Icon(Icons.Default.Schedule, contentDescription = null, tint = PosAmber500, modifier = Modifier.size(16.dp))
                                     if (isWideScreen) {
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Held", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = PosDesignTokens.TextPrimary)
+                                        Text("Pausados", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PosSlate700)
                                     }
                                 }
                             }
-                            Spacer(modifier = Modifier.width(4.dp))
 
-                            // Online / Sync Pill (Emerald)
+                            // KDS Shortcut
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isOnline) PosDesignTokens.AccentEmeraldBg else PosDesignTokens.AccentRedBg,
-                                border = BorderStroke(1.dp, if (isOnline) PosDesignTokens.AccentEmeraldBorder else PosDesignTokens.AccentRedBorder),
+                                color = PosAmber50,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PosAmber200),
                                 modifier = Modifier
+                                    .height(36.dp)
+                                    .clickable { showKitchenScreen = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(Icons.Default.OutdoorGrill, contentDescription = null, tint = PosAmber600, modifier = Modifier.size(16.dp))
+                                    if (isWideScreen) {
+                                        Text("KDS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PosAmber800)
+                                    }
+                                }
+                            }
+
+                            // Cloud Sync status
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isOnline) PosEmerald50 else PosRed50,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, if (isOnline) PosEmerald200 else PosRed200),
+                                modifier = Modifier
+                                    .height(36.dp)
                                     .clickable {
                                         syncManager.triggerSync()
                                         viewModel.setSyncStatusDialog(true)
                                     }
-                                    .height(38.dp)
                                     .testTag("sync_status_button")
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 8.dp)
-                                ) {
+                                Box(modifier = Modifier.padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
                                     Icon(
-                                        imageVector = if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
+                                        imageVector = if (isOnline) Icons.Default.Wifi else Icons.Default.WifiOff,
                                         contentDescription = "Sync",
-                                        tint = if (isOnline) PosDesignTokens.AccentEmeraldText else PosDesignTokens.AccentRedText,
+                                        tint = if (isOnline) PosEmerald600 else PosRed600,
                                         modifier = Modifier.size(16.dp)
                                     )
-                                    if (pendingSyncCount > 0) {
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Surface(
-                                            color = PosDesignTokens.AccentAmber,
-                                            shape = RoundedCornerShape(999.dp)
-                                        ) {
-                                            Text(
-                                                pendingSyncCount.toString(),
-                                                color = Color.Black,
-                                                fontSize = 9.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(horizontal = 4.dp)
-                                            )
-                                        }
-                                    }
                                 }
                             }
-                            Spacer(modifier = Modifier.width(4.dp))
 
-                            // View Mode Toggle (Grid vs List)
-                            IconButton(
-                                onClick = { viewModel.toggleLayoutMode() },
+                            // Lock terminal
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = PosRed50,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PosRed200),
                                 modifier = Modifier
-                                    .size(38.dp)
-                                    .background(PosDesignTokens.BackgroundLight, RoundedCornerShape(10.dp))
+                                    .height(36.dp)
+                                    .clickable { viewModel.setShiftDialog(true) }
                             ) {
-                                Icon(
-                                    if (uiState.isGridLayout) Icons.Default.ViewList else Icons.Default.GridView,
-                                    contentDescription = "Toggle View",
-                                    tint = PosDesignTokens.TextSecondary,
-                                    modifier = Modifier.size(18.dp)
-                                )
+                                Box(modifier = Modifier.padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.Lock,
+                                        contentDescription = "Bloquear Terminal",
+                                        tint = PosRed600,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
                             }
-                            Spacer(modifier = Modifier.width(4.dp))
 
-                            // More Options Dropdown Menu
+                            // More menu
                             Box {
-                                IconButton(
-                                    onClick = { showMoreMenu = true },
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = PosSlate100,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
                                     modifier = Modifier
-                                        .size(38.dp)
-                                        .background(PosDesignTokens.BackgroundLight, RoundedCornerShape(10.dp))
+                                        .size(36.dp)
+                                        .clickable { showMoreMenu = true }
                                 ) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = "More Options", tint = PosDesignTokens.TextSecondary, modifier = Modifier.size(18.dp))
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Default.MoreVert, contentDescription = "More Options", tint = PosSlate700, modifier = Modifier.size(18.dp))
+                                    }
                                 }
                                 DropdownMenu(
                                     expanded = showMoreMenu,
                                     onDismissRequest = { showMoreMenu = false }
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text(if (uiState.selectedCustomer != null) "Customer: ${uiState.selectedCustomer?.name}" else "Select Customer") },
-                                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = PosDesignTokens.BrandSky600) },
+                                        text = { Text(if (uiState.selectedCustomer != null) "Cliente: ${uiState.selectedCustomer?.name}" else "Asignar Cliente") },
+                                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = PosSky600) },
                                         onClick = {
                                             showMoreMenu = false
                                             viewModel.setCustomerSelectDialog(true)
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Shift Management") },
-                                        leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null, tint = PosDesignTokens.BrandSky600) },
+                                        text = { Text(if (uiState.isGridLayout) "Vista Lista" else "Vista Cuadrícula") },
+                                        leadingIcon = { Icon(if (uiState.isGridLayout) Icons.AutoMirrored.Filled.ListAlt else Icons.Default.GridView, contentDescription = null) },
+                                        onClick = {
+                                            showMoreMenu = false
+                                            viewModel.toggleLayoutMode()
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Gestión de Turnos (Shifts)") },
+                                        leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null) },
                                         onClick = {
                                             showMoreMenu = false
                                             viewModel.setShiftDialog(true)
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Thermal Printer Settings") },
-                                        leadingIcon = { Icon(Icons.Default.Print, contentDescription = null, tint = PosDesignTokens.BrandSky600) },
+                                        text = { Text("Ajustes de Impresora") },
+                                        leadingIcon = { Icon(Icons.Default.Print, contentDescription = null, tint = PosSky600) },
                                         onClick = {
                                             showMoreMenu = false
                                             viewModel.setPrinterSettingsDialog(true)
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Review Low Stock (${lowStockProducts.size})") },
-                                        leadingIcon = { Icon(Icons.Default.Warning, contentDescription = null, tint = PosDesignTokens.AccentAmber) },
+                                        text = { Text("Stock Bajo (${lowStockProducts.size})") },
+                                        leadingIcon = { Icon(Icons.Default.Warning, contentDescription = null, tint = PosAmber600) },
                                         onClick = {
                                             showMoreMenu = false
                                             viewModel.setLowStockDialog(true)
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Open Online Back Office") },
-                                        leadingIcon = { Icon(Icons.Default.OpenInNew, contentDescription = null, tint = PosDesignTokens.BrandSky600) },
+                                        text = { Text("Abrir Back Office Online") },
+                                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = PosSky600) },
                                         onClick = {
                                             showMoreMenu = false
                                             try {
@@ -464,16 +470,8 @@ fun SalesRegisterScreen(
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.width(6.dp))
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = PosDesignTokens.SurfaceLight,
-                            titleContentColor = PosDesignTokens.TextPrimary,
-                            navigationIconContentColor = PosDesignTokens.TextPrimary,
-                            actionIconContentColor = PosDesignTokens.TextPrimary
-                        )
-                    )
-                    HorizontalDivider(color = PosDesignTokens.BorderLight)
+                        }
+                    }
                 }
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -496,16 +494,15 @@ fun SalesRegisterScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .background(PosDesignTokens.BackgroundLight)
             ) {
                 // Item Catalog Pane
                 Column(
                     modifier = Modifier
                         .weight(if (isWideScreen) 0.62f else 1f)
                         .fillMaxHeight()
-                        .background(PosDesignTokens.BackgroundLight)
+                        .background(PosSlate100)
                 ) {
-                    // Category Chips Bar (Back Office Styling)
+                    // Category Chips Bar
                     CategoryFilterRow(
                         categories = categories,
                         selectedCategoryId = uiState.selectedCategoryId,
@@ -523,9 +520,9 @@ fun SalesRegisterScreen(
                         exit = fadeOut() + shrinkVertically()
                     ) {
                         Surface(
-                            color = PosDesignTokens.AccentAmberBg,
-                            border = BorderStroke(1.dp, PosDesignTokens.AccentAmberBorder),
-                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFFFFF3E0),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFB74D)),
+                            shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 14.dp, vertical = 4.dp)
@@ -545,21 +542,21 @@ fun SalesRegisterScreen(
                                     Icon(
                                         Icons.Default.Warning,
                                         contentDescription = null,
-                                        tint = PosDesignTokens.AccentAmberText,
-                                        modifier = Modifier.size(18.dp)
+                                        tint = Color(0xFFE65100),
+                                        modifier = Modifier.size(20.dp)
                                     )
                                     Column {
                                         Text(
-                                            text = "Low Stock Warning (${lowStockProducts.size} items)",
-                                            style = MaterialTheme.typography.labelMedium,
+                                            text = "Low Stock Warning: ${lowStockProducts.size} item(s) running low",
+                                            style = MaterialTheme.typography.labelLarge,
                                             fontWeight = FontWeight.Bold,
-                                            color = PosDesignTokens.AccentAmberText
+                                            color = Color(0xFFE65100)
                                         )
                                         val firstTwo = lowStockProducts.take(2).joinToString(", ") { "${it.name} (${it.stockLevel} left)" }
                                         Text(
                                             text = "$firstTwo${if (lowStockProducts.size > 2) "..." else ""}",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = PosDesignTokens.TextSecondary,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -574,7 +571,7 @@ fun SalesRegisterScreen(
                                         onClick = { viewModel.setLowStockDialog(true) },
                                         contentPadding = PaddingValues(horizontal = 8.dp)
                                     ) {
-                                        Text("Review", fontWeight = FontWeight.Bold, color = PosDesignTokens.AccentAmberText, fontSize = 12.sp)
+                                        Text("Review", fontWeight = FontWeight.Bold, color = Color(0xFFE65100), fontSize = 12.sp)
                                     }
                                     IconButton(
                                         onClick = { viewModel.dismissLowStockBanner() },
@@ -584,12 +581,74 @@ fun SalesRegisterScreen(
                                             Icons.Default.Close,
                                             contentDescription = "Dismiss banner",
                                             modifier = Modifier.size(16.dp),
-                                            tint = PosDesignTokens.TextSecondary
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
                             }
                         }
+                    }
+
+                    // Mobile Search Bar (Only shown on narrow screens where header search is hidden)
+                    if (!isWideScreen) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = PosSlate100,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(38.dp)
+                                .padding(horizontal = 14.dp, vertical = 2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = PosSlate400,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                BasicTextField(
+                                    value = uiState.searchQuery,
+                                    onValueChange = { viewModel.setSearchQuery(it) },
+                                    singleLine = true,
+                                    textStyle = TextStyle(
+                                        fontSize = 12.sp,
+                                        color = PosSlate800,
+                                        fontWeight = FontWeight.Medium
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .testTag("appbar_search_input_mobile"),
+                                    decorationBox = { innerTextField ->
+                                        if (uiState.searchQuery.isEmpty()) {
+                                            Text(
+                                                "Buscar por nombre, SKU o código...",
+                                                fontSize = 11.sp,
+                                                color = PosSlate400
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
+                                )
+                                if (uiState.searchQuery.isNotEmpty()) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Clear",
+                                        tint = PosSlate400,
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .clickable { viewModel.setSearchQuery("") }
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
                     }
 
                     // Items Grid, List or Loyverse Keypad
@@ -613,11 +672,11 @@ fun SalesRegisterScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    CircularProgressIndicator(color = PosDesignTokens.BrandSky600)
+                                    CircularProgressIndicator(color = Color(0xFF2E7D32))
                                     Text(
                                         text = "Connecting to Back Office & loading catalog...",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = PosDesignTokens.TextSecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             } else if (syncState == com.example.util.SyncState.ERROR && allItems.isEmpty()) {
@@ -629,24 +688,24 @@ fun SalesRegisterScreen(
                                     Icon(
                                         Icons.Default.CloudOff,
                                         contentDescription = null,
-                                        tint = PosDesignTokens.AccentRed,
+                                        tint = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.size(48.dp)
                                     )
                                     Text(
                                         text = "Unable to connect to Back Office",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = PosDesignTokens.AccentRed
+                                        color = MaterialTheme.colorScheme.error
                                     )
                                     Text(
                                         text = "Check network connection or tap retry to re-sync.",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = PosDesignTokens.TextSecondary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         textAlign = TextAlign.Center
                                     )
                                     Button(
                                         onClick = { syncManager.triggerSync() },
-                                        colors = ButtonDefaults.buttonColors(containerColor = PosDesignTokens.BrandSky600)
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
                                     ) {
                                         Icon(Icons.Default.Refresh, contentDescription = null)
                                         Spacer(modifier = Modifier.width(6.dp))
@@ -658,12 +717,10 @@ fun SalesRegisterScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Icon(Icons.Default.Search, contentDescription = null, tint = PosDesignTokens.TextMuted, modifier = Modifier.size(40.dp))
                                     Text(
                                         text = "No items match '${uiState.searchQuery}'",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = PosDesignTokens.TextSecondary,
-                                        fontWeight = FontWeight.Bold
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             } else if (uiState.isFavoritesSelected) {
@@ -674,13 +731,13 @@ fun SalesRegisterScreen(
                                     Icon(
                                         Icons.Default.Star,
                                         contentDescription = null,
-                                        tint = PosDesignTokens.AccentAmber,
+                                        tint = Color(0xFFFFB300),
                                         modifier = Modifier.size(40.dp)
                                     )
                                     Text(
                                         text = "No favorite items yet",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = PosDesignTokens.TextSecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             } else {
@@ -691,24 +748,25 @@ fun SalesRegisterScreen(
                                     Text(
                                         text = "No items in this category",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = PosDesignTokens.TextSecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
                         }
                     } else if (uiState.isGridLayout) {
                         LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 150.dp),
+                            columns = GridCells.Adaptive(minSize = 135.dp),
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             items(displayedItems) { item ->
                                 ItemGridCard(
                                     item = item,
-                                    onClick = { viewModel.onItemClick(item) }
+                                    onClick = { viewModel.onItemClick(item) },
+                                    onRecipeClick = { selectedDishForRecipeSheet = item }
                                 )
                             }
                         }
@@ -716,38 +774,39 @@ fun SalesRegisterScreen(
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(displayedItems) { item ->
                                 ItemListRow(
                                     item = item,
-                                    onClick = { viewModel.onItemClick(item) }
+                                    onClick = { viewModel.onItemClick(item) },
+                                    onRecipeClick = { selectedDishForRecipeSheet = item }
                                 )
                             }
                         }
                     }
                 }
 
-                // Wide Screen Ticket Pane (Back Office Cart Column)
+                // Wide Screen Ticket Pane (1/3 of screen)
                 if (isWideScreen) {
                     Box(
                         modifier = Modifier
                             .weight(0.38f)
                             .fillMaxHeight()
-                            .border(width = 1.dp, color = PosDesignTokens.BorderLight)
+                            .border(width = 1.dp, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                     ) {
                         TicketCartPanel(
                             uiState = uiState,
                             openTicketsCount = activeTickets.size,
+                            onDiningOptionChange = { viewModel.setDiningOption(it) },
                             onUpdateQuantity = { idx, qty -> viewModel.updateCartItemQuantity(idx, qty) },
                             onRemoveItem = { idx -> viewModel.removeCartItem(idx) },
                             onClearCart = { viewModel.clearCart() },
                             onOpenTicketsClick = { viewModel.setOpenTicketsDialog(true) },
                             onSaveTicketClick = { viewModel.setSaveTicketDialog(true) },
                             onDiscountClick = { showDiscountDialog = true },
-                            onChargeClick = { viewModel.setCheckoutSheet(true) },
-                            onDiningOptionChange = { viewModel.setDiningOption(it) }
+                            onChargeClick = { viewModel.setCheckoutSheet(true) }
                         )
                     }
                 }
@@ -759,13 +818,13 @@ fun SalesRegisterScreen(
     if (showMobileCartSheet) {
         ModalBottomSheet(
             onDismissRequest = { showMobileCartSheet = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = PosDesignTokens.SurfaceLight
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             Box(modifier = Modifier.fillMaxHeight(0.85f)) {
                 TicketCartPanel(
                     uiState = uiState,
                     openTicketsCount = activeTickets.size,
+                    onDiningOptionChange = { viewModel.setDiningOption(it) },
                     onUpdateQuantity = { idx, qty -> viewModel.updateCartItemQuantity(idx, qty) },
                     onRemoveItem = { idx -> viewModel.removeCartItem(idx) },
                     onClearCart = { viewModel.clearCart() },
@@ -781,8 +840,7 @@ fun SalesRegisterScreen(
                     onChargeClick = {
                         showMobileCartSheet = false
                         viewModel.setCheckoutSheet(true)
-                    },
-                    onDiningOptionChange = { viewModel.setDiningOption(it) }
+                    }
                 )
             }
         }
@@ -862,6 +920,33 @@ fun SalesRegisterScreen(
         BarcodeScannerDialog(
             onDismiss = { viewModel.setBarcodeDialog(false) },
             onBarcodeScanned = { code -> viewModel.onBarcodeScanned(code) }
+        )
+    }
+
+    // OCR Scanner Dialog (PaddleOCR)
+    if (showOcrDialog) {
+        com.example.ui.pos.components.OcrScannerDialog(
+            onDismiss = { showOcrDialog = false },
+            onAddItemsToCart = { acceptedItems ->
+                for (scanned in acceptedItems) {
+                    val existing = allItems.find { it.name.equals(scanned.name, ignoreCase = true) }
+                    if (existing != null) {
+                        viewModel.onItemClick(existing)
+                    } else {
+                        val transientItem = com.example.data.model.ItemEntity(
+                            id = System.currentTimeMillis() % 10000000L + (1..999).random(),
+                            name = scanned.name,
+                            categoryId = 1L,
+                            categoryName = scanned.category,
+                            price = scanned.price,
+                            cost = scanned.price * 0.6,
+                            sku = "OCR-${scanned.name.take(3).uppercase()}",
+                            inStock = 50.0
+                        )
+                        viewModel.onItemClick(transientItem)
+                    }
+                }
+            }
         )
     }
 
@@ -959,14 +1044,11 @@ fun SalesRegisterScreen(
                 }
             },
             confirmButton = {
-                Button(
-                    onClick = {
-                        val pct = discountInput.toDoubleOrNull() ?: 0.0
-                        viewModel.applyTicketDiscount(pct)
-                        showDiscountDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = PosDesignTokens.BrandSky600)
-                ) {
+                Button(onClick = {
+                    val pct = discountInput.toDoubleOrNull() ?: 0.0
+                    viewModel.applyTicketDiscount(pct)
+                    showDiscountDialog = false
+                }) {
                     Text("Apply")
                 }
             },
@@ -975,11 +1057,36 @@ fun SalesRegisterScreen(
             }
         )
     }
+
+    // Dish Recipe & Kitchen Preparation Sheet (at POS order time)
+    if (selectedDishForRecipeSheet != null) {
+        val dish = selectedDishForRecipeSheet!!
+        val recipe = remember(dish) {
+            com.example.util.RecipeManager.getRecipeForItem(dish.id, dish.name, dish.categoryName)
+        }
+        com.example.ui.pos.components.DishRecipeSheet(
+            recipe = recipe,
+            onDismiss = { selectedDishForRecipeSheet = null }
+        )
+    }
+
+    // Dedicated Kitchen Display Screen (KDS) Dialog
+    if (showKitchenScreen) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showKitchenScreen = false },
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                com.example.ui.kitchen.KitchenDisplayScreen(
+                    onNavigateBack = { showKitchenScreen = false }
+                )
+            }
+        }
+    }
 }
 
-// -----------------------------------------------------------------------------------------
-// CATEGORY FILTER BAR (1:1 with Web Back Office Chip Buttons)
-// -----------------------------------------------------------------------------------------
 @Composable
 fun CategoryFilterRow(
     categories: List<CategoryEntity>,
@@ -991,189 +1098,176 @@ fun CategoryFilterRow(
     onKeypadSelect: () -> Unit
 ) {
     Surface(
-        color = PosDesignTokens.SurfaceLight,
-        modifier = Modifier.fillMaxWidth()
+        color = PosWhite,
+        modifier = Modifier.fillMaxWidth(),
+        border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200)
     ) {
-        Column {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // All Items chip
-                item {
-                    val isAllSelected = !isKeypadSelected && !isFavoritesSelected && selectedCategoryId == null
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isAllSelected) PosDesignTokens.BrandSky600 else PosDesignTokens.BackgroundLight,
-                        shadowElevation = if (isAllSelected) 3.dp else 0.dp,
-                        modifier = Modifier
-                            .clickable { onCategorySelect(null) }
-                            .height(36.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.padding(horizontal = 14.dp)
-                        ) {
-                            Text(
-                                text = "All Items",
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 12.sp,
-                                color = if (isAllSelected) Color.White else PosDesignTokens.TextSecondary
-                            )
-                        }
-                    }
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // "Todas las Categorías" chip
+            item {
+                val isAllSelected = !isKeypadSelected && !isFavoritesSelected && selectedCategoryId == null
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isAllSelected) PosSky600 else PosSlate100,
+                    border = if (!isAllSelected) androidx.compose.foundation.BorderStroke(1.dp, PosSlate200) else null,
+                    shadowElevation = if (isAllSelected) 3.dp else 0.dp,
+                    modifier = Modifier.clickable { onCategorySelect(null) }
+                ) {
+                    Text(
+                        text = "Todas las Categorías",
+                        fontSize = 12.sp,
+                        fontWeight = if (isAllSelected) FontWeight.Black else FontWeight.Bold,
+                        color = if (isAllSelected) Color.White else PosSlate700,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                    )
                 }
+            }
 
-                // Favorites chip
-                item {
-                    val isFavSelected = !isKeypadSelected && isFavoritesSelected
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isFavSelected) PosDesignTokens.AccentAmber else PosDesignTokens.AccentAmberBg,
-                        border = if (!isFavSelected) BorderStroke(1.dp, PosDesignTokens.AccentAmberBorder) else null,
-                        shadowElevation = if (isFavSelected) 3.dp else 0.dp,
-                        modifier = Modifier
-                            .clickable { onFavoritesSelect() }
-                            .height(36.dp)
+            // "Favoritos" chip
+            item {
+                val isFav = !isKeypadSelected && isFavoritesSelected
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isFav) PosAmber500 else PosAmber50,
+                    border = if (!isFav) androidx.compose.foundation.BorderStroke(1.dp, PosAmber200) else null,
+                    shadowElevation = if (isFav) 3.dp else 0.dp,
+                    modifier = Modifier.clickable { onFavoritesSelect() }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Star,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = if (isFavSelected) Color.Black else PosDesignTokens.AccentAmberText
-                            )
-                            Text(
-                                text = "Favorites",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                color = if (isFavSelected) Color.Black else PosDesignTokens.AccentAmberText
-                            )
-                        }
-                    }
-                }
-
-                // Dynamic Categories from Back Office
-                items(categories) { category ->
-                    val isSelected = !isKeypadSelected && !isFavoritesSelected && selectedCategoryId == category.id
-                    val chipColor = try {
-                        Color(android.graphics.Color.parseColor(category.colorHex))
-                    } catch (e: Exception) {
-                        PosDesignTokens.BrandSky600
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) chipColor else PosDesignTokens.SurfaceLight,
-                        border = if (!isSelected) BorderStroke(1.dp, PosDesignTokens.BorderLight) else null,
-                        shadowElevation = if (isSelected) 3.dp else 0.dp,
-                        modifier = Modifier
-                            .clickable { onCategorySelect(category.id) }
-                            .height(36.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        ) {
-                            if (!isSelected) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .clip(CircleShape)
-                                        .background(chipColor)
-                                )
-                            }
-                            Text(
-                                text = category.name,
-                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-                                fontSize = 12.sp,
-                                color = if (isSelected) Color.White else PosDesignTokens.TextPrimary
-                            )
-                        }
-                    }
-                }
-
-                // Keypad tab
-                item {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isKeypadSelected) PosDesignTokens.BrandSky600 else PosDesignTokens.BackgroundLight,
-                        shadowElevation = if (isKeypadSelected) 3.dp else 0.dp,
-                        modifier = Modifier
-                            .clickable { onKeypadSelect() }
-                            .height(36.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Dialpad,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = if (isKeypadSelected) Color.White else PosDesignTokens.TextSecondary
-                            )
-                            Text(
-                                text = "Keypad",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                color = if (isKeypadSelected) Color.White else PosDesignTokens.TextSecondary
-                            )
-                        }
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            tint = if (isFav) PosSlate950 else PosAmber500,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = "Favoritos",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                            color = if (isFav) PosSlate950 else PosAmber800
+                        )
                     }
                 }
             }
-            HorizontalDivider(color = PosDesignTokens.BorderLight)
+
+            // Dynamic categories from Back Office / Room
+            items(categories) { category ->
+                val isSelected = !isKeypadSelected && !isFavoritesSelected && selectedCategoryId == category.id
+                val chipColor = try {
+                    Color(android.graphics.Color.parseColor(category.colorHex))
+                } catch (e: Exception) {
+                    PosSky600
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) chipColor else PosWhite,
+                    border = if (!isSelected) androidx.compose.foundation.BorderStroke(1.dp, PosSlate200) else null,
+                    shadowElevation = if (isSelected) 3.dp else 0.dp,
+                    modifier = Modifier.clickable { onCategorySelect(category.id) }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (!isSelected) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(chipColor)
+                            )
+                        }
+                        Text(
+                            text = category.name,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+                            color = if (isSelected) Color.White else PosSlate700
+                        )
+                    }
+                }
+            }
+
+            // Keypad tab
+            item {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isKeypadSelected) PosSky600 else PosWhite,
+                    border = if (!isKeypadSelected) androidx.compose.foundation.BorderStroke(1.dp, PosSlate200) else null,
+                    shadowElevation = if (isKeypadSelected) 3.dp else 0.dp,
+                    modifier = Modifier.clickable { onKeypadSelect() }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Dialpad,
+                            contentDescription = null,
+                            tint = if (isKeypadSelected) Color.White else PosSlate700,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = "Teclado",
+                            fontSize = 12.sp,
+                            fontWeight = if (isKeypadSelected) FontWeight.Black else FontWeight.Bold,
+                            color = if (isKeypadSelected) Color.White else PosSlate700
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
-// -----------------------------------------------------------------------------------------
-// PRODUCT GRID CARD (1:1 with Web Back Office Catalog Card)
-// -----------------------------------------------------------------------------------------
 @Composable
 fun ItemGridCard(
     item: ItemEntity,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onRecipeClick: (() -> Unit)? = null
 ) {
     val cardAccentColor = remember(item.colorHex) {
         try {
             Color(android.graphics.Color.parseColor(item.colorHex))
         } catch (e: Exception) {
-            PosDesignTokens.BrandSky600
+            PosSky600
         }
     }
 
     val isLowStock = item.trackStock && item.inStock <= item.lowStockThreshold && item.inStock > 0.0
     val isOutOfStock = item.trackStock && item.inStock <= 0.0
+    val isFavorite = item.id in listOf(101L, 102L, 103L, 105L, 106L)
 
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .testTag("item_card_${item.id}"),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = PosDesignTokens.SurfaceLight),
-        border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        color = PosWhite,
+        border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200.copy(alpha = 0.9f)),
+        shadowElevation = 1.dp
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Image / Monogram Area
+            // Image area (Back Office POS card layout)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(110.dp)
-                    .background(cardAccentColor.copy(alpha = 0.12f)),
+                    .height(115.dp)
+                    .background(PosSlate100),
                 contentAlignment = Alignment.Center
             ) {
                 if (item.imageUrl.isNotBlank()) {
@@ -1183,136 +1277,220 @@ fun ItemGridCard(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                         loading = {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = cardAccentColor)
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = PosSky600
+                                )
                             }
                         },
                         error = {
-                            ProductPlaceholderTile(name = item.name, color = cardAccentColor)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(cardAccentColor.copy(alpha = 0.8f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = item.name.firstOrNull()?.toString()?.uppercase() ?: "",
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Color.White
+                                )
+                            }
                         }
                     )
                 } else {
-                    ProductPlaceholderTile(name = item.name, color = cardAccentColor)
-                }
-
-                // Favorite Star Indicator (Top Start Frosted Circle)
-                Surface(
-                    shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.9f),
-                    shadowElevation = 2.dp,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(8.dp)
-                        .size(26.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.Star,
-                            contentDescription = "Favorite",
-                            tint = PosDesignTokens.AccentAmber,
-                            modifier = Modifier.size(15.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(cardAccentColor.copy(alpha = 0.8f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = item.name.firstOrNull()?.toString()?.uppercase() ?: "",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White
                         )
                     }
                 }
 
-                // Low Stock / Out of Stock Badge (Top End Pill)
+                // Favorite Star Badge (Back Office top-start)
+                if (isFavorite) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.92f),
+                        shape = CircleShape,
+                        shadowElevation = 2.dp,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp)
+                            .size(26.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = "Favorite",
+                                tint = PosAmber500,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Quick Recipe & Preparation Button (Back Office overlay)
+                if (onRecipeClick != null) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.92f),
+                        shape = CircleShape,
+                        shadowElevation = 2.dp,
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(8.dp)
+                            .size(26.dp)
+                            .clickable { onRecipeClick() }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                                contentDescription = "מתכון והכנה",
+                                tint = PosSky700,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Low Stock Tag (Back Office top-end red pill)
                 if (isOutOfStock) {
                     Surface(
-                        color = Color.Black.copy(alpha = 0.8f),
-                        shape = RoundedCornerShape(999.dp),
+                        color = PosSlate950.copy(alpha = 0.85f),
+                        shape = RoundedCornerShape(100.dp),
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(8.dp)
                     ) {
                         Text(
-                            text = "OUT OF STOCK",
+                            text = "AGOTADO",
                             color = Color.White,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Black,
                             fontSize = 9.sp,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
                 } else if (isLowStock) {
                     Surface(
-                        color = PosDesignTokens.AccentRed,
-                        shape = RoundedCornerShape(999.dp),
+                        color = PosRed600,
+                        shape = RoundedCornerShape(100.dp),
+                        shadowElevation = 2.dp,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(8.dp)
                     ) {
                         Text(
-                            text = "LOW (${item.inStock.toInt()})",
+                            text = "STOCK BAJO (${item.inStock.toInt()})",
                             color = Color.White,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Black,
                             fontSize = 9.sp,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
                 }
             }
 
-            // Text Info & Action Area
+            // Card Body (Back Office text hierarchy)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(10.dp)
+                    .padding(12.dp)
             ) {
-                // Category Tag
-                Text(
-                    text = item.categoryName.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = PosDesignTokens.BrandSky600,
-                    letterSpacing = 0.6.sp,
-                    fontSize = 9.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-
-                // Product Name (2 Lines max)
-                Text(
-                    text = item.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = PosDesignTokens.TextPrimary,
-                    maxLines = 2,
-                    minLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = 18.sp
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Price and Add Button Row
+                // Category tag uppercase
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "$${String.format(Locale.US, "%.2f", item.price)}${if (item.soldBy == SoldBy.WEIGHT) "/kg" else ""}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        color = PosDesignTokens.TextPrimary
+                        text = item.categoryName.uppercase(),
+                        style = TextStyle(
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = PosSky600,
+                            letterSpacing = 0.6.sp
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (item.modifierIds.isNotBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = PosSky50,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, PosSky100)
+                        ) {
+                            Text(
+                                text = "Variantes",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PosSky600,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                // Product Name
+                Text(
+                    text = item.name,
+                    style = TextStyle(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PosSlate900,
+                        lineHeight = 17.sp
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.heightIn(min = 34.dp)
+                )
+
+                // Divider line
+                HorizontalDivider(
+                    color = PosSlate100,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                // Price and Add Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "$${String.format(Locale.US, "%.2f", item.price)}",
+                        style = TextStyle(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Black,
+                            color = PosSlate900
+                        )
                     )
 
-                    // Dedicated Plus Button (Back Office 32x32 rounded-xl)
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = PosDesignTokens.BrandSky50,
-                        border = BorderStroke(1.dp, PosDesignTokens.BrandSky100),
-                        modifier = Modifier.size(32.dp)
+                        color = PosSky50,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PosSky100),
+                        modifier = Modifier.size(28.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Default.Add,
-                                contentDescription = "Add to Cart",
-                                tint = PosDesignTokens.BrandSky700,
+                                contentDescription = "Add to cart",
+                                tint = PosSky700,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -1323,30 +1501,30 @@ fun ItemGridCard(
     }
 }
 
-// -----------------------------------------------------------------------------------------
-// PRODUCT LIST ROW
-// -----------------------------------------------------------------------------------------
 @Composable
 fun ItemListRow(
     item: ItemEntity,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onRecipeClick: (() -> Unit)? = null
 ) {
     val cardAccentColor = remember(item.colorHex) {
         try {
             Color(android.graphics.Color.parseColor(item.colorHex))
         } catch (e: Exception) {
-            PosDesignTokens.BrandSky600
+            PosSky600
         }
     }
 
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .testTag("item_row_${item.id}"),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = PosDesignTokens.SurfaceLight),
-        border = BorderStroke(1.dp, PosDesignTokens.BorderLight)
+        color = PosWhite,
+        border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200.copy(alpha = 0.8f)),
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier
@@ -1356,158 +1534,224 @@ fun ItemListRow(
         ) {
             Box(
                 modifier = Modifier
-                    .size(46.dp)
+                    .size(52.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(cardAccentColor),
+                    .background(PosSlate100),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = item.name.take(1).uppercase(),
-                    fontWeight = FontWeight.Black,
-                    color = Color.White,
-                    fontSize = 18.sp
-                )
+                if (item.imageUrl.isNotBlank()) {
+                    SubcomposeAsyncImage(
+                        model = item.imageUrl,
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                        error = {
+                            Text(
+                                text = item.name.take(1).uppercase(),
+                                fontWeight = FontWeight.Black,
+                                color = PosSky600,
+                                fontSize = 20.sp
+                            )
+                        }
+                    )
+                } else {
+                    Text(
+                        text = item.name.take(1).uppercase(),
+                        fontWeight = FontWeight.Black,
+                        color = PosSky600,
+                        fontSize = 20.sp
+                    )
+                }
             }
+
             Spacer(modifier = Modifier.width(12.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.categoryName.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = PosDesignTokens.BrandSky600,
-                    fontSize = 9.sp
+                    text = item.name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = PosSlate900
                 )
-                Text(item.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium, color = PosDesignTokens.TextPrimary)
                 Text(
-                    "${if (item.trackStock) "Stock: ${item.inStock.toInt()}" else "Stock not tracked"}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = PosDesignTokens.TextSecondary
+                    "${item.categoryName} • ${if (item.trackStock) "Stock: ${item.inStock.toInt()}" else "Stock no controlado"}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = PosSlate500
                 )
             }
+
             Text(
                 "$${String.format(Locale.US, "%.2f", item.price)}${if (item.soldBy == SoldBy.WEIGHT) "/kg" else ""}",
                 fontWeight = FontWeight.Black,
-                style = MaterialTheme.typography.titleMedium,
-                color = PosDesignTokens.TextPrimary
+                fontSize = 14.sp,
+                color = PosSlate900
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = PosDesignTokens.BrandSky50,
-                modifier = Modifier.size(32.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Add, contentDescription = "Add", tint = PosDesignTokens.BrandSky700, modifier = Modifier.size(16.dp))
+
+            if (onRecipeClick != null) {
+                Spacer(modifier = Modifier.width(6.dp))
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = PosSky50,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PosSky100),
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable { onRecipeClick() }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                            contentDescription = "מתכון ואופן הכנה",
+                            tint = PosSky700,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-// -----------------------------------------------------------------------------------------
-// LOYVERSE KEYPAD VIEW
-// -----------------------------------------------------------------------------------------
 @Composable
 fun LoyverseKeypadView(
     inputAmountCents: String,
     onDigit: (String) -> Unit,
     onBackspace: () -> Unit,
     onClear: () -> Unit,
-    onAddToTicket: () -> Unit
+    onAddToTicket: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val cents = inputAmountCents.toLongOrNull() ?: 0L
-    val displayDollars = cents / 100.0
+    val amountVal = (inputAmountCents.toDoubleOrNull() ?: 0.0) / 100.0
+    val formattedAmount = "$${String.format(Locale.US, "%.2f", amountVal)}"
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Display Area
         Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            color = PosDesignTokens.SurfaceLight,
-            border = BorderStroke(1.dp, PosDesignTokens.BorderLight)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(72.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
         ) {
-            Column(
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(18.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Custom Amount", style = MaterialTheme.typography.labelMedium, color = PosDesignTokens.TextSecondary)
-                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "$${String.format(Locale.US, "%.2f", displayDollars)}",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Black,
-                    color = PosDesignTokens.BrandSky600
+                    text = "Custom Amount",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = formattedAmount,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF2E7D32)
                 )
             }
         }
 
-        val rows = listOf(
-            listOf(1, 2, 3),
-            listOf(4, 5, 6),
-            listOf(7, 8, 9),
-            listOf(-1, 0, -2) // -1 is clear, -2 is backspace
-        )
+        // Keypad Grid
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val rows = listOf(
+                listOf("1", "2", "3"),
+                listOf("4", "5", "6"),
+                listOf("7", "8", "9"),
+                listOf("C", "0", "00")
+            )
 
-        rows.forEach { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                row.forEach { digit ->
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(58.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .clickable {
-                                when (digit) {
-                                    -1 -> onClear()
-                                    -2 -> onBackspace()
-                                    else -> onDigit(digit.toString())
+            for (row in rows) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    for (key in row) {
+                        Button(
+                            onClick = {
+                                when (key) {
+                                    "C" -> onClear()
+                                    else -> onDigit(key)
                                 }
                             },
-                        shape = RoundedCornerShape(14.dp),
-                        color = PosDesignTokens.SurfaceLight,
-                        border = BorderStroke(1.dp, PosDesignTokens.BorderLight)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            when (digit) {
-                                -1 -> Text("C", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = PosDesignTokens.AccentRed)
-                                -2 -> Icon(Icons.Default.Backspace, contentDescription = "Backspace", tint = PosDesignTokens.TextSecondary)
-                                else -> Text(digit.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PosDesignTokens.TextPrimary)
-                            }
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (key == "C") MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (key == "C") MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 1.dp)
+                        ) {
+                            Text(
+                                text = key,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
             }
+
+            // Backspace row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { onBackspace() },
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.Backspace, contentDescription = "Backspace", modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Delete")
+                }
+            }
         }
 
+        // Add to Ticket Button
         Button(
             onClick = onAddToTicket,
-            enabled = cents > 0L,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PosDesignTokens.BrandSky600)
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF2E7D32),
+                contentColor = Color.White
+            ),
+            enabled = amountVal > 0.0
         ) {
-            Icon(Icons.Default.AddShoppingCart, contentDescription = null)
+            Icon(Icons.Default.ShoppingCart, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Add to Ticket", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text(
+                text = "Add to Ticket  ($formattedAmount)",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
 
-// -----------------------------------------------------------------------------------------
-// COMPACT CART BOTTOM BAR (Mobile Phone Mode)
-// -----------------------------------------------------------------------------------------
 @Composable
 fun CompactCartBottomBar(
     uiState: PosUiState,
@@ -1515,9 +1759,9 @@ fun CompactCartBottomBar(
     onCharge: () -> Unit
 ) {
     Surface(
+        color = PosWhite,
         shadowElevation = 8.dp,
-        color = PosDesignTokens.SurfaceLight,
-        border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
+        border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
@@ -1525,7 +1769,7 @@ fun CompactCartBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -1538,7 +1782,7 @@ fun CompactCartBottomBar(
                 BadgedBox(
                     badge = {
                         if (uiState.itemCount > 0) {
-                            Badge(containerColor = PosDesignTokens.AccentRed, contentColor = Color.White) {
+                            Badge(containerColor = PosSky600, contentColor = Color.White) {
                                 Text(uiState.itemCount.toString(), fontWeight = FontWeight.Bold)
                             }
                         }
@@ -1546,51 +1790,62 @@ fun CompactCartBottomBar(
                 ) {
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = PosDesignTokens.BrandSky50,
-                        modifier = Modifier.size(38.dp)
+                        color = PosSky50,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PosSky100),
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.ShoppingCart, contentDescription = "Cart", tint = PosDesignTokens.BrandSky600, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.ShoppingCart, contentDescription = "Carrito", tint = PosSky600, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
-                    Text("Ticket (${uiState.diningOption.label})", style = MaterialTheme.typography.labelSmall, color = PosDesignTokens.TextSecondary)
                     Text(
-                        "$${String.format(Locale.US, "%.2f", uiState.grandTotal)}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        color = PosDesignTokens.TextPrimary
+                        text = "${uiState.currentTicketName} • ${uiState.diningOption.label}",
+                        style = TextStyle(fontSize = 11.sp, color = PosSlate500, fontWeight = FontWeight.Medium)
+                    )
+                    Text(
+                        text = "$${String.format(Locale.US, "%.2f", uiState.grandTotal)}",
+                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Black, color = PosSlate900)
                     )
                 }
             }
 
-            // Primary Gradient Charge Button
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                shadowElevation = if (uiState.cartItems.isNotEmpty()) 4.dp else 0.dp,
                 modifier = Modifier
-                    .height(44.dp)
+                    .height(46.dp)
                     .testTag("charge_button")
+                    .clickable(enabled = uiState.cartItems.isNotEmpty(), onClick = onCharge),
+                shadowElevation = if (uiState.cartItems.isNotEmpty()) 4.dp else 0.dp
             ) {
                 Box(
                     modifier = Modifier
                         .background(
-                            if (uiState.cartItems.isNotEmpty()) PosDesignTokens.BrandGradient else Brush.horizontalGradient(listOf(Color(0xFFCBD5E1), Color(0xFF94A3B8)))
+                            if (uiState.cartItems.isNotEmpty())
+                                Brush.horizontalGradient(listOf(PosSky600, PosIndigo600))
+                            else
+                                androidx.compose.ui.graphics.SolidColor(PosSlate200)
                         )
-                        .clickable(enabled = uiState.cartItems.isNotEmpty(), onClick = onCharge)
                         .padding(horizontal = 20.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.CreditCard, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CreditCard,
+                            contentDescription = null,
+                            tint = if (uiState.cartItems.isNotEmpty()) Color.White else PosSlate400,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Text(
-                            "CHARGE $${String.format(Locale.US, "%.2f", uiState.grandTotal)}",
+                            text = "Cobrar $${String.format(Locale.US, "%.2f", uiState.grandTotal)}",
                             fontWeight = FontWeight.Black,
-                            color = Color.White,
-                            fontSize = 14.sp
+                            fontSize = 13.sp,
+                            color = if (uiState.cartItems.isNotEmpty()) Color.White else PosSlate400
                         )
                     }
                 }
@@ -1599,118 +1854,93 @@ fun CompactCartBottomBar(
     }
 }
 
-// -----------------------------------------------------------------------------------------
-// TICKET CART PANEL (1:1 with Web Back Office Cart Column)
-// -----------------------------------------------------------------------------------------
 @Composable
 fun TicketCartPanel(
     uiState: PosUiState,
     openTicketsCount: Int,
+    onDiningOptionChange: (DiningOption) -> Unit = {},
     onUpdateQuantity: (index: Int, newQuantity: Double) -> Unit,
     onRemoveItem: (index: Int) -> Unit,
     onClearCart: () -> Unit,
     onOpenTicketsClick: () -> Unit,
     onSaveTicketClick: () -> Unit,
     onDiscountClick: () -> Unit,
-    onChargeClick: () -> Unit,
-    onDiningOptionChange: (DiningOption) -> Unit = {}
+    onChargeClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(PosDesignTokens.SurfaceLight)
+            .background(PosWhite)
     ) {
-        // 1. Cart Header
+        // Back Office Cart Header (slate-50 background, blue shopping bag, dining pills)
         Surface(
-            color = PosDesignTokens.SurfaceLightSubtle,
-            border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
+            color = PosSlate50,
+            border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = PosDesignTokens.BrandSky600,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.ShoppingCart, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            }
-                        }
-                        Column {
-                            Text(
-                                text = uiState.currentTicketName,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Black,
-                                color = PosDesignTokens.TextPrimary
-                            )
-                            Text(
-                                text = "${uiState.itemCount} items in ticket",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = PosDesignTokens.TextSecondary,
-                                fontSize = 10.sp
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = PosSky600,
+                        shadowElevation = 2.dp,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Default.ShoppingCart,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        // Open tickets button
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = PosDesignTokens.BackgroundLight,
-                            border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
-                            modifier = Modifier
-                                .clickable(onClick = onOpenTicketsClick)
-                                .height(30.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            ) {
-                                Icon(Icons.Default.ListAlt, contentDescription = null, modifier = Modifier.size(14.dp), tint = PosDesignTokens.TextSecondary)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Tickets ($openTicketsCount)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PosDesignTokens.TextPrimary)
-                            }
-                        }
-
-                        if (uiState.cartItems.isNotEmpty()) {
-                            IconButton(onClick = onClearCart, modifier = Modifier.size(30.dp)) {
-                                Icon(Icons.Default.DeleteOutline, contentDescription = "Clear Ticket", tint = PosDesignTokens.AccentRed, modifier = Modifier.size(18.dp))
-                            }
-                        }
+                    Column {
+                        Text(
+                            text = uiState.currentTicketName,
+                            style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Black, color = PosSlate900)
+                        )
+                        Text(
+                            text = "${uiState.cartItems.size} items • Carrito Activo",
+                            style = TextStyle(fontSize = 11.sp, color = PosSlate500, fontWeight = FontWeight.Medium)
+                        )
                     }
                 }
 
-                // Dining Option Segmented Pills (Matching Back Office)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(PosDesignTokens.BackgroundLight, RoundedCornerShape(10.dp))
-                        .padding(2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                // Dining Option Segmented Pills (Comer Aquí, Para Llevar, A Domicilio)
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = PosSlate200,
+                    modifier = Modifier.padding(2.dp)
                 ) {
-                    DiningOption.values().forEach { opt ->
-                        val isSelected = uiState.diningOption == opt
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) Color.White else Color.Transparent,
-                            shadowElevation = if (isSelected) 1.dp else 0.dp,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { onDiningOptionChange(opt) }
-                                .height(28.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
+                    Row(modifier = Modifier.padding(2.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        DiningOption.values().forEach { opt ->
+                            val isSelected = uiState.diningOption == opt
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) PosWhite else Color.Transparent,
+                                shadowElevation = if (isSelected) 1.dp else 0.dp,
+                                modifier = Modifier.clickable { onDiningOptionChange(opt) }
+                            ) {
                                 Text(
-                                    text = opt.label,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
-                                    color = if (isSelected) PosDesignTokens.TextPrimary else PosDesignTokens.TextSecondary
+                                    text = when (opt) {
+                                        DiningOption.DINE_IN -> "Comer Aquí"
+                                        DiningOption.TAKEOUT -> "Para Llevar"
+                                        DiningOption.DELIVERY -> "A Domicilio"
+                                    },
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) PosSlate900 else PosSlate600,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                             }
                         }
@@ -1719,10 +1949,10 @@ fun TicketCartPanel(
             }
         }
 
-        // 2. Customer Loyalty Row
+        // Customer Selection Bar (sky-50/50 with User icon)
         Surface(
-            color = PosDesignTokens.BrandSky50.copy(alpha = 0.5f),
-            border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
+            color = PosSky50.copy(alpha = 0.6f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
@@ -1732,52 +1962,67 @@ fun TicketCartPanel(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(Icons.Default.Person, contentDescription = null, tint = PosDesignTokens.BrandSky600, modifier = Modifier.size(16.dp))
+                Row(
+                    modifier = Modifier.clickable { onOpenTicketsClick() },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = null,
+                        tint = PosSky600,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Text(
-                        text = uiState.selectedCustomer?.name ?: "Customer (+)",
-                        style = MaterialTheme.typography.labelMedium,
+                        text = if (uiState.selectedCustomer != null) uiState.selectedCustomer.name else "Asignar Cliente (+)",
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PosDesignTokens.BrandSky700
+                        color = PosSky700
                     )
                 }
 
                 if (uiState.selectedCustomer != null) {
                     Text(
-                        text = "★ ${uiState.selectedCustomer.pointsBalance.toInt()} pts",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Black,
-                        color = PosDesignTokens.AccentAmberText
+                        text = "★ ${String.format(Locale.US, "%.1f", uiState.selectedCustomer.pointsBalance)} pts",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = PosAmber600
                     )
                 }
             }
         }
 
-        // 3. Cart Items List
+        // Ticket Items List
         if (uiState.cartItems.isEmpty()) {
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Icon(
                         Icons.Default.ShoppingCart,
                         contentDescription = null,
-                        modifier = Modifier.size(44.dp),
-                        tint = PosDesignTokens.TextMuted.copy(alpha = 0.4f)
+                        modifier = Modifier.size(48.dp),
+                        tint = PosSlate400.copy(alpha = 0.25f)
                     )
                     Text(
-                        text = "Empty ticket",
-                        style = MaterialTheme.typography.titleSmall,
+                        text = "El carrito está vacío. Seleccione un producto.",
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PosDesignTokens.TextSecondary
+                        color = PosSlate500,
+                        textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "Tap products from the catalog to add",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = PosDesignTokens.TextMuted
+                        text = "Escáner con Cámara o elija del catálogo",
+                        fontSize = 11.sp,
+                        color = PosSlate400,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -1785,16 +2030,17 @@ fun TicketCartPanel(
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 itemsIndexed(uiState.cartItems) { index, item ->
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = PosDesignTokens.SurfaceLightSubtle),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, PosDesignTokens.BorderLight)
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = PosSlate50,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200.copy(alpha = 0.8f)),
+                        shadowElevation = 1.dp
                     ) {
-                        Column(modifier = Modifier.padding(10.dp)) {
+                        Column(modifier = Modifier.padding(12.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1803,38 +2049,39 @@ fun TicketCartPanel(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = item.itemName,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = PosDesignTokens.TextPrimary
+                                        style = TextStyle(
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Black,
+                                            color = PosSlate900
+                                        )
                                     )
                                     if (item.selectedModifiersJson.isNotBlank()) {
                                         Text(
-                                            text = item.selectedModifiersJson,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = PosDesignTokens.TextSecondary
+                                            text = "• ${item.selectedModifiersJson}",
+                                            style = TextStyle(fontSize = 10.sp, color = PosSlate500)
                                         )
                                     }
                                     if (item.comment.isNotBlank()) {
                                         Text(
                                             text = "* ${item.comment}",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = PosDesignTokens.AccentAmberText,
-                                            fontWeight = FontWeight.Bold
+                                            style = TextStyle(fontSize = 10.sp, color = PosAmber700, fontWeight = FontWeight.Bold)
                                         )
                                     }
                                 }
 
                                 Text(
                                     text = "$${String.format(Locale.US, "%.2f", item.lineTotal)}",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Black,
-                                    color = PosDesignTokens.TextPrimary
+                                    style = TextStyle(
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = PosSlate900
+                                    )
                                 )
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // Quantity controls & delete button
+                            // Quantity Stepper and Delete button (Back Office layout)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1844,44 +2091,66 @@ fun TicketCartPanel(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
+                                    // Minus button
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = PosDesignTokens.SurfaceLight,
-                                        border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
+                                        color = PosWhite,
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
+                                        shadowElevation = 1.dp,
                                         modifier = Modifier
                                             .size(28.dp)
                                             .clickable { onUpdateQuantity(index, item.quantity - 1.0) }
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(14.dp), tint = PosDesignTokens.TextPrimary)
+                                            Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = PosSlate700, modifier = Modifier.size(13.dp))
                                         }
                                     }
-                                    Text(
-                                        text = if (item.quantity % 1.0 == 0.0) item.quantity.toInt().toString() else String.format(Locale.US, "%.2f", item.quantity),
-                                        fontWeight = FontWeight.Black,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = PosDesignTokens.TextPrimary,
-                                        modifier = Modifier.padding(horizontal = 6.dp)
-                                    )
+
+                                    Box(
+                                        modifier = Modifier.widthIn(min = 24.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (item.quantity % 1.0 == 0.0) item.quantity.toInt().toString() else String.format(Locale.US, "%.2f", item.quantity),
+                                            fontWeight = FontWeight.Black,
+                                            fontSize = 12.sp,
+                                            color = PosSlate900
+                                        )
+                                    }
+
+                                    // Plus button
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = PosDesignTokens.SurfaceLight,
-                                        border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
+                                        color = PosWhite,
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
+                                        shadowElevation = 1.dp,
                                         modifier = Modifier
                                             .size(28.dp)
                                             .clickable { onUpdateQuantity(index, item.quantity + 1.0) }
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(14.dp), tint = PosDesignTokens.TextPrimary)
+                                            Icon(Icons.Default.Add, contentDescription = "Increase", tint = PosSlate700, modifier = Modifier.size(13.dp))
                                         }
                                     }
                                 }
 
-                                IconButton(
-                                    onClick = { onRemoveItem(index) },
-                                    modifier = Modifier.size(28.dp)
+                                // Delete Trash Button
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = PosRed50,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, PosRed200),
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clickable { onRemoveItem(index) }
                                 ) {
-                                    Icon(Icons.Default.DeleteOutline, contentDescription = "Delete", tint = PosDesignTokens.TextMuted, modifier = Modifier.size(18.dp))
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Default.DeleteOutline,
+                                            contentDescription = "Delete",
+                                            tint = PosRed600,
+                                            modifier = Modifier.size(15.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1890,148 +2159,143 @@ fun TicketCartPanel(
             }
         }
 
-        // 4. Summary Calculations & Action Buttons
+        // Summary Calculations & Action Buttons (Back Office Cart Footer)
         Surface(
-            color = PosDesignTokens.SurfaceLightSubtle,
-            border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
+            color = PosWhite,
+            border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Subtotal
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Subtotal", style = MaterialTheme.typography.bodySmall, color = PosDesignTokens.TextSecondary)
-                    Text("$${String.format(Locale.US, "%.2f", uiState.subtotal)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = PosDesignTokens.TextPrimary)
+                    Text("Subtotal", fontSize = 12.sp, color = PosSlate500)
+                    Text("$${String.format(Locale.US, "%.2f", uiState.subtotal)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PosSlate800)
                 }
 
                 if (uiState.discountAmount > 0.0) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(
-                            "Discounts ${if (uiState.ticketDiscountPercent > 0) "(${uiState.ticketDiscountPercent.toInt()}%)" else ""}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = PosDesignTokens.AccentRed
+                            "Descuento ${if (uiState.ticketDiscountPercent > 0) "(${uiState.ticketDiscountPercent.toInt()}%)" else ""}",
+                            fontSize = 12.sp,
+                            color = PosEmerald600,
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
                             "-$${String.format(Locale.US, "%.2f", uiState.discountAmount)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = PosDesignTokens.AccentRed,
+                            fontSize = 12.sp,
+                            color = PosEmerald600,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Sales Tax (8.25%)", style = MaterialTheme.typography.bodySmall, color = PosDesignTokens.TextSecondary)
-                    Text("$${String.format(Locale.US, "%.2f", uiState.taxAmount)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = PosDesignTokens.TextPrimary)
+                    Text("Impuestos (8.25%)", fontSize = 12.sp, color = PosSlate500)
+                    Text("$${String.format(Locale.US, "%.2f", uiState.taxAmount)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = PosSlate800)
                 }
 
-                HorizontalDivider(color = PosDesignTokens.BorderLight, modifier = Modifier.padding(vertical = 4.dp))
+                HorizontalDivider(color = PosSlate200, modifier = Modifier.padding(vertical = 2.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("TOTAL", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, color = PosDesignTokens.TextPrimary)
-                    Text(
-                        "$${String.format(Locale.US, "%.2f", uiState.grandTotal)}",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Black,
-                        color = PosDesignTokens.BrandSky600
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // 3-Column Action Buttons: Park, Discount, Clear
+                // Three Action Buttons Grid (Pausar Pedido, Descuento, Vaciar Carrito)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Pausar Pedido (Save / Hold)
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = PosDesignTokens.SurfaceLight,
-                        border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
+                        shape = RoundedCornerShape(12.dp),
+                        color = PosWhite,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
                         modifier = Modifier
                             .weight(1f)
                             .clickable(enabled = uiState.cartItems.isNotEmpty(), onClick = onSaveTicketClick)
-                            .height(42.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(4.dp)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(vertical = 8.dp)
                         ) {
-                            Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp), tint = PosDesignTokens.AccentAmber)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Park", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PosDesignTokens.TextPrimary)
+                            Icon(Icons.Default.Schedule, contentDescription = null, tint = PosAmber500, modifier = Modifier.size(16.dp))
+                            Text("Pausar Pedido", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PosSlate700)
                         }
                     }
 
+                    // Descuento (Discount)
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = PosDesignTokens.SurfaceLight,
-                        border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
+                        shape = RoundedCornerShape(12.dp),
+                        color = PosWhite,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
                         modifier = Modifier
                             .weight(1f)
                             .clickable(enabled = uiState.cartItems.isNotEmpty(), onClick = onDiscountClick)
-                            .height(42.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(4.dp)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(vertical = 8.dp)
                         ) {
-                            Icon(Icons.Default.Percent, contentDescription = null, modifier = Modifier.size(16.dp), tint = PosDesignTokens.AccentEmerald)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Discount", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PosDesignTokens.TextPrimary)
+                            Icon(Icons.Default.Percent, contentDescription = null, tint = PosEmerald600, modifier = Modifier.size(16.dp))
+                            Text("Descuento", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PosSlate700)
                         }
                     }
 
+                    // Vaciar Carrito (Clear Cart)
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = PosDesignTokens.SurfaceLight,
-                        border = BorderStroke(1.dp, PosDesignTokens.BorderLight),
+                        shape = RoundedCornerShape(12.dp),
+                        color = PosWhite,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
                         modifier = Modifier
                             .weight(1f)
                             .clickable(enabled = uiState.cartItems.isNotEmpty(), onClick = onClearCart)
-                            .height(42.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(4.dp)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(vertical = 8.dp)
                         ) {
-                            Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp), tint = PosDesignTokens.AccentRed)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Clear", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PosDesignTokens.AccentRed)
+                            Icon(Icons.Default.DeleteOutline, contentDescription = null, tint = PosRed600, modifier = Modifier.size(16.dp))
+                            Text("Vaciar Carrito", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = PosRed600)
                         }
                     }
                 }
 
-                // Primary Gradient Charge Button (Matching Back Office)
+                // Big Gradient CTA Checkout Button (Cobrar S/ 0.00 / $X.XX)
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    shadowElevation = if (uiState.cartItems.isNotEmpty()) 4.dp else 0.dp,
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .height(52.dp)
+                        .clickable(enabled = uiState.cartItems.isNotEmpty(), onClick = onChargeClick),
+                    shadowElevation = if (uiState.cartItems.isNotEmpty()) 6.dp else 0.dp
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(
-                                if (uiState.cartItems.isNotEmpty()) PosDesignTokens.BrandGradient else Brush.horizontalGradient(listOf(Color(0xFFCBD5E1), Color(0xFF94A3B8)))
-                            )
-                            .clickable(enabled = uiState.cartItems.isNotEmpty(), onClick = onChargeClick),
+                                if (uiState.cartItems.isNotEmpty())
+                                    Brush.horizontalGradient(listOf(PosSky600, PosIndigo600))
+                                else
+                                    androidx.compose.ui.graphics.SolidColor(PosSlate200)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CreditCard, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.CreditCard,
+                                contentDescription = null,
+                                tint = if (uiState.cartItems.isNotEmpty()) Color.White else PosSlate400,
+                                modifier = Modifier.size(20.dp)
+                            )
                             Text(
-                                "CHARGE $${String.format(Locale.US, "%.2f", uiState.grandTotal)}",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Black,
-                                color = Color.White
+                                text = "Cobrar $${String.format(Locale.US, "%.2f", uiState.grandTotal)}",
+                                style = TextStyle(
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (uiState.cartItems.isNotEmpty()) Color.White else PosSlate400
+                                )
                             )
                         }
                     }
@@ -2041,23 +2305,49 @@ fun TicketCartPanel(
     }
 }
 
-// -----------------------------------------------------------------------------------------
-// PRODUCT PLACEHOLDER TILE (Monogram Initial with Category Background, matching Web Back Office)
-// -----------------------------------------------------------------------------------------
 @Composable
 fun ProductPlaceholderTile(name: String, color: Color) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(color),
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        color.copy(alpha = 0.85f),
+                        color
+                    )
+                )
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = name.take(1).uppercase(),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Black,
-            color = Color.White.copy(alpha = 0.95f),
-            fontSize = 32.sp
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.22f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Restaurant,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = name,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
