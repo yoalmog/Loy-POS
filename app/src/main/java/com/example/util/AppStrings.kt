@@ -30,7 +30,19 @@ data class LocalizationStrings(
     val noOrdersSub: String,
     val startPrep: String,
     val orderReady: String,
-    val delivered: String
+    val delivered: String,
+    val salesRegister: String,
+    val receiptsArchive: String,
+    val shiftManagement: String,
+    val openTickets: String,
+    val backOffice: String,
+    val backupSync: String,
+    val settings: String,
+    val language: String,
+    val onlineCloud: String,
+    val offlineMode: String,
+    val lock: String,
+    val closeShiftLabel: String
 )
 
 object AppStrings {
@@ -38,18 +50,18 @@ object AppStrings {
         return when (lang.lowercase()) {
             "he" -> LocalizationStrings(
                 storeName = "AuraPOS Bistro & Bar",
-                posBadge = "קופה ראשית (POS)",
+                posBadge = "קופה ראשית POS",
                 cashierLabel = "קופאי",
-                searchHint = "חפש לפי שם, מק\"ט או ברקוד...",
+                searchHint = "חפש לפי שם, קוד או ברקוד...",
                 scanner = "סורק",
                 aiScanner = "סורק AI",
                 paused = "מושהות",
-                kds = "מטבח",
+                kds = "מטבח KDS",
                 cart = "עגלת קניות",
                 subtotal = "סכום ביניים",
                 discount = "הנחה",
-                tax = "מע\"מ / מס",
-                total = "סה\"כ לתשלום",
+                tax = "מס / מעמ",
+                total = "סהכ לתשלום",
                 charge = "חיוב מהיר",
                 pay = "תשלום",
                 allCategories = "כל הקטגוריות",
@@ -66,7 +78,19 @@ object AppStrings {
                 noOrdersSub = "הזמנות חדשות מהקופה או משלוחים יופיעו כאן באופן אוטומטי",
                 startPrep = "התחל הכנה",
                 orderReady = "הזמנה מוכנה!",
-                delivered = "נמסרה / הושלמה"
+                delivered = "נמסרה / הושלמה",
+                salesRegister = "קופה ראשית POS",
+                receiptsArchive = "ארכיון קבלות",
+                shiftManagement = "ניהול משמרות",
+                openTickets = "הזמנות פתוחות",
+                backOffice = "ניהול Back Office",
+                backupSync = "גיבוי וסנכרון",
+                settings = "הגדרות",
+                language = "שפה",
+                onlineCloud = "ענן מחובר",
+                offlineMode = "עבודה ללא אינטרנט",
+                lock = "נעילה",
+                closeShiftLabel = "סגירת משמרת"
             )
             "en" -> LocalizationStrings(
                 storeName = "AuraPOS Bistro & Bar",
@@ -76,7 +100,7 @@ object AppStrings {
                 scanner = "Scanner",
                 aiScanner = "AI Scanner",
                 paused = "Paused",
-                kds = "KDS",
+                kds = "Kitchen Display (KDS)",
                 cart = "Shopping Cart",
                 subtotal = "Subtotal",
                 discount = "Discount",
@@ -98,9 +122,21 @@ object AppStrings {
                 noOrdersSub = "New POS orders or deliveries will appear here automatically",
                 startPrep = "Start Prep",
                 orderReady = "Order Ready!",
-                delivered = "Completed / Delivered"
+                delivered = "Completed / Delivered",
+                salesRegister = "Sales Register",
+                receiptsArchive = "Receipts Archive",
+                shiftManagement = "Shift Management",
+                openTickets = "Open Tickets",
+                backOffice = "Back Office (Admin)",
+                backupSync = "Backup & Sync",
+                settings = "Settings",
+                language = "Language",
+                onlineCloud = "Cloud Connected",
+                offlineMode = "Offline Mode",
+                lock = "Lock",
+                closeShiftLabel = "Close Shift"
             )
-            else -> LocalizationStrings( // Spanish default
+            else -> LocalizationStrings(
                 storeName = "AuraPOS Bistro & Bar",
                 posBadge = "Punto de Venta (POS)",
                 cashierLabel = "Cajero",
@@ -108,7 +144,7 @@ object AppStrings {
                 scanner = "Escáner",
                 aiScanner = "Escáner IA",
                 paused = "Pausados",
-                kds = "KDS",
+                kds = "Cocina (KDS)",
                 cart = "Carrito de Ventas",
                 subtotal = "Subtotal",
                 discount = "Descuento",
@@ -130,7 +166,19 @@ object AppStrings {
                 noOrdersSub = "Las nuevas órdenes del POS o entregas aparecerán aquí automáticamente",
                 startPrep = "Iniciar Preparación",
                 orderReady = "¡Orden Lista!",
-                delivered = "Entregada / Completada"
+                delivered = "Entregada / Completada",
+                salesRegister = "Caja de Ventas",
+                receiptsArchive = "Historial de Recibos",
+                shiftManagement = "Gestión de Turnos",
+                openTickets = "Órdenes Abiertas",
+                backOffice = "Back Office (Admin)",
+                backupSync = "Copia de Seguridad y Sincronización",
+                settings = "Configuración",
+                language = "Idioma",
+                onlineCloud = "Nube Conectada",
+                offlineMode = "Modo sin Conexión",
+                lock = "Bloquear",
+                closeShiftLabel = "Cerrar Turno"
             )
         }
     }
