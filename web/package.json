@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test test/acceptance.mjs test/crud-and-scanner.mjs"
+    "test": "node --test test/acceptance.mjs test/crud-and-scanner.mjs test/menu-fixture-test.mjs test/menu-ocr-suite.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

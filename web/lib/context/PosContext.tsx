@@ -786,6 +786,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
           low_stock_threshold: item.low_stock_threshold,
           track_stock: item.track_stock,
           color_hex: item.color_hex,
+          description: item.description || '',
+          variants: item.variants || [],
+          name_translations: item.name_translations || {},
+          description_translations: item.description_translations || {},
         })
       } catch (err) {
         console.warn('Supabase items sync warning:', err)
@@ -812,6 +816,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
           low_stock_threshold: item.low_stock_threshold,
           track_stock: item.track_stock,
           color_hex: item.color_hex,
+          description: item.description || '',
+          variants: item.variants || [],
+          name_translations: item.name_translations || {},
+          description_translations: item.description_translations || {},
         })
       } catch (err) {
         console.warn('Supabase items update warning:', err)

@@ -19,6 +19,9 @@ import {
   ArrowRight,
   RefreshCw,
   Wand2,
+  Trash2,
+  AlertTriangle,
+  Eye,
 } from 'lucide-react'
 import { Item, Category } from '@/lib/types'
 import { usePos } from '@/lib/context/PosContext'
@@ -31,10 +34,14 @@ interface ScannedParsedItem {
   category: string
   price: number
   description: string
-  variants: { name: string; price: number }[]
+  prices?: { label: string; price: number }[]
+  variants: { id?: string; name: string; price: number }[]
   modifiers: { name: string; price: number }[]
   box: { x: number; y: number; width: number; height: number }
   aiImageUrl?: string
+  confidence?: any
+  warnings?: string[]
+  reviewRequired?: boolean
   status: 'NEW' | 'UPDATE' | 'IGNORE'
 }
 
@@ -277,15 +284,31 @@ export default function MenuScannerModal({
             return {
               id: c.id || `sc_${idx + 1}`,
               name: c.name || 'Plato del Menú',
-              category: c.category || 'General',
+              category: c.categoryName || c.category || 'General',
               price: Number(c.price) || 0,
               description: c.description || '',
-              variants: [],
+              prices: c.prices || [{ label: 'Personal', price: Number(c.price) || 0 }],
+              variants: (c.variants && c.variants.length > 0)
+                ? c.variants.map((v: any, vIdx: number) => ({
+                    id: v.id || `var_${idx}_${vIdx}`,
+                    name: v.name || v.label || `Tamaño ${vIdx + 1}`,
+                    price: Number(v.price) || 0,
+                  }))
+                : (c.prices && c.prices.length > 0)
+                ? c.prices.map((p: any, pIdx: number) => ({
+                    id: `var_${idx}_${pIdx}`,
+                    name: p.label || `Tamaño ${pIdx + 1}`,
+                    price: Number(p.price) || 0,
+                  }))
+                : [],
               modifiers: [],
               box: { x: 50, y: 70 + (idx % 6) * 75, width: 400, height: 60 },
               aiImageUrl:
                 c.aiImageUrl ||
                 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+              confidence: c.confidence,
+              warnings: c.warnings || [],
+              reviewRequired: Boolean(c.reviewRequired),
               status: isRejected ? 'IGNORE' : match ? 'UPDATE' : 'NEW',
             }
           })
@@ -301,21 +324,30 @@ export default function MenuScannerModal({
       // If text was extracted but no items parsed
       if (extractedText.trim()) {
         const { parseRawMenuText } = await import('@/lib/ocr/menuParser')
-        const { items: clientParsed } = parseRawMenuText(extractedText, items)
+        const { products: clientParsed } = parseRawMenuText(extractedText, items)
         if (clientParsed.length > 0) {
-          const mapped: ScannedParsedItem[] = clientParsed.map((p, idx) => ({
-            id: p.id,
-            name: p.name,
-            category: p.category,
-            price: p.price,
-            description: p.description,
-            variants: [],
-            modifiers: [],
-            box: { x: 50, y: 70 + (idx % 6) * 75, width: 400, height: 60 },
-            aiImageUrl:
-              'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
-            status: p.status,
-          }))
+          const mapped: ScannedParsedItem[] = clientParsed.map((p, idx) => {
+            const match = items.find(
+              (i) => i.name.toLowerCase().trim() === (p.name || '').toLowerCase().trim()
+            )
+            return {
+              id: p.id,
+              name: p.name,
+              category: p.categoryName || p.category,
+              price: p.price,
+              description: p.description,
+              prices: p.prices,
+              variants: p.variants.map(v => ({ id: v.id, name: v.name, price: v.price })),
+              modifiers: [],
+              box: { x: 50, y: 70 + (idx % 6) * 75, width: 400, height: 60 },
+              aiImageUrl:
+                'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+              confidence: p.confidence,
+              warnings: p.warnings,
+              reviewRequired: p.reviewRequired,
+              status: p.status === 'REJECTED' ? 'IGNORE' : match ? 'UPDATE' : 'NEW',
+            }
+          })
           setParsedItems(mapped)
           setStep('review')
           announce(`Se extrajeron ${mapped.length} platos del menú`)
@@ -340,22 +372,31 @@ export default function MenuScannerModal({
   async function handleReparseCustomText(text: string) {
     if (!text.trim()) return
     const { parseRawMenuText } = await import('@/lib/ocr/menuParser')
-    const { items: clientParsed } = parseRawMenuText(text, items)
+    const { products: clientParsed } = parseRawMenuText(text, items)
 
     if (clientParsed.length > 0) {
-      const mapped: ScannedParsedItem[] = clientParsed.map((p, idx) => ({
-        id: p.id,
-        name: p.name,
-        category: p.category,
-        price: p.price,
-        description: p.description,
-        variants: [],
-        modifiers: [],
-        box: { x: 50, y: 70 + (idx % 6) * 75, width: 400, height: 60 },
-        aiImageUrl:
-          'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
-        status: p.status,
-      }))
+      const mapped: ScannedParsedItem[] = clientParsed.map((p, idx) => {
+        const match = items.find(
+          (i) => i.name.toLowerCase().trim() === (p.name || '').toLowerCase().trim()
+        )
+        return {
+          id: p.id,
+          name: p.name,
+          category: p.categoryName || p.category,
+          price: p.price,
+          description: p.description,
+          prices: p.prices,
+          variants: p.variants.map(v => ({ id: v.id, name: v.name, price: v.price })),
+          modifiers: [],
+          box: { x: 50, y: 70 + (idx % 6) * 75, width: 400, height: 60 },
+          aiImageUrl:
+            'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+          confidence: p.confidence,
+          warnings: p.warnings,
+          reviewRequired: p.reviewRequired,
+          status: p.status === 'REJECTED' ? 'IGNORE' : match ? 'UPDATE' : 'NEW',
+        }
+      })
       setParsedItems(mapped)
       setStep('review')
       announce(`Se procesaron ${mapped.length} platos del texto`)
@@ -398,15 +439,20 @@ export default function MenuScannerModal({
     let updatedCount = 0
 
     for (const sc of importable) {
-      // Find or create category
-      let cat = categories.find((c) => c.name.toLowerCase() === sc.category.toLowerCase())
+      if (!sc.name || !sc.name.trim() || sc.price < 0) {
+        continue
+      }
+
+      // Find or create category (case-insensitive)
+      const cleanCategoryName = sc.category.trim() || 'General'
+      let cat = categories.find((c) => c.name.toLowerCase().trim() === cleanCategoryName.toLowerCase())
       let catId = cat ? cat.id : 1
 
       if (!cat) {
-        catId = Date.now() + Math.floor(Math.random() * 100)
+        catId = Date.now() + Math.floor(Math.random() * 1000)
         await addCategory({
           id: catId,
-          name: sc.category,
+          name: cleanCategoryName,
           color_hex: '#0288D1',
           target_printer: 'KITCHEN',
         })
@@ -416,23 +462,35 @@ export default function MenuScannerModal({
         (i) => i.name.toLowerCase().trim() === sc.name.toLowerCase().trim()
       )
 
+      const variantsPayload = (sc.variants || []).map((v, i) => ({
+        id: v.id || `var_${Date.now()}_${i}`,
+        name: v.name,
+        price: Number(v.price) || 0,
+        cost: Math.round((Number(v.price) || 0) * 0.3 * 100) / 100,
+        in_stock: 25,
+      }))
+
       if (sc.status === 'UPDATE' && existingItem) {
         await updateItemInCatalog({
           ...existingItem,
+          name: sc.name.trim(),
+          description: sc.description || existingItem.description || '',
           price: sc.price,
           category_id: catId,
-          category_name: sc.category,
+          category_name: cleanCategoryName,
+          variants: variantsPayload.length > 0 ? variantsPayload : existingItem.variants,
           image_url: sc.aiImageUrl || existingItem.image_url,
         })
         updatedCount++
       } else {
         const newItem: Item = {
-          id: Date.now() + Math.floor(Math.random() * 1000),
-          name: sc.name,
+          id: Date.now() + Math.floor(Math.random() * 10000),
+          name: sc.name.trim(),
+          description: sc.description || '',
           category_id: catId,
-          category_name: sc.category,
+          category_name: cleanCategoryName,
           price: sc.price,
-          cost: Math.round(sc.price * 0.3),
+          cost: Math.round(sc.price * 0.3 * 100) / 100,
           sku: `SKU-${Math.floor(Math.random() * 9000 + 1000)}`,
           barcode: `7290${Math.floor(Math.random() * 90000000 + 10000000)}`,
           sold_by: 'EACH',
@@ -442,13 +500,7 @@ export default function MenuScannerModal({
           is_active: true,
           is_favorite: true,
           image_url: sc.aiImageUrl,
-          variants: sc.variants.map((v, i) => ({
-            id: `var_${Date.now()}_${i}`,
-            name: v.name,
-            price: v.price,
-            cost: Math.round(v.price * 0.3),
-            in_stock: 25,
-          })),
+          variants: variantsPayload,
         }
         await addItemToCatalog(newItem)
         addedCount++
@@ -915,160 +967,291 @@ export default function MenuScannerModal({
           {/* STEP 4: REVIEW & BATCH CATALOG IMPORT */}
           {step === 'review' && (
             <div className="space-y-4">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-800">
-                    {t.importToCatalog}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    {t.confirmDeleteProduct}
-                  </p>
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  {imageSrc && (
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
+                      <img src={imageSrc} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800">
+                      {t.importToCatalog}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Revise los nombres exactos, descripciones, categorías y precios antes de guardar en el catálogo.
+                    </p>
+                  </div>
                 </div>
-                <button
-                  onClick={handleBatchImport}
-                  className="py-2.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 flex items-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{t.importToCatalog} ({parsedItems.filter((i) => i.status !== 'IGNORE').length})</span>
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setStep('process')}
+                    className="py-2 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-sm flex items-center gap-1.5 transition-colors"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Reintentar OCR</span>
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="py-2 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-sm"
+                  >
+                    {t.cancel}
+                  </button>
+                  <button
+                    onClick={handleBatchImport}
+                    className="py-2 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 flex items-center gap-2 transition-colors"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Confirmar Importación ({parsedItems.filter((i) => i.status !== 'IGNORE').length})</span>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-3">
-                {parsedItems.map((item, idx) => (
-                  <div
-                    key={item.id}
-                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4"
-                  >
-                    <div className="flex items-center gap-4 w-full md:w-auto">
-                      <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
-                        {item.aiImageUrl ? (
-                          <img
-                            src={item.aiImageUrl}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-400">
-                            <Package className="w-6 h-6" />
+                {parsedItems.map((item, idx) => {
+                  const hasSuspiciousName = !item.name || item.name.length < 2 || item.warnings?.some(w => w.includes('ingredientes'))
+                  const hasSuspiciousPrice = item.price <= 0
+
+                  return (
+                    <div
+                      key={item.id}
+                      className={`bg-white p-4 rounded-2xl border shadow-sm transition-all ${
+                        item.status === 'IGNORE'
+                          ? 'border-slate-200 opacity-60 bg-slate-50/50'
+                          : item.reviewRequired
+                          ? 'border-amber-300 ring-1 ring-amber-200'
+                          : 'border-slate-200'
+                      }`}
+                    >
+                      <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 w-full md:w-auto flex-1">
+                          <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200 mt-1">
+                            {item.aiImageUrl ? (
+                              <img
+                                src={item.aiImageUrl}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                <Package className="w-5 h-5" />
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex-1 space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-slate-400">#{idx + 1}</span>
-                          <input
-                            type="text"
-                            value={item.name}
-                            onChange={(e) =>
+
+                          <div className="flex-1 space-y-2 w-full">
+                            {/* Product Name Row */}
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-slate-400">#{idx + 1}</span>
+                              <input
+                                type="text"
+                                value={item.name}
+                                onChange={(e) =>
+                                  setParsedItems((prev) =>
+                                    prev.map((p) =>
+                                      p.id === item.id ? { ...p, name: e.target.value } : p
+                                    )
+                                  )
+                                }
+                                placeholder="Nombre exacto del plato..."
+                                className={`text-xs font-black p-2 border rounded-xl flex-1 bg-slate-50 focus:bg-white outline-none ${
+                                  hasSuspiciousName
+                                    ? 'border-amber-400 bg-amber-50/50 text-amber-900'
+                                    : 'border-slate-200 text-slate-800'
+                                }`}
+                              />
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
+                                  item.status === 'NEW'
+                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                                    : item.status === 'UPDATE'
+                                    ? 'bg-amber-50 text-amber-600 border border-amber-200'
+                                    : 'bg-slate-100 text-slate-400'
+                                }`}
+                              >
+                                {item.status === 'NEW'
+                                  ? t.add
+                                  : item.status === 'UPDATE'
+                                  ? t.edit
+                                  : 'Ignorar'}
+                              </span>
+                            </div>
+
+                            {/* Description / Ingredients */}
+                            <div>
+                              <textarea
+                                value={item.description}
+                                onChange={(e) =>
+                                  setParsedItems((prev) =>
+                                    prev.map((p) =>
+                                      p.id === item.id ? { ...p, description: e.target.value } : p
+                                    )
+                                  )
+                                }
+                                rows={2}
+                                placeholder="Ingredientes y descripción del plato..."
+                                className="w-full text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white text-slate-600 outline-none resize-none"
+                              />
+                            </div>
+
+                            {/* Category & Base Price */}
+                            <div className="flex flex-wrap items-center gap-3 text-xs">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-slate-400 font-bold">{t.categoryName}:</span>
+                                <input
+                                  type="text"
+                                  value={item.category}
+                                  onChange={(e) =>
+                                    setParsedItems((prev) =>
+                                      prev.map((p) =>
+                                        p.id === item.id ? { ...p, category: e.target.value } : p
+                                      )
+                                    )
+                                  }
+                                  placeholder="Categoría..."
+                                  className="text-xs p-1.5 border border-slate-200 rounded-xl bg-slate-50 w-44 font-semibold text-slate-700"
+                                />
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-slate-400 font-bold">{t.price}:</span>
+                                <input
+                                  type="number"
+                                  step="0.5"
+                                  value={item.price}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value) || 0
+                                    setParsedItems((prev) =>
+                                      prev.map((p) =>
+                                        p.id === item.id ? { ...p, price: val } : p
+                                      )
+                                    )
+                                  }}
+                                  className={`text-xs p-1.5 border rounded-xl bg-slate-50 w-24 font-bold ${
+                                    hasSuspiciousPrice
+                                      ? 'border-red-400 text-red-600 bg-red-50'
+                                      : 'border-slate-200 text-sky-700'
+                                  }`}
+                                />
+                                <span className="text-slate-400 text-[11px] font-bold">
+                                  {settings.currency_symbol}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Size Variants (Interactive and Editable) */}
+                            {item.variants && item.variants.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-2 pt-1">
+                                <span className="text-[11px] font-bold text-slate-400">Tamaños/Precios:</span>
+                                {item.variants.map((v, vIdx) => (
+                                  <div
+                                    key={vIdx}
+                                    className="flex items-center gap-1.5 px-2.5 py-1 bg-sky-50/70 border border-sky-200 rounded-xl text-xs"
+                                  >
+                                    <span className="font-semibold text-slate-700">{v.name}:</span>
+                                    <span className="text-slate-400 font-bold">{settings.currency_symbol}</span>
+                                    <input
+                                      type="number"
+                                      step="0.5"
+                                      value={v.price}
+                                      onChange={(e) => {
+                                        const newPrice = Number(e.target.value) || 0
+                                        setParsedItems((prev) =>
+                                          prev.map((p) => {
+                                            if (p.id !== item.id) return p
+                                            const updated = (p.variants || []).map((vItem, idx) =>
+                                              idx === vIdx ? { ...vItem, price: newPrice } : vItem
+                                            )
+                                            return {
+                                              ...p,
+                                              price: vIdx === 0 ? newPrice : p.price,
+                                              variants: updated,
+                                            }
+                                          })
+                                        )
+                                      }}
+                                      className="w-16 p-0.5 text-xs font-bold text-sky-700 bg-white border border-slate-200 rounded-lg outline-none focus:border-sky-500"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Warnings / Ambiguities */}
+                            {item.warnings && item.warnings.length > 0 && (
+                              <div className="flex items-center gap-1.5 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-2.5 py-1">
+                                <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                                <span>{item.warnings.join(' • ')}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Row Actions */}
+                        <div className="flex items-center gap-1.5 w-full md:w-auto justify-end shrink-0 pt-1">
+                          <button
+                            onClick={() =>
                               setParsedItems((prev) =>
                                 prev.map((p) =>
-                                  p.id === item.id ? { ...p, name: e.target.value } : p
+                                  p.id === item.id ? { ...p, status: 'NEW' } : p
                                 )
                               )
                             }
-                            className="text-xs font-black text-slate-800 p-1.5 border border-slate-200 rounded-lg flex-1 bg-slate-50 focus:bg-white"
-                          />
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                               item.status === 'NEW'
-                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                                : item.status === 'UPDATE'
-                                ? 'bg-amber-50 text-amber-600 border border-amber-200'
-                                : 'bg-slate-100 text-slate-400'
+                                ? 'bg-emerald-600 text-white shadow-sm'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                             }`}
                           >
-                            {item.status === 'NEW'
-                              ? t.add
-                              : item.status === 'UPDATE'
-                              ? t.edit
-                              : 'Ignorar'}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <div className="flex items-center gap-1">
-                            <span className="text-slate-400 font-bold">{t.categoryName}:</span>
-                            <input
-                              type="text"
-                              value={item.category}
-                              onChange={(e) =>
-                                setParsedItems((prev) =>
-                                  prev.map((p) =>
-                                    p.id === item.id ? { ...p, category: e.target.value } : p
-                                  )
+                            {t.add}
+                          </button>
+                          <button
+                            onClick={() =>
+                              setParsedItems((prev) =>
+                                prev.map((p) =>
+                                  p.id === item.id ? { ...p, status: 'UPDATE' } : p
                                 )
-                              }
-                              className="text-xs p-1 border border-slate-200 rounded-lg bg-slate-50 w-36 font-semibold"
-                            />
-                          </div>
-
-                          <div className="flex items-center gap-1">
-                            <span className="text-slate-400 font-bold">{t.price}:</span>
-                            <input
-                              type="number"
-                              step="0.5"
-                              value={item.price}
-                              onChange={(e) =>
-                                setParsedItems((prev) =>
-                                  prev.map((p) =>
-                                    p.id === item.id
-                                      ? { ...p, price: Number(e.target.value) }
-                                      : p
-                                  )
+                              )
+                            }
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                              item.status === 'UPDATE'
+                                ? 'bg-amber-500 text-white shadow-sm'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                          >
+                            {t.edit}
+                          </button>
+                          <button
+                            onClick={() =>
+                              setParsedItems((prev) =>
+                                prev.map((p) =>
+                                  p.id === item.id ? { ...p, status: 'IGNORE' } : p
                                 )
-                              }
-                              className="text-xs p-1 border border-slate-200 rounded-lg bg-slate-50 w-24 font-bold text-sky-700"
-                            />
-                            <span className="text-slate-400 text-[11px] font-bold">
-                              {settings.currency_symbol}
-                            </span>
-                          </div>
+                              )
+                            }
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                              item.status === 'IGNORE'
+                                ? 'bg-slate-700 text-white shadow-sm'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                          >
+                            Ignorar
+                          </button>
+                          <button
+                            onClick={() =>
+                              setParsedItems((prev) => prev.filter((p) => p.id !== item.id))
+                            }
+                            title="Eliminar fila"
+                            className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-
-                        {item.variants.length > 0 && (
-                          <p className="text-[11px] text-sky-600 font-medium">
-                            {t.variants}: {item.variants.map((v) => `${v.name} (${settings.currency_symbol}${v.price})`).join(', ')}
-                          </p>
-                        )}
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-                      <button
-                        onClick={() =>
-                          setParsedItems((prev) =>
-                            prev.map((p) =>
-                              p.id === item.id ? { ...p, status: 'NEW' } : p
-                            )
-                          )
-                        }
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                          item.status === 'NEW'
-                            ? 'bg-emerald-600 text-white shadow'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
-                      >
-                        {t.add}
-                      </button>
-                      <button
-                        onClick={() =>
-                          setParsedItems((prev) =>
-                            prev.map((p) =>
-                              p.id === item.id ? { ...p, status: 'IGNORE' } : p
-                            )
-                          )
-                        }
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                          item.status === 'IGNORE'
-                            ? 'bg-red-500 text-white shadow'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
-                      >
-                        {t.delete}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}

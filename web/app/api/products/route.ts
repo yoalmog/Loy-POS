@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
       unit_of_measure: body.unit_of_measure || 'item',
       tax_rate_percent: Number(body.tax_rate_percent ?? 18),
       image_url: body.image_url || '',
+      variants: Array.isArray(body.variants) ? body.variants : [],
     }
 
     if (body.id) {
