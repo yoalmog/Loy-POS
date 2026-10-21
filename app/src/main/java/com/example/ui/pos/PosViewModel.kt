@@ -1,5 +1,8 @@
 package com.example.ui.pos
 
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -69,9 +72,11 @@ data class PosUiState(
         get() = cartItems.sumOf { it.quantity }.toInt()
 }
 
-class PosViewModel(val repository: PosRepository) : ViewModel() {
+class PosViewModel(application: Application, val repository: PosRepository) : AndroidViewModel(application) {
+    private val prefs = application.getSharedPreferences("aurapos_prefs", Context.MODE_PRIVATE)
+    private val savedLang = prefs.getString("aurapos_language", "es") ?: "es"
 
-    private val _uiState = MutableStateFlow(PosUiState())
+    private val _uiState = MutableStateFlow(PosUiState(language = savedLang))
     val uiState: StateFlow<PosUiState> = _uiState.asStateFlow()
 
     val categories: StateFlow<List<CategoryEntity>> = repository.allCategories
@@ -532,13 +537,18 @@ class PosViewModel(val repository: PosRepository) : ViewModel() {
     fun setSyncStatusDialog(open: Boolean) = _uiState.update { it.copy(showSyncStatusDialog = open) }
     fun setDatabaseBackupDialog(open: Boolean) = _uiState.update { it.copy(showDatabaseBackupDialog = open) }
     fun setCustomizationDialog(open: Boolean) = _uiState.update { it.copy(isItemCustomizationOpen = open) }
-    fun setLanguage(lang: String) = _uiState.update { it.copy(language = lang) }
+    fun setLanguage(lang: String) {
+        _uiState.update { it.copy(language = lang) }
+        try {
+            prefs.edit().putString("aurapos_language", lang).apply()
+        } catch (e: Exception) {}
+    }
     fun dismissStatusMessage() = _uiState.update { it.copy(statusMessage = null) }
 }
 
-class PosViewModelFactory(private val repository: PosRepository) : ViewModelProvider.Factory {
+class PosViewModelFactory(private val application: Application, private val repository: PosRepository) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return PosViewModel(repository) as T
+        return PosViewModel(application, repository) as T
     }
 }

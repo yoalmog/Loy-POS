@@ -68,6 +68,7 @@ fun SalesRegisterScreen(
     var showMobileCartSheet by remember { mutableStateOf(false) }
     var showDiscountDialog by remember { mutableStateOf(false) }
     var showOcrDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
     var showKitchenScreen by remember { mutableStateOf(false) }
     var selectedDishForRecipeSheet by remember { mutableStateOf<ItemEntity?>(null) }
 
@@ -106,6 +107,7 @@ fun SalesRegisterScreen(
         Scaffold(
             topBar = {
                 var showMoreMenu by remember { mutableStateOf(false) }
+                val strings = com.example.util.LocalAppStrings.current
 
                 Surface(
                     color = PosWhite,
@@ -118,8 +120,8 @@ fun SalesRegisterScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(58.dp)
-                            .padding(horizontal = 12.dp),
+                            .height(PosTokens.TopBarHeight)
+                            .padding(horizontal = PosTokens.TopBarPaddingHorizontal),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -168,12 +170,7 @@ fun SalesRegisterScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Text(
-                                        text = "AuraPOS Bistro & Bar",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Black,
-                                        color = PosSlate800
-                                    )
+
                                     Surface(
                                         shape = RoundedCornerShape(100.dp),
                                         color = PosSky100,
@@ -263,6 +260,25 @@ fun SalesRegisterScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            // Language Selector Button in Top Bar Header
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = PosSlate100,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PosSlate200),
+                                modifier = Modifier
+                                    .height(36.dp)
+                                    .clickable { showLanguageDialog = true }
+                                    .testTag("topbar_language_button")
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(Icons.Default.Language, contentDescription = "Language", tint = PosSky600, modifier = Modifier.size(16.dp))
+                                    Text(uiState.language.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PosSlate700)
+                                }
+                            }
                             // Camera Scanner
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
@@ -924,6 +940,56 @@ fun SalesRegisterScreen(
     }
 
     // OCR Scanner Dialog (PaddleOCR)
+    if (showLanguageDialog) {
+        AlertDialog(
+            onDismissRequest = { showLanguageDialog = false },
+            title = { Text("Seleccionar Idioma / Language", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        Pair("es", "Español (Predeterminado)"),
+                        Pair("en", "English (US)"),
+                        Pair("he", "עברית (RTL)"),
+                        Pair("pt", "Português"),
+                        Pair("fr", "Français"),
+                        Pair("de", "Deutsch"),
+                        Pair("zh", "中文"),
+                        Pair("ja", "日本語"),
+                        Pair("ar", "العربية (RTL)")
+                    ).forEach { (code, label) ->
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (uiState.language == code) PosSky100 else PosSlate100,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (uiState.language == code) PosSky600 else PosSlate200),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setLanguage(code)
+                                    showLanguageDialog = false
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (uiState.language == code) PosSky700 else PosSlate800)
+                                if (uiState.language == code) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = PosSky600, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLanguageDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
     if (showOcrDialog) {
         com.example.ui.pos.components.OcrScannerDialog(
             onDismiss = { showOcrDialog = false },

@@ -1,6 +1,6 @@
 {
-  "summary": "תוכנית יישום מקיפה להוספת תפריט מוצרים (מתכון / רשימת חומרי גלם BOM) והוראות הכנה למטבח (שלבי בישול, זמני הכנה ותחנות עבודה) לכל מנה, כולל מסך מטבח ייעודי (KDS), עריכה בניהול המוצרים, עיון בקופה וגריעת מלאי אוטומטית.",
-  "updatedAt": "2026-10-20T07:24:23.275740946Z",
-  "requestFeedback": true,
-  "userFacing": true
+  "summary":  "Implementation plan for unified LocalizationProvider, multi-access language selection (Header and Settings Menu), default Spanish language, and side menu translation fixes.",
+  "updatedAt":  "2026-10-21T01:25:48.991789057Z",
+  "requestFeedback":  true,
+  "userFacing":  true
 }

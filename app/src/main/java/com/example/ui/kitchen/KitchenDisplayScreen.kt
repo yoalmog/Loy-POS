@@ -11,12 +11,10 @@ import androidx.compose.ui.Modifier
  */
 @Composable
 fun KitchenDisplayScreen(
-    language: String = "es",
     onNavigateBack: () -> Unit
 ) {
     KitchenDisplayComponent(
         modifier = Modifier.fillMaxSize(),
-        language = language,
         onNavigateBack = onNavigateBack
     )
 }

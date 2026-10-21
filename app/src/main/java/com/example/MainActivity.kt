@@ -69,8 +69,10 @@ fun LoyversePosApp() {
     val database = remember { AppDatabase.getDatabase(context) }
     val repository = remember { PosRepository(database) }
 
-    val posViewModel: PosViewModel = viewModel(factory = PosViewModelFactory(repository))
+    val application = context.applicationContext as android.app.Application
+    val posViewModel: PosViewModel = viewModel(factory = PosViewModelFactory(application, repository))
     val backOfficeViewModel: BackOfficeViewModel = viewModel(factory = BackOfficeViewModelFactory(repository))
+    val posUiState by posViewModel.uiState.collectAsState()
 
     var currentScreen by remember { mutableStateOf(AppDestination.SALES_REGISTER) }
     var currentCashier by remember { mutableStateOf("Alex (Cashier)") }
@@ -88,8 +90,9 @@ fun LoyversePosApp() {
         }
     }
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val isTabletLandscape = maxWidth >= 960.dp
+    com.example.util.LocalizationProvider(language = posUiState.language) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val isTabletLandscape = maxWidth >= 960.dp
 
         if (isTabletLandscape) {
             Row(modifier = Modifier.fillMaxSize()) {
@@ -212,6 +215,7 @@ fun LoyversePosApp() {
             }
         }
     }
+}
 
     // PIN Switch Dialog (Section 5.4 & 5.6 of Loyverse User Manual)
     if (showPinDialog) {
@@ -259,6 +263,7 @@ fun AppSidebar(
     onOpenPinDialog: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val strings = com.example.util.AppStrings.get(com.example.util.LocalAppLanguage.current)
     val drawerColors = NavigationDrawerItemDefaults.colors(
         selectedContainerColor = com.example.ui.theme.PosSky600,
         unselectedContainerColor = Color.Transparent,
@@ -433,7 +438,7 @@ fun AppSidebar(
         ) {
             NavigationDrawerItem(
                 icon = { Icon(Icons.Default.PointOfSale, contentDescription = null) },
-                label = { Text(stringResource(R.string.sales_register), fontWeight = FontWeight.Bold) },
+                label = { Text(strings.salesRegister, fontWeight = FontWeight.Bold) },
                 selected = currentScreen == AppDestination.SALES_REGISTER,
                 colors = drawerColors,
                 onClick = { onNavigate(AppDestination.SALES_REGISTER) },
@@ -442,7 +447,7 @@ fun AppSidebar(
 
             NavigationDrawerItem(
                 icon = { Icon(Icons.Default.Receipt, contentDescription = null) },
-                label = { Text(stringResource(R.string.receipts_archive)) },
+                label = { Text(strings.receiptsArchive) },
                 selected = false,
                 colors = drawerColors,
                 onClick = onOpenReceipts,
@@ -451,7 +456,7 @@ fun AppSidebar(
 
             NavigationDrawerItem(
                 icon = { Icon(Icons.Default.Schedule, contentDescription = null) },
-                label = { Text(stringResource(R.string.shift_management)) },
+                label = { Text(strings.shiftManagement) },
                 selected = false,
                 colors = drawerColors,
                 onClick = onOpenShifts,
@@ -460,7 +465,7 @@ fun AppSidebar(
 
             NavigationDrawerItem(
                 icon = { Icon(Icons.Default.ListAlt, contentDescription = null) },
-                label = { Text(stringResource(R.string.open_tickets)) },
+                label = { Text(strings.openTickets) },
                 selected = false,
                 colors = drawerColors,
                 onClick = onOpenTickets,
@@ -469,7 +474,7 @@ fun AppSidebar(
 
             NavigationDrawerItem(
                 icon = { Icon(Icons.Default.OutdoorGrill, contentDescription = null, tint = com.example.ui.theme.PosAmber500) },
-                label = { Text("מסך מטבח והכנה (KDS)", fontWeight = FontWeight.Bold) },
+                label = { Text(strings.kds, fontWeight = FontWeight.Bold) },
                 selected = currentScreen == AppDestination.KITCHEN_DISPLAY,
                 colors = drawerColors,
                 onClick = { onNavigate(AppDestination.KITCHEN_DISPLAY) },
@@ -480,7 +485,7 @@ fun AppSidebar(
 
             NavigationDrawerItem(
                 icon = { Icon(Icons.Default.Analytics, contentDescription = null) },
-                label = { Text(stringResource(R.string.back_office), fontWeight = FontWeight.Bold) },
+                label = { Text(strings.backOffice, fontWeight = FontWeight.Bold) },
                 selected = currentScreen == AppDestination.BACK_OFFICE,
                 colors = drawerColors,
                 onClick = { onNavigate(AppDestination.BACK_OFFICE) },
@@ -489,7 +494,7 @@ fun AppSidebar(
 
             NavigationDrawerItem(
                 icon = { Icon(Icons.Default.Backup, contentDescription = null) },
-                label = { Text(stringResource(R.string.backup_sync), fontWeight = FontWeight.SemiBold) },
+                label = { Text(strings.backupSync, fontWeight = FontWeight.SemiBold) },
                 selected = false,
                 colors = drawerColors,
                 onClick = onOpenBackup,
