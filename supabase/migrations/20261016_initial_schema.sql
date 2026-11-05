@@ -231,7 +231,7 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = ''
-AS $$
+AS $function$$
   SELECT EXISTS (
     SELECT 1
     FROM public.profiles AS p
@@ -350,7 +350,7 @@ BEGIN
 
     RETURN new_stock;
 END;
-$;
+$function$;
 
 REVOKE ALL ON FUNCTION public.adjust_item_stock(BIGINT, NUMERIC) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.adjust_item_stock(BIGINT, NUMERIC) TO authenticated;
