@@ -204,6 +204,29 @@ CREATE INDEX IF NOT EXISTS idx_items_category_id ON public.items (category_id);
 CREATE INDEX IF NOT EXISTS idx_items_barcode ON public.items (barcode);
 CREATE INDEX IF NOT EXISTS idx_customers_phone ON public.customers (phone);
 
+-- Bootstrap only the explicitly designated Supabase Auth user as the first owner.
+-- The UUID is supplied by the project administrator; no first-user auto-promotion.
+INSERT INTO public.profiles (id, email, full_name, role)
+SELECT id, email, COALESCE(raw_user_meta_data ->> 'full_name', ''), 'owner'
+FROM auth.users
+WHERE id = 'b245f371-9154-4dd3-aa4c-a5fb5266e5d3'::uuid
+ON CONFLICT (id) DO UPDATE
+SET email = EXCLUDED.email,
+    role = 'owner',
+    updated_at = NOW();
+
+DO $
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = 'b245f371-9154-4dd3-aa4c-a5fb5266e5d3'::uuid
+      AND role = 'owner'
+  ) THEN
+    RAISE EXCEPTION 'Owner Auth user UUID was not found; verify the configured owner UID before applying this migration.';
+  END IF;
+END
+$;
+
 -- ====================================================================
 -- 7. ROW LEVEL SECURITY & LEAST-PRIVILEGE ACCESS
 -- ====================================================================
@@ -261,8 +284,8 @@ TO authenticated;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
 -- A user can read only their own profile. Only an existing owner/admin can
--- read or manage other profiles and assign roles. Initial owner bootstrap is
--- performed manually by a trusted project administrator in the SQL Editor.
+-- read or manage other profiles and assign roles. The first owner is bootstrapped
+-- above from the explicitly configured Auth user UUID.
 CREATE POLICY "profile_read_self_or_admin"
   ON public.profiles FOR SELECT TO authenticated
   USING (id = (SELECT auth.uid()) OR (SELECT public.is_store_admin()));
