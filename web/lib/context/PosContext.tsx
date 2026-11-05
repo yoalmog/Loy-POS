@@ -738,7 +738,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   }
 
   function verifyOwnerPin(pin: string): boolean {
-    return pin === settings.owner_pin || pin === '1234'
+    return Boolean(settings.owner_pin) && pin === settings.owner_pin
   }
 
   async function syncNow() {
