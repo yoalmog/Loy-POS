@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase/client'
+import { isSupabaseConfigured } from '@/lib/supabase/client'
+import { requireStoreAdmin } from '@/lib/supabase/server-auth'
 import { DEFAULT_ITEMS, DEFAULT_CATEGORIES, DEFAULT_SETTINGS } from '@/lib/db/idb'
 
 const corsHeaders = {
@@ -12,8 +13,11 @@ export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders })
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const auth = await requireStoreAdmin(request)
+    if (!auth.ok) return auth.response
+    const { supabase } = auth
     let items = DEFAULT_ITEMS
     let categories = DEFAULT_CATEGORIES
     let settings = DEFAULT_SETTINGS
@@ -60,6 +64,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireStoreAdmin(request)
+    if (!auth.ok) return auth.response
+    const { supabase } = auth
     const payload = await request.json()
     let processedCount = 0
 
