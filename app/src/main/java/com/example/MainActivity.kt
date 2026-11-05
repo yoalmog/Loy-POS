@@ -51,6 +51,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Initialize encrypted Supabase owner session storage before API clients are used
+        com.example.data.api.SupabaseApiClient.initialize(this)
+
         // Initialize local network printer manager & settings
         com.example.util.NetworkPrinterManager.initialize(this)
 
