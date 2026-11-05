@@ -36,7 +36,7 @@ export default function LoginPage() {
 
   // Staff PINs are verified by the database; never compare against local/demo PINs.
   async function authenticateStaffPin(candidatePin: string) {
-    if (!/^\\d{4,8}$/.test(candidatePin)) {
+    if (!/^\d{4}$/.test(candidatePin)) {
       setError(t.enterPin)
       return
     }
