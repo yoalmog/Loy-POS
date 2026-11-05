@@ -133,11 +133,15 @@ interface SupabaseRestApi {
 }
 
 data class SupabaseAuthRequest(val email: String, val password: String)
+data class SupabaseRefreshRequest(val refresh_token: String)
 data class SupabaseProfileRoleDto(val role: String? = null)
 
 interface SupabaseAuthRestApi {
     @POST("auth/v1/token?grant_type=password")
     suspend fun signIn(@Header("apikey") apiKey: String, @Body credentials: SupabaseAuthRequest): Response<ResponseBody>
+
+    @POST("auth/v1/token?grant_type=refresh_token")
+    suspend fun refresh(@Header("apikey") apiKey: String, @Body request: SupabaseRefreshRequest): Response<ResponseBody>
 }
 
 object SupabaseApiClient {
@@ -194,7 +198,39 @@ object SupabaseApiClient {
                 return Result.failure(IllegalStateException("This Supabase account is not assigned the owner/admin role"))
             }
             Result.success(Unit)
-        } catch (e: Exception) { Result.failure(e) }
+        } catch (e: Exception) {
+            store.clear()
+            Result.failure(e)
+        }
+    }
+
+    suspend fun restoreOwnerSession(): Boolean {
+        val store = sessionStore ?: return false
+        val refreshToken = store.refreshToken() ?: return false
+        val key = getAnonKey()
+        if (key.isBlank() || getBaseUrl().contains("placeholder-project")) return false
+        return try {
+            val response = authApi.refresh(key, SupabaseRefreshRequest(refreshToken))
+            if (!response.isSuccessful) {
+                store.clear()
+                return false
+            }
+            val raw = response.body()?.string() ?: throw IllegalStateException("Empty refresh response")
+            val json = moshi.adapter(Map::class.java).fromJson(raw) ?: throw IllegalStateException("Invalid refresh response")
+            val access = json["access_token"] as? String ?: throw IllegalStateException("Missing refreshed access token")
+            val refresh = json["refresh_token"] as? String ?: throw IllegalStateException("Missing refreshed refresh token")
+            val user = json["user"] as? Map<*, *>
+            val userId = user?.get("id") as? String ?: throw IllegalStateException("Missing refreshed user")
+            store.save(access, refresh)
+            val role = api.getProfileRole("Bearer $access", "eq.$userId").firstOrNull()?.role
+            if (role !in listOf("owner", "admin")) {
+                store.clear()
+                false
+            } else true
+        } catch (_: Exception) {
+            store.clear()
+            false
+        }
     }
 
     fun clearSession() { sessionStore?.clear() }
