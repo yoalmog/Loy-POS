@@ -215,7 +215,7 @@ SET email = EXCLUDED.email,
     role = 'owner',
     updated_at = NOW();
 
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM public.profiles
@@ -225,7 +225,7 @@ BEGIN
     RAISE EXCEPTION 'Owner Auth user UUID was not found; verify the configured owner UID before applying this migration.';
   END IF;
 END
-$;
+$$;
 
 -- ====================================================================
 -- 7. ROW LEVEL SECURITY & LEAST-PRIVILEGE ACCESS
