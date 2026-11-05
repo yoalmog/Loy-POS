@@ -22,7 +22,7 @@ import {
 
 export default function LoginPage() {
   const router = useRouter()
-  const { staffList, settings, switchStaffWithPin } = usePos()
+  const { settings, activateStaffMember } = usePos()
   const { language } = useTheme()
   const t = getTranslation(language)
 
@@ -34,42 +34,44 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  // Handle Staff PIN Login
-  function handlePinLogin(e?: React.FormEvent) {
-    if (e) e.preventDefault()
-    if (!pin || pin.length < 4) {
+  // Staff PINs are verified by the database; never compare against local/demo PINs.
+  async function authenticateStaffPin(candidatePin: string) {
+    if (!/^\\d{4,8}$/.test(candidatePin)) {
       setError(t.enterPin)
       return
     }
-
     setLoading(true)
     setError(null)
-
-    // PINs are for staff switching only. Owners must authenticate with Supabase.
-    const staff = staffList.find((s) => s.pin === pin && s.role !== 'OWNER')
-
-    if (staff) {
-      const activeStaff = staff
-
-      // Store authenticated session
-      localStorage.setItem('aurapos_auth_staff', JSON.stringify(activeStaff))
-      switchStaffWithPin(pin)
-
-      if (activeStaff.role === 'CASHIER') {
-        setSuccessMsg(t.success)
-        setTimeout(() => {
-          router.replace('/pos')
-        }, 600)
-      } else {
-        setSuccessMsg(`${activeStaff.name} • ${t.success}`)
-        setTimeout(() => {
-          router.replace('/dashboard')
-        }, 600)
+    try {
+      if (!isSupabaseConfigured()) throw new Error('Staff PIN login requires an online connection.')
+      const { data, error: pinError } = await supabase.rpc('verify_staff_pin', { p_pin: candidatePin })
+      if (pinError) throw pinError
+      const member = Array.isArray(data) ? data[0] : null
+      if (!member?.id || !member?.display_name || !['cashier', 'manager'].includes(member.role)) {
+        throw new Error(t.error)
       }
-    } else {
-      setError(t.error)
+      const activeStaff = {
+        id: member.id,
+        name: member.display_name,
+        role: member.role === 'manager' ? ('MANAGER' as const) : ('CASHIER' as const),
+        pin: '',
+        avatarColor: '#0288D1',
+      }
+      activateStaffMember(activeStaff)
+      localStorage.setItem('aurapos_auth_staff', JSON.stringify(activeStaff))
+      setSuccessMsg(t.success)
+      setTimeout(() => router.replace('/pos'), 500)
+    } catch (err: any) {
+      setError(err.message || t.error)
+      setPin('')
+    } finally {
       setLoading(false)
     }
+  }
+
+  function handlePinLogin(e?: React.FormEvent) {
+    if (e) e.preventDefault()
+    void authenticateStaffPin(pin)
   }
 
   // Handle Cloud Supabase Email / Password Login
@@ -126,28 +128,11 @@ export default function LoginPage() {
   }
 
   function handleKeypadClick(digit: string) {
-    if (pin.length < 4) {
-      const nextPin = pin + digit
-      setPin(nextPin)
-      if (nextPin.length === 4) {
-        setTimeout(() => {
-          // Auto submit when 4 digits reached
-          const staff = staffList.find((s) => s.pin === nextPin && s.role !== 'OWNER')
-          if (staff) {
-            const activeStaff = staff
-            localStorage.setItem('aurapos_auth_staff', JSON.stringify(activeStaff))
-            switchStaffWithPin(nextPin)
-            if (activeStaff.role === 'CASHIER') {
-              router.replace('/pos')
-            } else {
-              router.replace('/dashboard')
-            }
-          } else {
-            setError(t.error)
-            setPin('')
-          }
-        }, 150)
-      }
+    if (loading || pin.length >= 8) return
+    const nextPin = pin + digit
+    setPin(nextPin)
+    if (nextPin.length >= 4) {
+      setTimeout(() => { void authenticateStaffPin(nextPin) }, 150)
     }
   }
 
