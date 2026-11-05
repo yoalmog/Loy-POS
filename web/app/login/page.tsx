@@ -45,18 +45,11 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    // Check staff list & owner pin
-    const staff = staffList.find((s) => s.pin === pin)
-    const isOwner = pin === settings.owner_pin || pin === '1234'
+    // PINs are for staff switching only. Owners must authenticate with Supabase.
+    const staff = staffList.find((s) => s.pin === pin && s.role !== 'OWNER')
 
-    if (staff || isOwner) {
-      const activeStaff = staff || {
-        id: 'owner-root',
-        name: 'Owner / Admin',
-        role: 'OWNER' as const,
-        pin: settings.owner_pin || '1234',
-        avatarColor: '#10B981',
-      }
+    if (staff) {
+      const activeStaff = staff
 
       // Store authenticated session
       localStorage.setItem('aurapos_auth_staff', JSON.stringify(activeStaff))
@@ -97,15 +90,20 @@ export default function LoginPage() {
 
       if (authError) throw authError
 
-      // Fetch profile role if available
-      const { data: profile } = await supabase
+      // Owner/admin access requires an explicit trusted profile role.
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role, full_name')
         .eq('id', data.user.id)
         .single()
 
-      const role = profile?.role || 'admin'
-      const name = profile?.full_name || data.user.email?.split('@')[0] || 'Admin'
+      if (profileError || !profile || !['owner', 'admin'].includes(profile.role)) {
+        await supabase.auth.signOut()
+        throw new Error('This account is not assigned the owner/admin role.')
+      }
+
+      const role = profile.role
+      const name = profile.full_name || data.user.email?.split('@')[0] || 'Admin'
 
       const authStaff = {
         id: data.user.id,
@@ -134,16 +132,9 @@ export default function LoginPage() {
       if (nextPin.length === 4) {
         setTimeout(() => {
           // Auto submit when 4 digits reached
-          const staff = staffList.find((s) => s.pin === nextPin)
-          const isOwner = nextPin === settings.owner_pin || nextPin === '1234'
-          if (staff || isOwner) {
-            const activeStaff = staff || {
-              id: 'owner-root',
-              name: 'Owner / Admin',
-              role: 'OWNER' as const,
-              pin: settings.owner_pin || '1234',
-              avatarColor: '#10B981',
-            }
+          const staff = staffList.find((s) => s.pin === nextPin && s.role !== 'OWNER')
+          if (staff) {
+            const activeStaff = staff
             localStorage.setItem('aurapos_auth_staff', JSON.stringify(activeStaff))
             switchStaffWithPin(nextPin)
             if (activeStaff.role === 'CASHIER') {
@@ -276,8 +267,7 @@ export default function LoginPage() {
 
               <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
                 <p className="font-bold text-slate-300">{t.ownerAuthRequired}:</p>
-                <p>• {t.ownerAuthRequired}: <code className="text-sky-400 font-mono">1234</code></p>
-                <p>• {t.register}: <code className="text-slate-400 font-mono">1111</code></p>
+                <p>Use your assigned staff PIN. Owners sign in with their Supabase email and password.</p>
               </div>
             </div>
           ) : (
