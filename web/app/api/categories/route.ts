@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase/client'
+import { isSupabaseConfigured } from '@/lib/supabase/client'
+import { requireStoreAdmin } from '@/lib/supabase/server-auth'
 import { DEFAULT_CATEGORIES, DEFAULT_ITEMS } from '@/lib/db/idb'
 
 const corsHeaders = {
@@ -12,8 +13,11 @@ export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders })
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const auth = await requireStoreAdmin(request)
+    if (!auth.ok) return auth.response
+    const { supabase } = auth
     let categories = DEFAULT_CATEGORIES
 
     if (isSupabaseConfigured()) {
@@ -38,6 +42,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireStoreAdmin(request)
+    if (!auth.ok) return auth.response
+    const { supabase } = auth
     const body = await request.json()
     if (!body || !body.name || !body.name.trim()) {
       return NextResponse.json(
@@ -79,6 +86,9 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const auth = await requireStoreAdmin(request)
+    if (!auth.ok) return auth.response
+    const { supabase } = auth
     const body = await request.json()
     if (!body || !body.id) {
       return NextResponse.json(
@@ -123,6 +133,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const auth = await requireStoreAdmin(request)
+    if (!auth.ok) return auth.response
+    const { supabase } = auth
     const { searchParams } = new URL(request.url)
     let id = searchParams.get('id')
     let reassignToId = searchParams.get('reassign_to_id')
