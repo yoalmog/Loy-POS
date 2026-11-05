@@ -80,7 +80,13 @@ fun LoyversePosApp() {
     var currentScreen by remember { mutableStateOf(AppDestination.SALES_REGISTER) }
     var currentCashier by remember { mutableStateOf("Alex (Cashier)") }
     var showPinDialog by remember { mutableStateOf(false) }
-    var isOwnerAuthenticated by remember { mutableStateOf(!com.example.data.api.SupabaseApiClient.currentAccessToken().isNullOrBlank()) }
+    var isOwnerAuthenticated by remember { mutableStateOf(false) }
+    var isRestoringSession by remember { mutableStateOf(!com.example.data.api.SupabaseApiClient.currentAccessToken().isNullOrBlank()) }
+
+    LaunchedEffect(Unit) {
+        isOwnerAuthenticated = com.example.data.api.SupabaseApiClient.restoreOwnerSession()
+        isRestoringSession = false
+    }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -94,7 +100,13 @@ fun LoyversePosApp() {
         }
     }
 
-    if (isOwnerAuthenticated) {
+    if (isRestoringSession) {
+        Surface(modifier = Modifier.fillMaxSize(), color = com.example.ui.theme.PosSlate950) {
+            Box(contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+    } else if (isOwnerAuthenticated) {
     com.example.util.LocalizationProvider(language = posUiState.language) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val isTabletLandscape = maxWidth >= 960.dp
