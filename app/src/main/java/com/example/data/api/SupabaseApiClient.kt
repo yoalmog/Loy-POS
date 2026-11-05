@@ -5,6 +5,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -88,6 +89,13 @@ data class SupabaseShiftDto(
 
 interface SupabaseRestApi {
 
+    @GET("rest/v1/profiles")
+    suspend fun getProfileRole(
+        @Header("Authorization") authorization: String,
+        @Query("id") idFilter: String,
+        @Query("select") select: String = "role"
+    ): List<SupabaseProfileRoleDto>
+
     @GET("rest/v1/items")
     suspend fun getItems(@Query("select") select: String = "*"): List<SupabaseItemDto>
 
@@ -125,10 +133,11 @@ interface SupabaseRestApi {
 }
 
 data class SupabaseAuthRequest(val email: String, val password: String)
+data class SupabaseProfileRoleDto(val role: String? = null)
 
 interface SupabaseAuthRestApi {
     @POST("auth/v1/token?grant_type=password")
-    suspend fun signIn(@Header("apikey") apiKey: String, @Body credentials: SupabaseAuthRequest): Response<retrofit2.ResponseBody>
+    suspend fun signIn(@Header("apikey") apiKey: String, @Body credentials: SupabaseAuthRequest): Response<ResponseBody>
 }
 
 object SupabaseApiClient {
@@ -175,7 +184,15 @@ object SupabaseApiClient {
             val json = moshi.adapter(Map::class.java).fromJson(raw) ?: return Result.failure(IllegalStateException("Invalid auth response"))
             val access = json["access_token"] as? String ?: return Result.failure(IllegalStateException("Missing access token"))
             val refresh = json["refresh_token"] as? String ?: return Result.failure(IllegalStateException("Missing refresh token"))
+            val user = json["user"] as? Map<*, *>
+            val userId = user?.get("id") as? String
+                ?: return Result.failure(IllegalStateException("Supabase response did not include the signed-in user"))
             store.save(access, refresh)
+            val profile = api.getProfileRole("Bearer $access", "eq.$userId").firstOrNull()
+            if (profile?.role !in listOf("owner", "admin")) {
+                store.clear()
+                return Result.failure(IllegalStateException("This Supabase account is not assigned the owner/admin role"))
+            }
             Result.success(Unit)
         } catch (e: Exception) { Result.failure(e) }
     }
