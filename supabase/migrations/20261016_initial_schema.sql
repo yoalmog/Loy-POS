@@ -204,8 +204,31 @@ CREATE INDEX IF NOT EXISTS idx_items_category_id ON public.items (category_id);
 CREATE INDEX IF NOT EXISTS idx_items_barcode ON public.items (barcode);
 CREATE INDEX IF NOT EXISTS idx_customers_phone ON public.customers (phone);
 
+-- Bootstrap only the explicitly designated Supabase Auth user as the first owner.
+-- The UUID is supplied by the project administrator; no first-user auto-promotion.
+INSERT INTO public.profiles (id, email, full_name, role)
+SELECT id, email, COALESCE(raw_user_meta_data ->> 'full_name', ''), 'owner'
+FROM auth.users
+WHERE id = 'b245f371-9154-4dd3-aa4c-a5fb5266e5d3'::uuid
+ON CONFLICT (id) DO UPDATE
+SET email = EXCLUDED.email,
+    role = 'owner',
+    updated_at = NOW();
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = 'b245f371-9154-4dd3-aa4c-a5fb5266e5d3'::uuid
+      AND role = 'owner'
+  ) THEN
+    RAISE EXCEPTION 'Owner Auth user UUID was not found; verify the configured owner UID before applying this migration.';
+  END IF;
+END
+$$;
+
 -- ====================================================================
--- 7. ROW LEVEL SECURITY (RLS) & ACCESS POLICIES
+-- 7. ROW LEVEL SECURITY & LEAST-PRIVILEGE ACCESS
 -- ====================================================================
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -223,48 +246,102 @@ ALTER TABLE public.timecards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.receipts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.receipt_items ENABLE ROW LEVEL SECURITY;
 
--- Allow public access via anon key for POS application & Web application
-CREATE POLICY "Allow public read access to settings" ON public.store_settings FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to settings" ON public.store_settings FOR ALL USING (true);
+-- SECURITY DEFINER avoids recursive RLS evaluation when policies inspect profiles.
+-- The empty search_path and fully-qualified table names prevent object shadowing.
+CREATE OR REPLACE FUNCTION public.is_store_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS '
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.profiles AS p
+    WHERE p.id = (SELECT auth.uid())
+      AND p.role IN (''owner'', ''admin'')
+  );
+';
 
-CREATE POLICY "Allow public read access to categories" ON public.categories FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to categories" ON public.categories FOR ALL USING (true);
+REVOKE ALL ON FUNCTION public.is_store_admin() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_store_admin() TO authenticated;
 
-CREATE POLICY "Allow public read access to products" ON public.products FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to products" ON public.products FOR ALL USING (true);
+-- Never grant application data access to the anon role.
+REVOKE ALL ON TABLE
+  public.profiles, public.store_settings, public.categories, public.products,
+  public.items, public.modifier_groups, public.modifiers, public.customers,
+  public.loyalty_points, public.shifts, public.cash_actions, public.timecards,
+  public.receipts, public.receipt_items
+FROM PUBLIC, anon;
 
-CREATE POLICY "Allow public read access to items" ON public.items FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to items" ON public.items FOR ALL USING (true);
+-- Authenticated users receive SQL privileges, but RLS below limits rows/actions.
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
+  public.profiles, public.store_settings, public.categories, public.products,
+  public.items, public.modifier_groups, public.modifiers, public.customers,
+  public.loyalty_points, public.shifts, public.cash_actions, public.timecards,
+  public.receipts, public.receipt_items
+TO authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
-CREATE POLICY "Allow public read access to modifier_groups" ON public.modifier_groups FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to modifier_groups" ON public.modifier_groups FOR ALL USING (true);
+-- A user can read only their own profile. Only an existing owner/admin can
+-- read or manage other profiles and assign roles. The first owner is bootstrapped
+-- above from the explicitly configured Auth user UUID.
+CREATE POLICY "profile_read_self_or_admin"
+  ON public.profiles FOR SELECT TO authenticated
+  USING (id = (SELECT auth.uid()) OR (SELECT public.is_store_admin()));
+CREATE POLICY "profile_admin_insert"
+  ON public.profiles FOR INSERT TO authenticated
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "profile_admin_update"
+  ON public.profiles FOR UPDATE TO authenticated
+  USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "profile_admin_delete"
+  ON public.profiles FOR DELETE TO authenticated
+  USING ((SELECT public.is_store_admin()));
 
-CREATE POLICY "Allow public read access to modifiers" ON public.modifiers FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to modifiers" ON public.modifiers FOR ALL USING (true);
-
-CREATE POLICY "Allow public read access to customers" ON public.customers FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to customers" ON public.customers FOR ALL USING (true);
-
-CREATE POLICY "Allow public read access to loyalty_points" ON public.loyalty_points FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to loyalty_points" ON public.loyalty_points FOR ALL USING (true);
-
-CREATE POLICY "Allow public read access to shifts" ON public.shifts FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to shifts" ON public.shifts FOR ALL USING (true);
-
-CREATE POLICY "Allow public read access to cash_actions" ON public.cash_actions FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to cash_actions" ON public.cash_actions FOR ALL USING (true);
-
-CREATE POLICY "Allow public read access to timecards" ON public.timecards FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to timecards" ON public.timecards FOR ALL USING (true);
-
-CREATE POLICY "Allow public read access to receipts" ON public.receipts FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to receipts" ON public.receipts FOR ALL USING (true);
-
-CREATE POLICY "Allow public read access to receipt_items" ON public.receipt_items FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to receipt_items" ON public.receipt_items FOR ALL USING (true);
-
-CREATE POLICY "Allow public read access to profiles" ON public.profiles FOR SELECT USING (true);
-CREATE POLICY "Allow public write access to profiles" ON public.profiles FOR ALL USING (true);
+-- This version is intentionally single-store: owner/admin JWTs can access
+-- store data; cashier/anonymous sessions cannot. Multi-store tenancy requires
+-- store_id columns and per-store policies before enabling multiple stores.
+CREATE POLICY "store_settings_admin_all" ON public.store_settings
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "categories_admin_all" ON public.categories
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "products_admin_all" ON public.products
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "items_admin_all" ON public.items
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "modifier_groups_admin_all" ON public.modifier_groups
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "modifiers_admin_all" ON public.modifiers
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "customers_admin_all" ON public.customers
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "loyalty_points_admin_all" ON public.loyalty_points
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "shifts_admin_all" ON public.shifts
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "cash_actions_admin_all" ON public.cash_actions
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "timecards_admin_all" ON public.timecards
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "receipts_admin_all" ON public.receipts
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
+CREATE POLICY "receipt_items_admin_all" ON public.receipt_items
+  FOR ALL TO authenticated USING ((SELECT public.is_store_admin()))
+  WITH CHECK ((SELECT public.is_store_admin()));
 
 -- Insert default store settings record
 INSERT INTO public.store_settings (id, store_name, address, phone, email, currency, currency_symbol, tax_rate)
@@ -276,10 +353,18 @@ ON CONFLICT (id) DO NOTHING;
 -- ====================================================================
 
 CREATE OR REPLACE FUNCTION public.adjust_item_stock(p_item_id BIGINT, p_delta NUMERIC)
-RETURNS NUMERIC AS $$
+RETURNS NUMERIC
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS '
 DECLARE
     new_stock NUMERIC;
 BEGIN
+    IF NOT public.is_store_admin() THEN
+        RAISE EXCEPTION ''not authorized'' USING ERRCODE = ''42501'';
+    END IF;
+
     UPDATE public.items
     SET in_stock = COALESCE(in_stock, 0) + p_delta,
         updated_at = NOW()
@@ -288,4 +373,7 @@ BEGIN
 
     RETURN new_stock;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+';
+
+REVOKE ALL ON FUNCTION public.adjust_item_stock(BIGINT, NUMERIC) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.adjust_item_stock(BIGINT, NUMERIC) TO authenticated;

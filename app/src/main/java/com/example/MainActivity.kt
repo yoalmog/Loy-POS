@@ -51,6 +51,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Initialize encrypted Supabase owner session storage before API clients are used
+        com.example.data.api.SupabaseApiClient.initialize(this)
+
         // Initialize local network printer manager & settings
         com.example.util.NetworkPrinterManager.initialize(this)
 
@@ -77,6 +80,13 @@ fun LoyversePosApp() {
     var currentScreen by remember { mutableStateOf(AppDestination.SALES_REGISTER) }
     var currentCashier by remember { mutableStateOf("Alex (Cashier)") }
     var showPinDialog by remember { mutableStateOf(false) }
+    var isOwnerAuthenticated by remember { mutableStateOf(false) }
+    var isRestoringSession by remember { mutableStateOf(!com.example.data.api.SupabaseApiClient.currentAccessToken().isNullOrBlank()) }
+
+    LaunchedEffect(Unit) {
+        isOwnerAuthenticated = com.example.data.api.SupabaseApiClient.restoreOwnerSession()
+        isRestoringSession = false
+    }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -90,6 +100,13 @@ fun LoyversePosApp() {
         }
     }
 
+    if (isRestoringSession) {
+        Surface(modifier = Modifier.fillMaxSize(), color = com.example.ui.theme.PosSlate950) {
+            Box(contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+    } else if (isOwnerAuthenticated) {
     com.example.util.LocalizationProvider(language = posUiState.language) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val isTabletLandscape = maxWidth >= 960.dp
@@ -601,6 +618,60 @@ fun AppSidebar(
                         }
                     }
                 }
+            }
+        }
+    }
+    } else {
+        OwnerLoginScreen { email, password ->
+            com.example.data.api.SupabaseApiClient.signInOwner(email, password).also { result ->
+                if (result.isSuccess) isOwnerAuthenticated = true
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun OwnerLoginScreen(onLogin: suspend (String, String) -> Result<Unit>) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    Surface(modifier = Modifier.fillMaxSize(), color = com.example.ui.theme.PosSlate950) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Loy POS", color = Color.White, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(12.dp))
+            Text("Owner sign-in", color = com.example.ui.theme.PosSlate300)
+            Spacer(Modifier.height(24.dp))
+            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Owner email") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, singleLine = true, modifier = Modifier.fillMaxWidth(), visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation())
+            if (errorMessage != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(errorMessage!!, color = MaterialTheme.colorScheme.error)
+            }
+            Spacer(Modifier.height(20.dp))
+            Button(
+                onClick = {
+                    scope.launch {
+                        loading = true
+                        errorMessage = null
+                        val result = onLogin(email, password)
+                        if (result.isFailure) errorMessage = result.exceptionOrNull()?.message ?: "Sign-in failed"
+                        loading = false
+                    }
+                },
+                enabled = !loading && email.isNotBlank() && password.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (loading) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                else Text("Sign in")
             }
         }
     }

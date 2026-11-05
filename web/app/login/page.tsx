@@ -22,7 +22,7 @@ import {
 
 export default function LoginPage() {
   const router = useRouter()
-  const { staffList, settings, switchStaffWithPin } = usePos()
+  const { settings, activateStaffMember } = usePos()
   const { language } = useTheme()
   const t = getTranslation(language)
 
@@ -34,49 +34,44 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  // Handle Staff PIN Login
-  function handlePinLogin(e?: React.FormEvent) {
-    if (e) e.preventDefault()
-    if (!pin || pin.length < 4) {
+  // Staff PINs are verified by the database; never compare against local/demo PINs.
+  async function authenticateStaffPin(candidatePin: string) {
+    if (!/^\d{4}$/.test(candidatePin)) {
       setError(t.enterPin)
       return
     }
-
     setLoading(true)
     setError(null)
-
-    // Check staff list & owner pin
-    const staff = staffList.find((s) => s.pin === pin)
-    const isOwner = pin === settings.owner_pin || pin === '1234'
-
-    if (staff || isOwner) {
-      const activeStaff = staff || {
-        id: 'owner-root',
-        name: 'Owner / Admin',
-        role: 'OWNER' as const,
-        pin: settings.owner_pin || '1234',
-        avatarColor: '#10B981',
+    try {
+      if (!isSupabaseConfigured()) throw new Error('Staff PIN login requires an online connection.')
+      const { data, error: pinError } = await supabase.rpc('verify_staff_pin', { p_pin: candidatePin })
+      if (pinError) throw pinError
+      const member = Array.isArray(data) ? data[0] : null
+      if (!member?.id || !member?.display_name || !['cashier', 'manager'].includes(member.role)) {
+        throw new Error(t.error)
       }
-
-      // Store authenticated session
+      const activeStaff = {
+        id: member.id,
+        name: member.display_name,
+        role: member.role === 'manager' ? ('MANAGER' as const) : ('CASHIER' as const),
+        pin: '',
+        avatarColor: '#0288D1',
+      }
+      activateStaffMember(activeStaff)
       localStorage.setItem('aurapos_auth_staff', JSON.stringify(activeStaff))
-      switchStaffWithPin(pin)
-
-      if (activeStaff.role === 'CASHIER') {
-        setSuccessMsg(t.success)
-        setTimeout(() => {
-          router.replace('/pos')
-        }, 600)
-      } else {
-        setSuccessMsg(`${activeStaff.name} • ${t.success}`)
-        setTimeout(() => {
-          router.replace('/dashboard')
-        }, 600)
-      }
-    } else {
-      setError(t.error)
+      setSuccessMsg(t.success)
+      setTimeout(() => router.replace('/pos'), 500)
+    } catch (err: any) {
+      setError(err.message || t.error)
+      setPin('')
+    } finally {
       setLoading(false)
     }
+  }
+
+  function handlePinLogin(e?: React.FormEvent) {
+    if (e) e.preventDefault()
+    void authenticateStaffPin(pin)
   }
 
   // Handle Cloud Supabase Email / Password Login
@@ -97,15 +92,20 @@ export default function LoginPage() {
 
       if (authError) throw authError
 
-      // Fetch profile role if available
-      const { data: profile } = await supabase
+      // Owner/admin access requires an explicit trusted profile role.
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role, full_name')
         .eq('id', data.user.id)
         .single()
 
-      const role = profile?.role || 'admin'
-      const name = profile?.full_name || data.user.email?.split('@')[0] || 'Admin'
+      if (profileError || !profile || !['owner', 'admin'].includes(profile.role)) {
+        await supabase.auth.signOut()
+        throw new Error('This account is not assigned the owner/admin role.')
+      }
+
+      const role = profile.role
+      const name = profile.full_name || data.user.email?.split('@')[0] || 'Admin'
 
       const authStaff = {
         id: data.user.id,
@@ -128,35 +128,11 @@ export default function LoginPage() {
   }
 
   function handleKeypadClick(digit: string) {
-    if (pin.length < 4) {
-      const nextPin = pin + digit
-      setPin(nextPin)
-      if (nextPin.length === 4) {
-        setTimeout(() => {
-          // Auto submit when 4 digits reached
-          const staff = staffList.find((s) => s.pin === nextPin)
-          const isOwner = nextPin === settings.owner_pin || nextPin === '1234'
-          if (staff || isOwner) {
-            const activeStaff = staff || {
-              id: 'owner-root',
-              name: 'Owner / Admin',
-              role: 'OWNER' as const,
-              pin: settings.owner_pin || '1234',
-              avatarColor: '#10B981',
-            }
-            localStorage.setItem('aurapos_auth_staff', JSON.stringify(activeStaff))
-            switchStaffWithPin(nextPin)
-            if (activeStaff.role === 'CASHIER') {
-              router.replace('/pos')
-            } else {
-              router.replace('/dashboard')
-            }
-          } else {
-            setError(t.error)
-            setPin('')
-          }
-        }, 150)
-      }
+    if (loading || pin.length >= 8) return
+    const nextPin = pin + digit
+    setPin(nextPin)
+    if (nextPin.length >= 4) {
+      setTimeout(() => { void authenticateStaffPin(nextPin) }, 150)
     }
   }
 
@@ -276,8 +252,7 @@ export default function LoginPage() {
 
               <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
                 <p className="font-bold text-slate-300">{t.ownerAuthRequired}:</p>
-                <p>• {t.ownerAuthRequired}: <code className="text-sky-400 font-mono">1234</code></p>
-                <p>• {t.register}: <code className="text-slate-400 font-mono">1111</code></p>
+                <p>Use your assigned staff PIN. Owners sign in with their Supabase email and password.</p>
               </div>
             </div>
           ) : (

@@ -5,6 +5,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -88,6 +89,13 @@ data class SupabaseShiftDto(
 
 interface SupabaseRestApi {
 
+    @GET("rest/v1/profiles")
+    suspend fun getProfileRole(
+        @Header("Authorization") authorization: String,
+        @Query("id") idFilter: String,
+        @Query("select") select: String = "role"
+    ): List<SupabaseProfileRoleDto>
+
     @GET("rest/v1/items")
     suspend fun getItems(@Query("select") select: String = "*"): List<SupabaseItemDto>
 
@@ -124,67 +132,116 @@ interface SupabaseRestApi {
     suspend fun upsertShift(@Body shift: SupabaseShiftDto): Response<List<SupabaseShiftDto>>
 }
 
-object SupabaseApiClient {
+data class SupabaseAuthRequest(val email: String, val password: String)
+data class SupabaseRefreshRequest(val refresh_token: String)
+data class SupabaseProfileRoleDto(val role: String? = null)
 
-    private val moshi = Moshi.Builder()
-        .add(KotlinJsonAdapterFactory())
-        .build()
+interface SupabaseAuthRestApi {
+    @POST("auth/v1/token?grant_type=password")
+    suspend fun signIn(@Header("apikey") apiKey: String, @Body credentials: SupabaseAuthRequest): Response<ResponseBody>
+
+    @POST("auth/v1/token?grant_type=refresh_token")
+    suspend fun refresh(@Header("apikey") apiKey: String, @Body request: SupabaseRefreshRequest): Response<ResponseBody>
+}
+
+object SupabaseApiClient {
+    private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+    @Volatile private var sessionStore: SupabaseSessionStore? = null
+
+    fun initialize(context: android.content.Context) { sessionStore = SupabaseSessionStore(context.applicationContext) }
 
     private fun getBaseUrl(): String {
-        val url = try {
-            BuildConfig::class.java.getField("SUPABASE_URL").get(null) as? String
-        } catch (e: Exception) {
-            null
-        }
-        return if (!url.isNullOrEmpty() && url.startsWith("http")) {
-            if (url.endsWith("/")) url else "$url/"
-        } else {
-            "https://placeholder-project.supabase.co/"
-        }
+        val url = try { BuildConfig::class.java.getField("SUPABASE_URL").get(null) as? String } catch (_: Exception) { null }
+        return if (!url.isNullOrEmpty() && url.startsWith("http")) { if (url.endsWith("/")) url else "$url/" }
+        else "https://placeholder-project.supabase.co/"
     }
 
     private fun getAnonKey(): String {
-        return try {
-            (BuildConfig::class.java.getField("SUPABASE_ANON_KEY").get(null) as? String) ?: ""
-        } catch (e: Exception) {
-            ""
-        }
+        return try { (BuildConfig::class.java.getField("SUPABASE_ANON_KEY").get(null) as? String) ?: "" } catch (_: Exception) { "" }
     }
 
     private val authInterceptor = Interceptor { chain ->
-        val original = chain.request()
-        val apiKey = getAnonKey()
-        val requestBuilder = original.newBuilder()
-            .header("apikey", apiKey)
-            .header("Authorization", "Bearer $apiKey")
-            .header("Content-Type", "application/json")
-        chain.proceed(requestBuilder.build())
+        val token = sessionStore?.accessToken()
+        val builder = chain.request().newBuilder().header("apikey", getAnonKey()).header("Content-Type", "application/json")
+        if (!token.isNullOrBlank()) builder.header("Authorization", "Bearer $token")
+        chain.proceed(builder.build())
     }
 
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)
-        .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
-        })
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
-        .writeTimeout(15, TimeUnit.SECONDS)
-        .build()
+        .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
+        .connectTimeout(15, TimeUnit.SECONDS).readTimeout(15, TimeUnit.SECONDS).writeTimeout(15, TimeUnit.SECONDS).build()
+
+    private val authApi: SupabaseAuthRestApi by lazy {
+        Retrofit.Builder().baseUrl(getBaseUrl()).client(OkHttpClient.Builder().build())
+            .addConverterFactory(MoshiConverterFactory.create(moshi)).build().create(SupabaseAuthRestApi::class.java)
+    }
+
+    suspend fun signInOwner(email: String, password: String): Result<Unit> {
+        val store = sessionStore ?: return Result.failure(IllegalStateException("Auth session store is not initialized"))
+        val key = getAnonKey()
+        if (key.isBlank() || getBaseUrl().contains("placeholder-project")) return Result.failure(IllegalStateException("Supabase is not configured"))
+        return try {
+            val response = authApi.signIn(key, SupabaseAuthRequest(email.trim(), password))
+            if (!response.isSuccessful) return Result.failure(IllegalStateException("Supabase sign-in failed (" + response.code() + ")"))
+            val raw = response.body()?.string() ?: return Result.failure(IllegalStateException("Empty auth response"))
+            val json = moshi.adapter(Map::class.java).fromJson(raw) ?: return Result.failure(IllegalStateException("Invalid auth response"))
+            val access = json["access_token"] as? String ?: return Result.failure(IllegalStateException("Missing access token"))
+            val refresh = json["refresh_token"] as? String ?: return Result.failure(IllegalStateException("Missing refresh token"))
+            val user = json["user"] as? Map<*, *>
+            val userId = user?.get("id") as? String
+                ?: return Result.failure(IllegalStateException("Supabase response did not include the signed-in user"))
+            store.save(access, refresh)
+            val profile = api.getProfileRole("Bearer $access", "eq.$userId").firstOrNull()
+            if (profile?.role !in listOf("owner", "admin")) {
+                store.clear()
+                return Result.failure(IllegalStateException("This Supabase account is not assigned the owner/admin role"))
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            store.clear()
+            Result.failure(e)
+        }
+    }
+
+    suspend fun restoreOwnerSession(): Boolean {
+        val store = sessionStore ?: return false
+        val refreshToken = store.refreshToken() ?: return false
+        val key = getAnonKey()
+        if (key.isBlank() || getBaseUrl().contains("placeholder-project")) return false
+        return try {
+            val response = authApi.refresh(key, SupabaseRefreshRequest(refreshToken))
+            if (!response.isSuccessful) {
+                store.clear()
+                return false
+            }
+            val raw = response.body()?.string() ?: throw IllegalStateException("Empty refresh response")
+            val json = moshi.adapter(Map::class.java).fromJson(raw) ?: throw IllegalStateException("Invalid refresh response")
+            val access = json["access_token"] as? String ?: throw IllegalStateException("Missing refreshed access token")
+            val refresh = json["refresh_token"] as? String ?: throw IllegalStateException("Missing refreshed refresh token")
+            val user = json["user"] as? Map<*, *>
+            val userId = user?.get("id") as? String ?: throw IllegalStateException("Missing refreshed user")
+            store.save(access, refresh)
+            val role = api.getProfileRole("Bearer $access", "eq.$userId").firstOrNull()?.role
+            if (role !in listOf("owner", "admin")) {
+                store.clear()
+                false
+            } else true
+        } catch (_: Exception) {
+            store.clear()
+            false
+        }
+    }
+
+    fun clearSession() { sessionStore?.clear() }
+    fun currentAccessToken(): String? = sessionStore?.accessToken()
 
     val api: SupabaseRestApi by lazy {
-        Retrofit.Builder()
-            .baseUrl(getBaseUrl())
-            .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .build()
-            .create(SupabaseRestApi::class.java)
+        Retrofit.Builder().baseUrl(getBaseUrl()).client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi)).build().create(SupabaseRestApi::class.java)
     }
 
-    fun isConfigured(): Boolean {
-        val url = getBaseUrl()
-        val key = getAnonKey()
-        return !url.contains("placeholder-project") && key.isNotEmpty()
-    }
+    fun isConfigured(): Boolean = !getBaseUrl().contains("placeholder-project") && getAnonKey().isNotEmpty()
 }
 
 // Back Office Sync DTOs
@@ -226,6 +283,11 @@ object BackOfficeApiClient {
         .build()
 
     private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(Interceptor { chain ->
+            val request = chain.request().newBuilder()
+            SupabaseApiClient.currentAccessToken()?.let { request.header("Authorization", "Bearer $it") }
+            chain.proceed(request.build())
+        })
         .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BASIC
         })

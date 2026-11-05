@@ -35,7 +35,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   loyalty_earn_rate: 1.0, // 1 punto por S/ 1
   loyalty_redemption_rate: 5.0, // S/ 5 descuento por 100 puntos
   allow_negative_stock: true,
-  owner_pin: '1234'
+  owner_pin: ''
 }
 
 export const DEFAULT_STAFF: StaffMember[] = [
