@@ -107,6 +107,7 @@ interface PosContextType {
 
   // Staff & Security
   switchStaffWithPin: (pin: string) => { success: boolean; message: string }
+  activateStaffMember: (staff: StaffMember) => void
   verifyOwnerPin: (pin: string) => boolean
   isLocked: boolean
   setIsLocked: (locked: boolean) => void
@@ -724,6 +725,13 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   }
 
   // Staff & PIN
+  function activateStaffMember(staff: StaffMember) {
+    setCurrentStaff(staff)
+    setIsLocked(false)
+    triggerSound('click')
+    announce(`ברוך הבא, ${staff.name}`)
+  }
+
   function switchStaffWithPin(pin: string): { success: boolean; message: string } {
     const found = staffList.find((s) => s.pin === pin)
     if (found) {
@@ -992,6 +1000,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         processPayment,
         processRefund,
         switchStaffWithPin,
+        activateStaffMember,
         verifyOwnerPin,
         isLocked,
         setIsLocked,
