@@ -334,12 +334,12 @@ RETURNS NUMERIC
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
-AS $
+AS '
 DECLARE
     new_stock NUMERIC;
 BEGIN
     IF NOT public.is_store_admin() THEN
-        RAISE EXCEPTION 'not authorized' USING ERRCODE = '42501';
+        RAISE EXCEPTION ''not authorized'' USING ERRCODE = ''42501'';
     END IF;
 
     UPDATE public.items
@@ -350,7 +350,7 @@ BEGIN
 
     RETURN new_stock;
 END;
-$function$;
+';
 
 REVOKE ALL ON FUNCTION public.adjust_item_stock(BIGINT, NUMERIC) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.adjust_item_stock(BIGINT, NUMERIC) TO authenticated;
