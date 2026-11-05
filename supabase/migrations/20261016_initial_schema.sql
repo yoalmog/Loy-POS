@@ -231,14 +231,14 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = ''
-AS $function$$
+AS '
   SELECT EXISTS (
     SELECT 1
     FROM public.profiles AS p
     WHERE p.id = (SELECT auth.uid())
-      AND p.role IN ('owner', 'admin')
+      AND p.role IN (''owner'', ''admin'')
   );
-$$;
+';
 
 REVOKE ALL ON FUNCTION public.is_store_admin() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.is_store_admin() TO authenticated;
