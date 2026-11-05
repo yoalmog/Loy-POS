@@ -181,6 +181,7 @@ object SupabaseApiClient {
     }
 
     fun clearSession() { sessionStore?.clear() }
+    fun currentAccessToken(): String? = sessionStore?.accessToken()
 
     val api: SupabaseRestApi by lazy {
         Retrofit.Builder().baseUrl(getBaseUrl()).client(okHttpClient)
@@ -229,6 +230,11 @@ object BackOfficeApiClient {
         .build()
 
     private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(Interceptor { chain ->
+            val request = chain.request().newBuilder()
+            SupabaseApiClient.currentAccessToken()?.let { request.header("Authorization", "Bearer $it") }
+            chain.proceed(request.build())
+        })
         .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BASIC
         })
